@@ -3,6 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MaterialIcons } from '@expo/vector-icons';
 import HomeScreen from '../screens/HomeScreen';
+import ProfileScreen from '../screens/ProfileScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -38,7 +39,7 @@ const AppNavigator: React.FC = () => {
         />
         <Tab.Screen
           name="Profile"
-          component={HomeScreen} // 仮のコンポーネント
+          component={ProfileScreen}
           options={{
             tabBarLabel: 'プロフィール',
             tabBarIcon: ({ color, size }) => (

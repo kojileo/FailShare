@@ -1,12 +1,14 @@
 import React from 'react';
 import { View, StyleSheet, FlatList } from 'react-native';
-import { Text, Card, FAB, Searchbar } from 'react-native-paper';
+import { Text, Card, FAB, Searchbar, Avatar } from 'react-native-paper';
 import { useStoryStore } from '../stores/storyStore';
+import { useAuthStore } from '../stores/authStore';
 import { FailureStory } from '../types';
 import { sampleStories } from '../utils/sampleData';
 
 const HomeScreen: React.FC = () => {
   const { stories, setStories } = useStoryStore();
+  const { user } = useAuthStore();
   const [searchQuery, setSearchQuery] = React.useState('');
 
   // 初期データをロード
@@ -36,6 +38,22 @@ const HomeScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
+      {/* ユーザー情報ヘッダー */}
+      {user && (
+        <View style={styles.userHeader}>
+          <Avatar.Image 
+            size={40} 
+            source={{ uri: `https://robohash.org/${user.displayName}?set=set4` }}
+          />
+          <View style={styles.userInfo}>
+            <Text variant="titleMedium">{user.displayName}</Text>
+            <Text variant="bodySmall" style={styles.userStats}>
+              投稿: {user.stats.totalPosts} • コメント: {user.stats.totalComments}
+            </Text>
+          </View>
+        </View>
+      )}
+
       <Searchbar
         placeholder="失敗談を検索..."
         value={searchQuery}
@@ -77,6 +95,23 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+  },
+  userHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  userInfo: {
+    marginLeft: 12,
+    flex: 1,
+  },
+  userStats: {
+    color: '#666',
+    marginTop: 2,
   },
   searchbar: {
     margin: 16,
