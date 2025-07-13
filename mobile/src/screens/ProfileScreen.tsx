@@ -1,13 +1,75 @@
-import React from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
-import { Text, Card, Button, Avatar, Divider } from 'react-native-paper';
+import React, { useState } from 'react';
+import { View, StyleSheet, ScrollView, Alert } from 'react-native';
+import { Text, Card, Button, Avatar, Divider, TextInput, Dialog, Portal, IconButton } from 'react-native-paper';
+import { StackNavigationProp } from '@react-navigation/stack';
 import { useAuthStore } from '../stores/authStore';
+import { updateDisplayName, updateAvatar, generateNewNickname } from '../services/authService';
+import { RootStackParamList } from '../types';
 
-const ProfileScreen: React.FC = () => {
-  const { user, signOut, isLoading } = useAuthStore();
+type ProfileScreenNavigationProp = StackNavigationProp<RootStackParamList>;
+
+interface ProfileScreenProps {
+  navigation?: ProfileScreenNavigationProp;
+}
+
+const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
+  const { user, signOut, isLoading, setUser } = useAuthStore();
+  const [nicknameDialogVisible, setNicknameDialogVisible] = useState(false);
+  const [avatarDialogVisible, setAvatarDialogVisible] = useState(false);
+  const [newNickname, setNewNickname] = useState('');
+  const [updating, setUpdating] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
+  };
+
+  const handleNicknameEdit = () => {
+    setNewNickname(user?.displayName || '');
+    setNicknameDialogVisible(true);
+  };
+
+  const handleNicknameUpdate = async () => {
+    if (!user) return;
+
+    setUpdating(true);
+    try {
+      const updatedUser = await updateDisplayName(user.id, newNickname);
+      if (updatedUser) {
+        setUser(updatedUser);
+        setNicknameDialogVisible(false);
+        Alert.alert('完了', 'ニックネームを更新しました');
+      }
+    } catch (error) {
+      console.error('ニックネーム更新エラー:', error);
+      Alert.alert('エラー', error instanceof Error ? error.message : 'ニックネームの更新に失敗しました');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleGenerateNewNickname = () => {
+    const newName = generateNewNickname();
+    setNewNickname(newName);
+  };
+
+  const handleAvatarChange = async (avatarNumber: number) => {
+    if (!user) return;
+
+    setUpdating(true);
+    try {
+      const newAvatar = `avatar_${avatarNumber}.png`;
+      const updatedUser = await updateAvatar(user.id, newAvatar);
+      if (updatedUser) {
+        setUser(updatedUser);
+        setAvatarDialogVisible(false);
+        Alert.alert('完了', 'アバターを更新しました');
+      }
+    } catch (error) {
+      console.error('アバター更新エラー:', error);
+      Alert.alert('エラー', error instanceof Error ? error.message : 'アバターの更新に失敗しました');
+    } finally {
+      setUpdating(false);
+    }
   };
 
   if (!user) {
@@ -25,14 +87,30 @@ const ProfileScreen: React.FC = () => {
         <Card style={styles.profileCard}>
           <Card.Content>
             <View style={styles.profileHeader}>
-              <Avatar.Image 
-                size={80} 
-                source={{ uri: `https://robohash.org/${user.displayName}?set=set4` }}
-              />
+              <View style={styles.avatarContainer}>
+                <Avatar.Image 
+                  size={80} 
+                  source={{ uri: `https://robohash.org/${user.displayName}?set=set4` }}
+                />
+                <IconButton
+                  icon="pencil"
+                  size={20}
+                  style={styles.editAvatarButton}
+                  onPress={() => setAvatarDialogVisible(true)}
+                />
+              </View>
               <View style={styles.profileInfo}>
-                <Text variant="headlineSmall" style={styles.displayName}>
-                  {user.displayName}
-                </Text>
+                <View style={styles.nicknameContainer}>
+                  <Text variant="headlineSmall" style={styles.displayName}>
+                    {user.displayName}
+                  </Text>
+                  <IconButton
+                    icon="pencil"
+                    size={20}
+                    style={styles.editNicknameButton}
+                    onPress={handleNicknameEdit}
+                  />
+                </View>
                 <Text variant="bodyMedium" style={styles.joinDate}>
                   {user.joinedAt instanceof Date ? user.joinedAt.toLocaleDateString('ja-JP') : '不明'} から参加
                 </Text>
@@ -109,6 +187,14 @@ const ProfileScreen: React.FC = () => {
         {/* アクションボタン */}
         <View style={styles.actionButtons}>
           <Button
+            mode="contained"
+            onPress={() => navigation?.navigate('MyStories')}
+            style={styles.myStoriesButton}
+            icon="folder"
+          >
+            マイ投稿
+          </Button>
+          <Button
             mode="outlined"
             onPress={handleSignOut}
             loading={isLoading}
@@ -129,6 +215,69 @@ const ProfileScreen: React.FC = () => {
           </Text>
         </View>
       </View>
+
+      {/* ニックネーム編集ダイアログ */}
+      <Portal>
+        <Dialog visible={nicknameDialogVisible} onDismiss={() => setNicknameDialogVisible(false)}>
+          <Dialog.Title>ニックネーム変更</Dialog.Title>
+          <Dialog.Content>
+            <TextInput
+              label="新しいニックネーム"
+              value={newNickname}
+              onChangeText={setNewNickname}
+              maxLength={20}
+              style={styles.dialogInput}
+            />
+            <Button
+              mode="outlined"
+              onPress={handleGenerateNewNickname}
+              style={styles.generateButton}
+            >
+              ランダム生成
+            </Button>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setNicknameDialogVisible(false)}>
+              キャンセル
+            </Button>
+            <Button
+              onPress={handleNicknameUpdate}
+              loading={updating}
+              disabled={updating || !newNickname.trim()}
+            >
+              更新
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+
+        {/* アバター選択ダイアログ */}
+        <Dialog visible={avatarDialogVisible} onDismiss={() => setAvatarDialogVisible(false)}>
+          <Dialog.Title>アバター変更</Dialog.Title>
+          <Dialog.Content>
+            <View style={styles.avatarGrid}>
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((number) => (
+                <Button
+                  key={number}
+                  mode="outlined"
+                  onPress={() => handleAvatarChange(number)}
+                  style={styles.avatarOption}
+                  disabled={updating}
+                >
+                  <Avatar.Image
+                    size={40}
+                    source={{ uri: `https://robohash.org/avatar_${number}?set=set4` }}
+                  />
+                </Button>
+              ))}
+            </View>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setAvatarDialogVisible(false)}>
+              キャンセル
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
     </ScrollView>
   );
 };
@@ -148,13 +297,30 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  avatarContainer: {
+    position: 'relative',
+  },
+  editAvatarButton: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    backgroundColor: '#6200EE',
+  },
   profileInfo: {
     marginLeft: 16,
     flex: 1,
   },
+  nicknameContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   displayName: {
     fontWeight: 'bold',
     marginBottom: 4,
+    flex: 1,
+  },
+  editNicknameButton: {
+    marginLeft: 4,
   },
   joinDate: {
     color: '#666',
@@ -202,6 +368,9 @@ const styles = StyleSheet.create({
   actionButtons: {
     marginBottom: 32,
   },
+  myStoriesButton: {
+    marginBottom: 16,
+  },
   signOutButton: {
     marginBottom: 16,
   },
@@ -212,6 +381,22 @@ const styles = StyleSheet.create({
   footerText: {
     color: '#888',
     marginBottom: 4,
+  },
+  dialogInput: {
+    marginBottom: 16,
+  },
+  generateButton: {
+    marginBottom: 16,
+  },
+  avatarGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  avatarOption: {
+    width: '18%',
+    marginBottom: 8,
   },
 });
 

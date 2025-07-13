@@ -75,7 +75,6 @@ export type RootStackParamList = {
   MainTabs: undefined;
   CreateStory: undefined;
   StoryDetail: { storyId: string };
-  MyStories: undefined;
 };
 
 export type TabParamList = {

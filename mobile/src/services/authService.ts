@@ -1,6 +1,6 @@
 import { auth, db } from './firebase';
 import { signInAnonymously, signOut, User as FirebaseUser } from 'firebase/auth';
-import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, getDoc, updateDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { User } from '../types';
 
@@ -165,4 +165,65 @@ export const getUserProfile = async (userId: string): Promise<User | null> => {
     console.error('ユーザープロフィール取得エラー:', error);
     return null;
   }
+};
+
+// プロフィール更新
+export const updateUserProfile = async (userId: string, updates: Partial<User>): Promise<User | null> => {
+  try {
+    const userDocRef = doc(db, 'anonymousUsers', userId);
+    
+    // 更新データを準備
+    const updateData: any = {
+      ...updates,
+      lastActive: serverTimestamp()
+    };
+    
+    // 日付フィールドはTimestampとして保存
+    if (updates.joinedAt) {
+      updateData.joinedAt = Timestamp.fromDate(updates.joinedAt);
+    }
+    
+    // Firestoreを更新
+    await updateDoc(userDocRef, updateData);
+    
+    // 更新後のプロフィールを取得
+    const updatedProfile = await getUserProfile(userId);
+    
+    // AsyncStorageも更新
+    if (updatedProfile) {
+      await saveUserToStorage(updatedProfile);
+    }
+    
+    return updatedProfile;
+  } catch (error) {
+    console.error('プロフィール更新エラー:', error);
+    throw new Error('プロフィールの更新に失敗しました');
+  }
+};
+
+// ニックネーム変更
+export const updateDisplayName = async (userId: string, newDisplayName: string): Promise<User | null> => {
+  if (!newDisplayName.trim()) {
+    throw new Error('ニックネームは必須です');
+  }
+  
+  if (newDisplayName.length > 20) {
+    throw new Error('ニックネームは20文字以内で入力してください');
+  }
+  
+  return await updateUserProfile(userId, { displayName: newDisplayName.trim() });
+};
+
+// アバター変更
+export const updateAvatar = async (userId: string, newAvatar: string): Promise<User | null> => {
+  if (!newAvatar.trim()) {
+    throw new Error('アバターは必須です');
+  }
+  
+  return await updateUserProfile(userId, { avatar: newAvatar.trim() });
+};
+
+// 新しいランダムニックネーム生成
+export const generateNewNickname = (): string => {
+  return generateAnonymousNickname();
 }; 

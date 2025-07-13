@@ -2,13 +2,16 @@ import React from 'react';
 import { View, StyleSheet, FlatList } from 'react-native';
 import { Text, Card, FAB, Searchbar, Avatar } from 'react-native-paper';
 import { useFocusEffect } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 import { useStoryStore } from '../stores/storyStore';
 import { useAuthStore } from '../stores/authStore';
-import { FailureStory } from '../types';
+import { FailureStory, RootStackParamList } from '../types';
 import { storyService } from '../services/storyService';
 
+type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList>;
+
 interface HomeScreenProps {
-  navigation?: any;
+  navigation?: HomeScreenNavigationProp;
 }
 
 const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
@@ -37,7 +40,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   );
 
   const renderStoryItem = ({ item }: { item: FailureStory }) => (
-    <Card style={styles.storyCard}>
+    <Card style={styles.storyCard} onPress={() => navigation?.navigate('StoryDetail', { storyId: item.id })}>
       <Card.Title title={item.content.title} subtitle={item.content.category} />
       <Card.Content>
         <Text variant="bodyMedium" numberOfLines={3}>

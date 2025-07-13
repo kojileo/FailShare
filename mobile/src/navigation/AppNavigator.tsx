@@ -6,6 +6,8 @@ import { MaterialIcons } from '@expo/vector-icons';
 import HomeScreen from '../screens/HomeScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import CreateStoryScreen from '../screens/CreateStoryScreen';
+import StoryDetailScreen from '../screens/StoryDetailScreen';
+import MyStoriesScreen from '../screens/MyStoriesScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -67,6 +69,34 @@ const AppNavigator: React.FC = () => {
           component={CreateStoryScreen}
           options={{
             title: '失敗談を投稿',
+            headerStyle: {
+              backgroundColor: '#6200EE',
+            },
+            headerTintColor: '#fff',
+            headerTitleStyle: {
+              fontWeight: 'bold',
+            },
+          }}
+        />
+        <Stack.Screen
+          name="StoryDetail"
+          component={StoryDetailScreen}
+          options={{
+            title: '失敗談の詳細',
+            headerStyle: {
+              backgroundColor: '#6200EE',
+            },
+            headerTintColor: '#fff',
+            headerTitleStyle: {
+              fontWeight: 'bold',
+            },
+          }}
+        />
+        <Stack.Screen
+          name="MyStories"
+          component={MyStoriesScreen}
+          options={{
+            title: 'マイ投稿',
             headerStyle: {
               backgroundColor: '#6200EE',
             },

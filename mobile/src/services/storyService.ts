@@ -11,6 +11,7 @@ import {
   startAfter,
   where,
   getDoc,
+  deleteDoc,
   DocumentData,
   QueryDocumentSnapshot,
   Timestamp
@@ -272,6 +273,92 @@ class StoryService {
     });
 
     return [...new Set(tags)]; // 重複を削除
+  }
+
+  /**
+   * 特定ユーザーの投稿一覧を取得
+   */
+  async getUserStories(userId: string, filters: Omit<StoryFilters, 'authorId'> = {}): Promise<{
+    stories: FailureStory[];
+    lastVisible: QueryDocumentSnapshot<DocumentData> | null;
+  }> {
+    try {
+      let q = query(
+        collection(db, this.COLLECTION_NAME),
+        where('authorId', '==', userId),
+        orderBy('metadata.createdAt', 'desc')
+      );
+
+      // フィルタリング
+      if (filters.category) {
+        q = query(q, where('content.category', '==', filters.category));
+      }
+      if (filters.emotion) {
+        q = query(q, where('content.emotion', '==', filters.emotion));
+      }
+
+      // ページネーション
+      const pageLimit = filters.limit || 10;
+      q = query(q, limit(pageLimit));
+
+      if (filters.lastVisible) {
+        q = query(q, startAfter(filters.lastVisible));
+      }
+
+      const querySnapshot = await getDocs(q);
+      const stories: FailureStory[] = [];
+      
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        stories.push({
+          id: doc.id,
+          authorId: data.authorId,
+          content: data.content,
+          metadata: {
+            ...data.metadata,
+            createdAt: data.metadata.createdAt?.toDate() || new Date(),
+          },
+        });
+      });
+
+      const lastVisible = querySnapshot.docs[querySnapshot.docs.length - 1] || null;
+
+      return { stories, lastVisible };
+    } catch (error) {
+      console.error('ユーザー投稿取得エラー:', error);
+      throw new Error('投稿データの取得に失敗しました');
+    }
+  }
+
+  /**
+   * 投稿を削除
+   */
+  async deleteStory(storyId: string, userId: string): Promise<void> {
+    try {
+      // 投稿の存在確認と所有者確認
+      const docRef = doc(db, this.COLLECTION_NAME, storyId);
+      const docSnap = await getDoc(docRef);
+
+      if (!docSnap.exists()) {
+        throw new Error('投稿が見つかりません');
+      }
+
+      const data = docSnap.data();
+      if (data.authorId !== userId) {
+        throw new Error('この投稿を削除する権限がありません');
+      }
+
+      // 投稿を削除
+      await deleteDoc(docRef);
+
+      // ユーザー統計を更新（投稿数を減らす）
+      await this.updateUserStats(userId, 'totalPosts', -1);
+
+      console.log('投稿削除成功:', storyId);
+    } catch (error) {
+      console.error('投稿削除エラー:', error);
+      throw error;
+    }
   }
 
   /**
