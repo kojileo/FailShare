@@ -20,7 +20,23 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   const [updating, setUpdating] = useState(false);
 
   const handleSignOut = async () => {
-    await signOut();
+    Alert.alert(
+      'サインアウト確認',
+      '匿名ユーザーではサインアウト後に同じアカウントで再ログインできません。\n\n投稿した失敗談やプロフィール情報は完全に削除されます。\n\n本当にサインアウトしますか？',
+      [
+        {
+          text: 'キャンセル',
+          style: 'cancel',
+        },
+        {
+          text: 'サインアウト',
+          style: 'destructive',
+          onPress: async () => {
+            await signOut();
+          },
+        },
+      ]
+    );
   };
 
   const handleNicknameEdit = () => {

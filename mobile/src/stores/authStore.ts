@@ -40,14 +40,22 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
   
   signOut: async () => {
-    try {
-      set({ isLoading: true, error: null });
-      await signOutUser();
+    set({ isLoading: true, error: null });
+    const result = await signOutUser();
+    
+    if (result.success) {
       set({ user: null, isSignedIn: false, isLoading: false });
-    } catch (error) {
-      console.error('サインアウトエラー:', error);
+      
+      // データ削除の結果をログに記録
+      if (result.dataDeleted) {
+        console.log('ユーザーデータが正常に削除されました');
+      } else if (result.error) {
+        console.warn('データ削除でエラーが発生しました:', result.error);
+      }
+    } else {
+      console.error('サインアウトエラー:', result.error);
       set({ 
-        error: 'サインアウトに失敗しました。',
+        error: result.error || 'サインアウトに失敗しました。',
         isLoading: false 
       });
     }
