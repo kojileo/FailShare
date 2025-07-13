@@ -1,7 +1,46 @@
 import { auth, db } from './firebase';
 import { signInAnonymously, signOut, User as FirebaseUser } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { User } from '../types';
+
+// AsyncStorageからユーザー情報を取得
+const getUserFromStorage = async (): Promise<User | null> => {
+  try {
+    const userData = await AsyncStorage.getItem('userData');
+    if (userData) {
+      const user = JSON.parse(userData);
+      // 日付フィールドをDateオブジェクトに変換
+      return {
+        ...user,
+        joinedAt: user.joinedAt ? new Date(user.joinedAt) : new Date(),
+        lastActive: user.lastActive ? new Date(user.lastActive) : new Date()
+      };
+    }
+    return null;
+  } catch (error) {
+    console.error('ユーザー情報取得エラー:', error);
+    return null;
+  }
+};
+
+// AsyncStorageにユーザー情報を保存
+const saveUserToStorage = async (user: User): Promise<void> => {
+  try {
+    await AsyncStorage.setItem('userData', JSON.stringify(user));
+  } catch (error) {
+    console.error('ユーザー情報保存エラー:', error);
+  }
+};
+
+// AsyncStorageからユーザー情報を削除
+const removeUserFromStorage = async (): Promise<void> => {
+  try {
+    await AsyncStorage.removeItem('userData');
+  } catch (error) {
+    console.error('ユーザー情報削除エラー:', error);
+  }
+};
 
 // 匿名ニックネーム生成
 const generateAnonymousNickname = (): string => {
@@ -63,14 +102,21 @@ export const signInAnonymous = async (): Promise<User> => {
       });
       
       const data = profileDoc.data();
-      return {
+      const user = {
         ...data,
         joinedAt: data.joinedAt.toDate(),
         lastActive: new Date()
       } as User;
+      
+      // AsyncStorageに保存
+      await saveUserToStorage(user);
+      return user;
     } else {
       // 新規ユーザーの場合、プロフィールを作成
-      return await generateAnonymousProfile(userId);
+      const user = await generateAnonymousProfile(userId);
+      // AsyncStorageに保存
+      await saveUserToStorage(user);
+      return user;
     }
   } catch (error) {
     console.error('匿名サインインエラー:', error);
@@ -82,6 +128,8 @@ export const signInAnonymous = async (): Promise<User> => {
 export const signOutUser = async (): Promise<void> => {
   try {
     await signOut(auth);
+    // AsyncStorageからもユーザー情報を削除
+    await removeUserFromStorage();
   } catch (error) {
     console.error('サインアウトエラー:', error);
     throw error;
@@ -93,6 +141,11 @@ export const onAuthStateChanged = (callback: (user: FirebaseUser | null) => void
   return auth.onAuthStateChanged(callback);
 };
 
+// AsyncStorageからユーザー情報を取得（初期化時用）
+export const getStoredUser = async (): Promise<User | null> => {
+  return await getUserFromStorage();
+};
+
 // ユーザープロフィールの取得
 export const getUserProfile = async (userId: string): Promise<User | null> => {
   try {
@@ -102,8 +155,8 @@ export const getUserProfile = async (userId: string): Promise<User | null> => {
       const data = profileDoc.data();
       return {
         ...data,
-        joinedAt: data.joinedAt.toDate(),
-        lastActive: data.lastActive.toDate()
+        joinedAt: data.joinedAt?.toDate() || new Date(),
+        lastActive: data.lastActive?.toDate() || new Date()
       } as User;
     }
     

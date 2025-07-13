@@ -1,22 +1,40 @@
 import React from 'react';
 import { View, StyleSheet, FlatList } from 'react-native';
 import { Text, Card, FAB, Searchbar, Avatar } from 'react-native-paper';
+import { useFocusEffect } from '@react-navigation/native';
 import { useStoryStore } from '../stores/storyStore';
 import { useAuthStore } from '../stores/authStore';
 import { FailureStory } from '../types';
-import { sampleStories } from '../utils/sampleData';
+import { storyService } from '../services/storyService';
 
-const HomeScreen: React.FC = () => {
+interface HomeScreenProps {
+  navigation?: any;
+}
+
+const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const { stories, setStories } = useStoryStore();
   const { user } = useAuthStore();
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [loading, setLoading] = React.useState(false);
 
-  // 初期データをロード
-  React.useEffect(() => {
-    if (stories.length === 0) {
-      setStories(sampleStories);
+  // 実際のデータをロード
+  const loadStories = React.useCallback(async () => {
+    try {
+      setLoading(true);
+      const { stories: fetchedStories } = await storyService.getStories();
+      setStories(fetchedStories);
+    } catch (error) {
+      console.error('失敗談の読み込みエラー:', error);
+    } finally {
+      setLoading(false);
     }
-  }, [stories.length, setStories]);
+  }, [setStories]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      loadStories();
+    }, [loadStories])
+  );
 
   const renderStoryItem = ({ item }: { item: FailureStory }) => (
     <Card style={styles.storyCard}>
@@ -83,8 +101,7 @@ const HomeScreen: React.FC = () => {
         icon="plus"
         style={styles.fab}
         onPress={() => {
-          // TODO: 新規投稿画面へ遷移
-          console.log('新規投稿');
+          navigation?.navigate('CreateStory');
         }}
       />
     </View>

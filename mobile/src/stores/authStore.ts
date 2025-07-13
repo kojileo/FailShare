@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { User } from '../types';
-import { signInAnonymous, signOutUser, onAuthStateChanged, getUserProfile } from '../services/authService';
+import { signInAnonymous, signOutUser, onAuthStateChanged, getUserProfile, getStoredUser } from '../services/authService';
 
 interface AuthState {
   user: User | null;
@@ -55,6 +55,24 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   
   initializeAuth: () => {
     set({ isLoading: true });
+    
+    // まずAsyncStorageから保存されたユーザー情報を取得
+    const initializeFromStorage = async () => {
+      try {
+        const storedUser = await getStoredUser();
+        if (storedUser) {
+          set({ user: storedUser, isSignedIn: true, isLoading: false });
+        } else {
+          set({ isLoading: false });
+        }
+      } catch (error) {
+        console.error('AsyncStorageからのユーザー情報取得エラー:', error);
+        set({ isLoading: false });
+      }
+    };
+    
+    // 初期化実行
+    initializeFromStorage();
     
     const unsubscribe = onAuthStateChanged(async (firebaseUser) => {
       if (firebaseUser) {

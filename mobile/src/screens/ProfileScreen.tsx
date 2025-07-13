@@ -34,7 +34,7 @@ const ProfileScreen: React.FC = () => {
                   {user.displayName}
                 </Text>
                 <Text variant="bodyMedium" style={styles.joinDate}>
-                  {user.joinedAt.toLocaleDateString('ja-JP')} から参加
+                  {user.joinedAt instanceof Date ? user.joinedAt.toLocaleDateString('ja-JP') : '不明'} から参加
                 </Text>
               </View>
             </View>
