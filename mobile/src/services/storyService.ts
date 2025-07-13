@@ -32,6 +32,7 @@ export interface CreateStoryData {
 export interface StoryFilters {
   category?: StoryCategory;
   emotion?: EmotionType;
+  searchText?: string;
   limit?: number;
   lastVisible?: QueryDocumentSnapshot<DocumentData>;
 }
@@ -91,10 +92,8 @@ class StoryService {
     lastVisible: QueryDocumentSnapshot<DocumentData> | null;
   }> {
     try {
-      let q = query(
-        collection(db, this.COLLECTION_NAME),
-        orderBy('metadata.createdAt', 'desc')
-      );
+      // インデックスエラーを回避するため、orderByを削除してクライアントサイドでソート
+      let q = query(collection(db, this.COLLECTION_NAME));
 
       // フィルタリング
       if (filters.category) {
@@ -104,8 +103,8 @@ class StoryService {
         q = query(q, where('content.emotion', '==', filters.emotion));
       }
 
-      // ページネーション
-      const pageLimit = filters.limit || 10;
+      // テキスト検索がある場合は、より多くのデータを取得してクライアントサイドでフィルタリング
+      const pageLimit = filters.searchText ? (filters.limit || 10) * 3 : (filters.limit || 10);
       q = query(q, limit(pageLimit));
 
       if (filters.lastVisible) {
@@ -113,7 +112,7 @@ class StoryService {
       }
 
       const querySnapshot = await getDocs(q);
-      const stories: FailureStory[] = [];
+      let stories: FailureStory[] = [];
       
       querySnapshot.forEach((doc) => {
         const data = doc.data();
@@ -127,6 +126,17 @@ class StoryService {
           },
         });
       });
+
+      // クライアントサイドで作成日時順にソート
+      stories.sort((a, b) => b.metadata.createdAt.getTime() - a.metadata.createdAt.getTime());
+
+      // テキスト検索フィルタリング
+      if (filters.searchText) {
+        stories = this.filterStoriesByText(stories, filters.searchText);
+        // テキスト検索後は元のlimit数に調整
+        const originalLimit = filters.limit || 10;
+        stories = stories.slice(0, originalLimit);
+      }
 
       const lastVisible = querySnapshot.docs[querySnapshot.docs.length - 1] || null;
 
@@ -276,6 +286,38 @@ class StoryService {
   }
 
   /**
+   * テキストによるストーリーのフィルタリング
+   */
+  private filterStoriesByText(stories: FailureStory[], searchText: string): FailureStory[] {
+    if (!searchText.trim()) {
+      return stories;
+    }
+
+    const searchLower = searchText.toLowerCase().trim();
+    
+    return stories.filter(story => {
+      const { content, metadata } = story;
+      
+      // 検索対象のフィールドを配列にまとめる
+      const searchFields = [
+        content.title,
+        content.situation,
+        content.action,
+        content.result,
+        content.learning,
+        content.category,
+        content.emotion,
+        ...metadata.tags
+      ];
+      
+      // いずれかのフィールドに検索テキストが含まれているかチェック
+      return searchFields.some(field => 
+        field.toLowerCase().includes(searchLower)
+      );
+    });
+  }
+
+  /**
    * 特定ユーザーの投稿一覧を取得
    */
   async getUserStories(userId: string, filters: Omit<StoryFilters, 'authorId'> = {}): Promise<{
@@ -283,10 +325,10 @@ class StoryService {
     lastVisible: QueryDocumentSnapshot<DocumentData> | null;
   }> {
     try {
+      // インデックスエラーを回避するため、orderByを削除してクライアントサイドでソート
       let q = query(
         collection(db, this.COLLECTION_NAME),
-        where('authorId', '==', userId),
-        orderBy('metadata.createdAt', 'desc')
+        where('authorId', '==', userId)
       );
 
       // フィルタリング
@@ -297,8 +339,8 @@ class StoryService {
         q = query(q, where('content.emotion', '==', filters.emotion));
       }
 
-      // ページネーション
-      const pageLimit = filters.limit || 10;
+      // テキスト検索がある場合は、より多くのデータを取得してクライアントサイドでフィルタリング
+      const pageLimit = filters.searchText ? (filters.limit || 10) * 3 : (filters.limit || 10);
       q = query(q, limit(pageLimit));
 
       if (filters.lastVisible) {
@@ -306,7 +348,7 @@ class StoryService {
       }
 
       const querySnapshot = await getDocs(q);
-      const stories: FailureStory[] = [];
+      let stories: FailureStory[] = [];
       
       querySnapshot.forEach((doc) => {
         const data = doc.data();
@@ -320,6 +362,17 @@ class StoryService {
           },
         });
       });
+
+      // クライアントサイドで作成日時順にソート
+      stories.sort((a, b) => b.metadata.createdAt.getTime() - a.metadata.createdAt.getTime());
+
+      // テキスト検索フィルタリング
+      if (filters.searchText) {
+        stories = this.filterStoriesByText(stories, filters.searchText);
+        // テキスト検索後は元のlimit数に調整
+        const originalLimit = filters.limit || 10;
+        stories = stories.slice(0, originalLimit);
+      }
 
       const lastVisible = querySnapshot.docs[querySnapshot.docs.length - 1] || null;
 

@@ -18,12 +18,12 @@ export interface FailureStory {
   authorId: string;
   content: {
     title: string;
-    category: string;
+    category: StoryCategory;
     situation: string;
     action: string;
     result: string;
     learning: string;
-    emotion: string;
+    emotion: EmotionType;
   };
   metadata: {
     createdAt: Date;

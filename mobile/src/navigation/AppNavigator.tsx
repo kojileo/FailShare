@@ -4,6 +4,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { MaterialIcons } from '@expo/vector-icons';
 import HomeScreen from '../screens/HomeScreen';
+import SearchScreen from '../screens/SearchScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import CreateStoryScreen from '../screens/CreateStoryScreen';
 import StoryDetailScreen from '../screens/StoryDetailScreen';
@@ -33,7 +34,7 @@ const TabNavigator: React.FC = () => {
       />
       <Tab.Screen
         name="Search"
-        component={HomeScreen} // 仮のコンポーネント
+        component={SearchScreen}
         options={{
           tabBarLabel: '検索',
           tabBarIcon: ({ color, size }) => (

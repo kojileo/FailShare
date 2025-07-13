@@ -21,10 +21,10 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const [loading, setLoading] = React.useState(false);
 
   // 実際のデータをロード
-  const loadStories = React.useCallback(async () => {
+  const loadStories = React.useCallback(async (filters?: { searchText?: string }) => {
     try {
       setLoading(true);
-      const { stories: fetchedStories } = await storyService.getStories();
+      const { stories: fetchedStories } = await storyService.getStories(filters);
       setStories(fetchedStories);
     } catch (error) {
       console.error('失敗談の読み込みエラー:', error);
@@ -32,6 +32,15 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       setLoading(false);
     }
   }, [setStories]);
+
+  // 検索実行
+  const performSearch = React.useCallback(() => {
+    if (searchQuery.trim()) {
+      loadStories({ searchText: searchQuery.trim() });
+    } else {
+      loadStories();
+    }
+  }, [searchQuery, loadStories]);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -79,6 +88,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         placeholder="失敗談を検索..."
         value={searchQuery}
         onChangeText={setSearchQuery}
+        onSubmitEditing={performSearch}
         style={styles.searchbar}
       />
       
