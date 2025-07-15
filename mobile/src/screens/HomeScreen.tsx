@@ -99,14 +99,31 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text variant="bodyLarge" style={styles.emptyText}>
-              まだ失敗談がありません
-            </Text>
-            <Text variant="bodyMedium" style={styles.emptySubtext}>
-              最初の失敗談を投稿してみましょう
-            </Text>
-          </View>
+          !loading ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyIcon}>📖</Text>
+              <Text variant="headlineSmall" style={styles.emptyTitle}>
+                失敗談を探索してみましょう
+              </Text>
+              <Text variant="bodyLarge" style={styles.emptyText}>
+                まだ投稿がないようですが、
+              </Text>
+              <Text variant="bodyMedium" style={styles.emptySubtext}>
+                あなたの最初の失敗談を投稿して、{'\n'}
+                他の人の学びに貢献してみませんか？
+              </Text>
+              <View style={styles.emptyHints}>
+                <Text variant="bodyMedium" style={styles.hintTitle}>
+                  💡 ヒント
+                </Text>
+                <Text variant="bodySmall" style={styles.hintText}>
+                  • 小さな失敗でも大丈夫です{'\n'}
+                  • 構造化されたテンプレートで簡単投稿{'\n'}
+                  • 完全匿名なので安心して共有できます
+                </Text>
+              </View>
+            </View>
+          ) : null
         }
       />
 
@@ -158,15 +175,45 @@ const styles = StyleSheet.create({
   emptyContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: 100,
+    paddingTop: 60,
+    paddingHorizontal: 32,
+  },
+  emptyIcon: {
+    fontSize: 64,
+    marginBottom: 24,
+  },
+  emptyTitle: {
+    textAlign: 'center',
+    marginBottom: 16,
+    fontWeight: 'bold',
+    color: '#333',
   },
   emptyText: {
     textAlign: 'center',
     marginBottom: 8,
+    color: '#666',
   },
   emptySubtext: {
     textAlign: 'center',
-    opacity: 0.7,
+    marginBottom: 32,
+    color: '#666',
+    lineHeight: 20,
+  },
+  emptyHints: {
+    backgroundColor: '#f8f9fa',
+    padding: 16,
+    borderRadius: 12,
+    width: '100%',
+    maxWidth: 300,
+  },
+  hintTitle: {
+    fontWeight: 'bold',
+    marginBottom: 8,
+    color: '#333',
+  },
+  hintText: {
+    color: '#666',
+    lineHeight: 18,
   },
   fab: {
     position: 'absolute',

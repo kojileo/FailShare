@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StoryCategory, EmotionType } from '../types';
 import { storyService } from '../services/storyService';
 import { useAuthStore } from '../stores/authStore';
+import { getCategoryNames } from '../utils/categories';
 
 interface CreateStoryScreenProps {
   navigation: any;
@@ -34,7 +35,7 @@ const CreateStoryScreen: React.FC<CreateStoryScreenProps> = ({ navigation }) => 
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
-  const categories: StoryCategory[] = ['仕事', '恋愛', 'お金', '健康', '人間関係', '学習', 'その他'];
+  const categories = getCategoryNames();
   const emotions: EmotionType[] = ['後悔', '恥ずかしい', '悲しい', '不安', '怒り', '混乱', 'その他'];
 
   const validateForm = () => {

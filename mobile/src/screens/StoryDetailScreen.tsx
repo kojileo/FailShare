@@ -16,6 +16,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList, FailureStory } from '../types';
 import { storyService } from '../services/storyService';
 import { useAuthStore } from '../stores/authStore';
+import { getCategoryColor } from '../utils/categories';
 
 type StoryDetailScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -81,18 +82,7 @@ const StoryDetailScreen: React.FC<StoryDetailScreenProps> = ({ navigation, route
     }
   };
 
-  const getCategoryColor = (category: string) => {
-    const colors: { [key: string]: string } = {
-      '仕事': '#1976D2',
-      '恋愛': '#E91E63',
-      'お金': '#4CAF50',
-      '健康': '#FF9800',
-      '人間関係': '#9C27B0',
-      '学習': '#00BCD4',
-      'その他': '#757575'
-    };
-    return colors[category] || '#757575';
-  };
+  // getCategoryColorはutilsから使用
 
   const getEmotionEmoji = (emotion: string) => {
     const emojis: { [key: string]: string } = {

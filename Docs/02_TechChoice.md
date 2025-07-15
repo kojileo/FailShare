@@ -114,7 +114,7 @@ failureStories/
     authorId: anonymousId, // 匿名ID
     content: {
       title: string,
-      category: string, // 仕事・恋愛・お金・健康等
+      category: string, // エンジニア・恋愛
       situation: string, // 状況説明
       action: string, // 取った行動
       result: string, // 結果
@@ -369,7 +369,7 @@ const searchByTag = (tag) => {
 - **組織内失敗共有**: クローズドコミュニティ
 - **基本統計レポート**: 投稿数・参加度等の基本分析
 - **管理ダッシュボード**: 組織の活動状況可視化
-- **カスタムカテゴリー**: 業界特化のカテゴリー設定
+- **カスタムカテゴリー**: 二大コンテンツ（エンジニア・恋愛）のカテゴリー設定
 
 ---
 

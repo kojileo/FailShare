@@ -5,10 +5,12 @@ import { View, StyleSheet } from 'react-native';
 import { ActivityIndicator } from 'react-native-paper';
 import AppNavigator from './src/navigation/AppNavigator';
 import AuthScreen from './src/screens/AuthScreen';
+import OnboardingScreen from './src/screens/OnboardingScreen';
 import { useAuthStore } from './src/stores/authStore';
+import { storyService } from './src/services/storyService';
 
 export default function App() {
-  const { isSignedIn, isLoading, initializeAuth } = useAuthStore();
+  const { isSignedIn, isLoading, isOnboardingCompleted, initializeAuth, completeOnboarding } = useAuthStore();
 
   // 認証状態の初期化
   React.useEffect(() => {
@@ -19,6 +21,16 @@ export default function App() {
       unsubscribe();
     };
   }, [initializeAuth]);
+
+  // サンプルデータの初期化（エンジニア向けデータに更新）
+  React.useEffect(() => {
+    if (isSignedIn) {
+      // 認証後にサンプルデータをリセット＆更新
+      storyService.resetSampleData().catch(error => {
+        console.error('サンプルデータ初期化エラー:', error);
+      });
+    }
+  }, [isSignedIn]);
 
   // ローディング中の表示
   if (isLoading) {
@@ -33,11 +45,26 @@ export default function App() {
     );
   }
 
+  // オンボーディング完了ハンドラー
+  const handleOnboardingComplete = async () => {
+    try {
+      await completeOnboarding();
+    } catch (error) {
+      console.error('オンボーディング完了エラー:', error);
+    }
+  };
+
   // 認証状態に応じて画面を切り替え
   return (
     <SafeAreaProvider>
       <PaperProvider>
-        {isSignedIn ? <AppNavigator /> : <AuthScreen />}
+        {!isSignedIn ? (
+          <AuthScreen />
+        ) : !isOnboardingCompleted ? (
+          <OnboardingScreen onComplete={handleOnboardingComplete} />
+        ) : (
+          <AppNavigator />
+        )}
       </PaperProvider>
     </SafeAreaProvider>
   );

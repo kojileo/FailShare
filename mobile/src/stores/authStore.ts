@@ -1,11 +1,12 @@
 import { create } from 'zustand';
 import { User } from '../types';
-import { signInAnonymous, signOutUser, onAuthStateChanged, getUserProfile, getStoredUser } from '../services/authService';
+import { signInAnonymous, signOutUser, onAuthStateChanged, getUserProfile, getStoredUser, getOnboardingStatus, setOnboardingCompleted } from '../services/authService';
 
 interface AuthState {
   user: User | null;
   isLoading: boolean;
   isSignedIn: boolean;
+  isOnboardingCompleted: boolean;
   error: string | null;
   setUser: (user: User | null) => void;
   setLoading: (loading: boolean) => void;
@@ -13,12 +14,14 @@ interface AuthState {
   signIn: () => Promise<void>;
   signOut: () => Promise<void>;
   initializeAuth: () => () => void;
+  completeOnboarding: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   isLoading: false,
   isSignedIn: false,
+  isOnboardingCompleted: false,
   error: null,
   
   setUser: (user) => set({ user, isSignedIn: !!user }),
@@ -29,7 +32,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       set({ isLoading: true, error: null });
       const user = await signInAnonymous();
-      set({ user, isSignedIn: true, isLoading: false });
+      
+      // オンボーディング状態を確認
+      const onboardingCompleted = await getOnboardingStatus();
+      
+      set({ 
+        user, 
+        isSignedIn: true, 
+        isOnboardingCompleted: onboardingCompleted,
+        isLoading: false 
+      });
     } catch (error) {
       console.error('サインインエラー:', error);
       set({ 
@@ -99,5 +111,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     
     // クリーンアップ関数を返す
     return unsubscribe;
-  }
+  },
+  
+  completeOnboarding: async () => {
+    try {
+      await setOnboardingCompleted();
+      set({ isOnboardingCompleted: true });
+    } catch (error) {
+      console.error('オンボーディング完了エラー:', error);
+      throw error;
+    }
+  },
 })); 

@@ -2,6 +2,8 @@ import { auth, db } from './firebase';
 import { signInAnonymously, signOut, User as FirebaseUser } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc, deleteDoc, collection, query, where, getDocs, writeBatch, serverTimestamp, Timestamp } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const ONBOARDING_KEY = '@FailShare:onboarding_completed';
 import { User } from '../types';
 
 // AsyncStorageからユーザー情報を取得
@@ -331,4 +333,33 @@ export const updateAvatar = async (userId: string, newAvatar: string): Promise<U
 // 新しいランダムニックネーム生成
 export const generateNewNickname = (): string => {
   return generateAnonymousNickname();
+};
+
+// オンボーディング状態管理
+export const getOnboardingStatus = async (): Promise<boolean> => {
+  try {
+    const status = await AsyncStorage.getItem(ONBOARDING_KEY);
+    return status === 'true';
+  } catch (error) {
+    console.error('オンボーディング状態取得エラー:', error);
+    return false;
+  }
+};
+
+export const setOnboardingCompleted = async (): Promise<void> => {
+  try {
+    await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
+  } catch (error) {
+    console.error('オンボーディング状態保存エラー:', error);
+    throw error;
+  }
+};
+
+export const clearOnboardingStatus = async (): Promise<void> => {
+  try {
+    await AsyncStorage.removeItem(ONBOARDING_KEY);
+  } catch (error) {
+    console.error('オンボーディング状態削除エラー:', error);
+    throw error;
+  }
 }; 

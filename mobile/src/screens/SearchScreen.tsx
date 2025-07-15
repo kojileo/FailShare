@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList, FailureStory, StoryCategory, EmotionType } from '../types';
 import { storyService } from '../services/storyService';
+import { getCategoryNames, getCategoryColor } from '../utils/categories';
 
 type SearchScreenNavigationProp = StackNavigationProp<RootStackParamList>;
 
@@ -28,7 +29,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
 
-  const categories: StoryCategory[] = ['仕事', '恋愛', 'お金', '健康', '人間関係', '学習', 'その他'];
+  const categories = getCategoryNames();
   const emotions: EmotionType[] = ['後悔', '恥ずかしい', '悲しい', '不安', '怒り', '混乱', 'その他'];
 
   const performSearch = async () => {
@@ -62,18 +63,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ navigation }) => {
     setHasSearched(false);
   };
 
-  const getCategoryColor = (category: StoryCategory) => {
-    const colors: { [key in StoryCategory]: string } = {
-      '仕事': '#1976D2',
-      '恋愛': '#E91E63',
-      'お金': '#4CAF50',
-      '健康': '#FF9800',
-      '人間関係': '#9C27B0',
-      '学習': '#00BCD4',
-      'その他': '#757575'
-    };
-    return colors[category];
-  };
+  // getCategoryColorはutilsから使用
 
   const getEmotionColor = (emotion: EmotionType) => {
     const colors: { [key in EmotionType]: string } = {

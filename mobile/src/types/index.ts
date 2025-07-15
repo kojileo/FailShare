@@ -53,13 +53,8 @@ export interface SupportAction {
 }
 
 export type StoryCategory = 
-  | '仕事' 
-  | '恋愛' 
-  | 'お金' 
-  | '健康' 
-  | '人間関係' 
-  | '学習' 
-  | 'その他';
+  | 'エンジニア'
+  | '恋愛';
 
 export type EmotionType = 
   | '後悔' 
