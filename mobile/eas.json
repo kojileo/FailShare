@@ -1,0 +1,39 @@
+{
+  "cli": {
+    "version": ">= 5.0.0"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_ENVIRONMENT": "development"
+      }
+    },
+    "staging": {
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_ENVIRONMENT": "staging"
+      }
+    },
+    "production": {
+      "distribution": "store",
+      "env": {
+        "EXPO_PUBLIC_ENVIRONMENT": "production"
+      }
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "appleId": "developer@failshare.app",
+        "ascAppId": "placeholder-app-store-connect-id",
+        "appleTeamId": "placeholder-team-id"
+      },
+      "android": {
+        "serviceAccountKeyPath": "./google-services.json",
+        "track": "production"
+      }
+    }
+  }
+} 
