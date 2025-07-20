@@ -102,7 +102,6 @@ jobs:
           env_vars: |
             NODE_ENV=${{ env.ENVIRONMENT == 'production' && 'production' || 'development' }}
             EXPO_PUBLIC_ENVIRONMENT=${{ env.ENVIRONMENT }}
-            PORT=8080
 
       - name: Show deployment info
         run: |
