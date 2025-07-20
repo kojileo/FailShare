@@ -1,0 +1,37 @@
+# Node.js
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 環境変数ファイル
+.env*
+
+# ビルド出力（ビルド時に再生成される）
+dist
+.expo
+
+# 開発ファイル
+.vscode
+.idea
+
+# Git
+.git
+.gitignore
+
+# ログ
+*.log
+
+# 一時ファイル
+*.tmp
+*.temp
+
+# OS固有ファイル
+.DS_Store
+Thumbs.db
+
+# EAS Build
+.easignore
+
+# Vercel
+.vercel 

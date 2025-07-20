@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { User } from '../types';
-import { signInAnonymous, signOutUser, onAuthStateChanged, getUserProfile, getStoredUser, getOnboardingStatus, setOnboardingCompleted } from '../services/authService';
+import { signInAnonymous, signOutUser, onAuthStateChanged, getUserProfile, getStoredUser, getOnboardingStatus, setOnboardingCompleted, cleanupDuplicateUsers, getAnonymousUserStats } from '../services/authService';
+import { auth } from '../services/firebase';
 
 interface AuthState {
   user: User | null;
@@ -13,6 +14,9 @@ interface AuthState {
   setError: (error: string | null) => void;
   signIn: () => Promise<void>;
   signOut: () => Promise<void>;
+  // 🛠️ 開発環境用デバッグ機能
+  cleanupDuplicates: () => Promise<{ cleaned: number; total: number }>;
+  showStats: () => Promise<void>;
   initializeAuth: () => () => void;
   completeOnboarding: () => Promise<void>;
 }
@@ -31,6 +35,32 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   signIn: async () => {
     try {
       set({ isLoading: true, error: null });
+      
+      // 🛡️ 既にサインインしているかチェック
+      const currentState = get();
+      if (currentState.isSignedIn && currentState.user) {
+        console.log('🔄 既にサインイン済み、重複処理をスキップ');
+        set({ isLoading: false });
+        return;
+      }
+      
+      // 🔍 Firebase認証状態もチェック  
+      if (auth.currentUser && auth.currentUser.isAnonymous) {
+        console.log('🔄 Firebase認証済み、プロフィール取得のみ実行');
+        const user = await getUserProfile(auth.currentUser.uid);
+        if (user) {
+          const onboardingCompleted = await getOnboardingStatus();
+          set({ 
+            user, 
+            isSignedIn: true, 
+            isOnboardingCompleted: onboardingCompleted,
+            isLoading: false 
+          });
+          return;
+        }
+      }
+      
+      // 🆕 新規サインインまたは復元
       const user = await signInAnonymous();
       
       // オンボーディング状態を確認
@@ -121,5 +151,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       console.error('オンボーディング完了エラー:', error);
       throw error;
     }
+  },
+
+  // 🛠️ 開発環境用デバッグ機能
+  cleanupDuplicates: async () => {
+    return await cleanupDuplicateUsers();
+  },
+
+  showStats: async () => {
+    await getAnonymousUserStats();
   },
 })); 

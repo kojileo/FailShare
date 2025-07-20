@@ -4,6 +4,7 @@ import { Text, Card, Button, Avatar, Divider, TextInput, Dialog, Portal, IconBut
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useAuthStore } from '../stores/authStore';
 import { updateDisplayName, updateAvatar, generateNewNickname } from '../services/authService';
+import { storyService } from '../services/storyService';
 import { RootStackParamList } from '../types';
 
 type ProfileScreenNavigationProp = StackNavigationProp<RootStackParamList>;
@@ -18,6 +19,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   const [avatarDialogVisible, setAvatarDialogVisible] = useState(false);
   const [newNickname, setNewNickname] = useState('');
   const [updating, setUpdating] = useState(false);
+  const [debugLoading, setDebugLoading] = useState(false);
 
   const handleSignOut = async () => {
     Alert.alert(
@@ -86,6 +88,70 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
     } finally {
       setUpdating(false);
     }
+  };
+
+  const handleCleanupUsers = async () => {
+    Alert.alert(
+      '重複ユーザークリーンアップ',
+      '重複している匿名ユーザーを削除しますか？\n\n※この操作は元に戻せません',
+      [
+        { text: 'キャンセル', style: 'cancel' },
+        {
+          text: '実行',
+          style: 'destructive',
+          onPress: async () => {
+            setDebugLoading(true);
+            try {
+              const { cleanupDuplicates } = useAuthStore.getState();
+              const result = await cleanupDuplicates();
+              Alert.alert('完了', `${result.cleaned}個のユーザーを削除しました\n（全体: ${result.total}）`);
+            } catch (error) {
+              Alert.alert('エラー', error instanceof Error ? error.message : 'クリーンアップに失敗しました');
+            } finally {
+              setDebugLoading(false);
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const handleShowStats = async () => {
+    setDebugLoading(true);
+    try {
+      const { showStats } = useAuthStore.getState();
+      await showStats();
+      Alert.alert('統計情報', 'コンソールログを確認してください');
+    } catch (error) {
+      Alert.alert('エラー', error instanceof Error ? error.message : '統計取得に失敗しました');
+    } finally {
+      setDebugLoading(false);
+    }
+  };
+
+  const handleCleanupSampleData = async () => {
+    Alert.alert(
+      'サンプルデータクリーンアップ',
+      '重複しているサンプルデータを削除しますか？\n\n※この操作は元に戻せません',
+      [
+        { text: 'キャンセル', style: 'cancel' },
+        {
+          text: '実行',
+          style: 'destructive',
+          onPress: async () => {
+            setDebugLoading(true);
+            try {
+              await storyService.resetSampleData();
+              Alert.alert('完了', 'サンプルデータをリセットしました');
+            } catch (error) {
+              Alert.alert('エラー', error instanceof Error ? error.message : 'クリーンアップに失敗しました');
+            } finally {
+              setDebugLoading(false);
+            }
+          }
+        }
+      ]
+    );
   };
 
   if (!user) {
@@ -199,6 +265,57 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
             </View>
           </Card.Content>
         </Card>
+
+        {/* 開発者デバッグツール (Development環境のみ) */}
+        {(__DEV__ || process.env.NODE_ENV === 'development') && (
+          <Card style={styles.debugCard}>
+            <Card.Content>
+              <Text variant="titleMedium" style={styles.debugTitle}>
+                🛠️ 開発者ツール
+              </Text>
+              <Text variant="bodySmall" style={styles.debugDescription}>
+                ※ Development環境でのみ表示されます
+              </Text>
+              <Divider style={styles.divider} />
+              
+              <View style={styles.debugButtonRow}>
+                <Button
+                  mode="outlined"
+                  onPress={handleShowStats}
+                  loading={debugLoading}
+                  disabled={debugLoading}
+                  style={styles.debugButton}
+                  compact
+                >
+                  📊 統計表示
+                </Button>
+                <Button
+                  mode="outlined"
+                  onPress={handleCleanupUsers}
+                  loading={debugLoading}
+                  disabled={debugLoading}
+                  style={styles.debugButton}
+                  compact
+                >
+                  🧹 重複ユーザー削除
+                </Button>
+              </View>
+              
+              <View style={styles.debugButtonRow}>
+                <Button
+                  mode="outlined"
+                  onPress={handleCleanupSampleData}
+                  loading={debugLoading}
+                  disabled={debugLoading}
+                  style={styles.debugButton}
+                  compact
+                >
+                  🗑️ サンプルデータ削除
+                </Button>
+              </View>
+            </Card.Content>
+          </Card>
+        )}
 
         {/* アクションボタン */}
         <View style={styles.actionButtons}>
@@ -413,6 +530,34 @@ const styles = StyleSheet.create({
   avatarOption: {
     width: '18%',
     marginBottom: 8,
+  },
+  // デバッグツール用スタイル
+  debugCard: {
+    marginBottom: 16,
+    backgroundColor: '#fff3cd',
+    borderLeftWidth: 4,
+    borderLeftColor: '#ffc107',
+  },
+  debugTitle: {
+    marginBottom: 8,
+    color: '#856404',
+    fontWeight: 'bold',
+  },
+  debugDescription: {
+    color: '#856404',
+    fontStyle: 'italic',
+    marginBottom: 8,
+  },
+  debugButtonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 8,
+    gap: 8,
+  },
+  debugButton: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderColor: '#ffc107',
   },
 });
 

@@ -1,16 +1,18 @@
-# FailShare モバイルアプリ
+# FailShare - React Native + Expo アプリケーション
 
 失敗を成長の糧に変える、匿名で安全な学び合いコミュニティアプリです。
 
-## 技術スタック
+> **📚 詳細なドキュメント**: [/Docs](../Docs/) フォルダを参照してください
+> - **プロジェクト概要**: [01_AppConcept.md](../Docs/01_AppConcept.md)
+> - **技術選択詳細**: [02_TechChoice.md](../Docs/02_TechChoice.md)
+> - **開発進捗**: [03_DevelopmentProgress.md](../Docs/03_DevelopmentProgress.md)
+> - **Webデプロイ**: [08_WebDeploymentGuide.md](../Docs/08_WebDeploymentGuide.md)
 
-- **フロントエンド**: React Native + Expo
-- **言語**: TypeScript
-- **状態管理**: Zustand
-- **データフェッチング**: SWR
-- **UIライブラリ**: React Native Paper
-- **ナビゲーション**: React Navigation
-- **バックエンド**: Firebase (Auth, Firestore)
+## クイックスタート
+
+### 技術スタック
+- React Native Web + Expo, TypeScript, Firebase
+- Web-First アプローチによるブラウザ完全対応
 
 ## 開発環境のセットアップ
 
@@ -53,9 +55,10 @@
    EXPO_PUBLIC_FIREBASE_APP_ID=your-app-id
    ```
 
-4. **Expo Goでの動作確認**
-   - スマートフォンにExpo Goアプリをインストール
-   - QRコードをスキャンしてアプリを起動
+4. **Webブラウザでの動作確認**
+   - ローカル開発サーバーが `http://localhost:19006` で起動
+   - ブラウザで直接アクセスして動作確認
+   - レスポンシブデザインをデバイスモードで確認
 
 ## プロジェクト構造
 
@@ -73,20 +76,18 @@ src/
 ## 利用可能なスクリプト
 
 ### 開発用
-- `npm start`: 開発サーバーの起動
-- `npm run android`: Android エミュレータで起動
-- `npm run ios`: iOS シミュレータで起動 (macOS のみ)
+- `npm start`: 開発サーバーの起動 (Web優先)
 - `npm run web`: ブラウザで起動
 - `npm run start:dev`: 開発環境で起動
 - `npm run start:staging`: ステージング環境で起動
 - `npm run start:prod`: 本番環境で起動
 
-### ビルド・デプロイ用
-- `npm run build:dev`: 開発版ビルド
-- `npm run build:staging`: ステージング版ビルド
-- `npm run build:prod`: 本番版ビルド
-- `npm run submit:prod`: App Store/Play Store への提出
-- `npm run preview:dev`: 開発版プレビュー
+### Web ビルド・デプロイ用
+- `npm run build:web:dev`: 開発版Webビルド
+- `npm run build:web:staging`: ステージング版Webビルド
+- `npm run build:web:prod`: 本番版Webビルド
+- `npm run server:start`: Express サーバー起動
+- `npm run server:prod`: 本番用サーバー起動
 
 ### テスト・品質管理
 - `npm run test`: テスト実行
@@ -201,20 +202,20 @@ npm run start:staging
 
 #### Production環境
 ```bash
-# 本番版ビルド
-npm run build:prod
+# 本番版Webビルド
+npm run build:web:prod
 
-# App Store/Play Storeへの提出
-npm run submit:prod
+# サーバー起動
+npm run server:prod
 ```
 
 ### 自動デプロイ (CI/CD)
 
-GitHub Actionsを使用した自動デプロイを設定済みです：
+Cloud Buildを使用した自動デプロイを設定済みです：
 
-- `develop` ブランチ → Development環境に自動デプロイ
-- `main` ブランチ → Staging環境に自動デプロイ
-- タグ作成 (`v1.0.0`) → Production環境に自動デプロイ
+- `main` ブランチ → Cloud Run 本番環境に自動デプロイ
+- Dockerイメージ自動ビルド・配信
+- Firebase環境変数自動設定
 
 ### 環境変数ファイルの作成
 
@@ -224,22 +225,17 @@ GitHub Actionsを使用した自動デプロイを設定済みです：
 ```env
 EXPO_PUBLIC_APP_NAME=FailShare (Dev)
 EXPO_PUBLIC_ENVIRONMENT=development
-EXPO_PUBLIC_FIREBASE_PROJECT_ID=failshare-dev
-# その他のFirebase設定...
-```
-
-**`.env.staging`**
-```env
-EXPO_PUBLIC_APP_NAME=FailShare (Staging)
-EXPO_PUBLIC_ENVIRONMENT=staging
-EXPO_PUBLIC_FIREBASE_PROJECT_ID=failshare-staging
-# その他のFirebase設定...
+EXPO_PUBLIC_FIREBASE_PROJECT_ID=failshare-app
+# Firebase設定は app.config.js で管理
 ```
 
 **`.env.production`**
 ```env
 EXPO_PUBLIC_APP_NAME=FailShare
 EXPO_PUBLIC_ENVIRONMENT=production
-EXPO_PUBLIC_FIREBASE_PROJECT_ID=failshare-prod
-# その他のFirebase設定...
-``` 
+EXPO_PUBLIC_FIREBASE_PROJECT_ID=failshare-app
+# Firebase設定は Dockerfile で管理
+```
+
+> **注意**: Web本番環境では、Firebase環境変数は `Dockerfile` で直接設定されています。  
+> 詳細は [Webデプロイガイド](../Docs/08_WebDeploymentGuide.md) を参照してください。 

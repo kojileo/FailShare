@@ -25,10 +25,15 @@ export default function App() {
   // サンプルデータの初期化（エンジニア向けデータに更新）
   React.useEffect(() => {
     if (isSignedIn) {
-      // 認証後にサンプルデータをリセット＆更新
-      storyService.resetSampleData().catch(error => {
-        console.error('サンプルデータ初期化エラー:', error);
-      });
+      // Development環境のみでサンプルデータをリセット＆更新
+      // Production環境では権限エラーが発生するため無効化
+      if (process.env.NODE_ENV === 'development' || __DEV__) {
+        storyService.resetSampleData().catch(error => {
+          console.error('サンプルデータ初期化エラー:', error);
+        });
+      } else {
+        console.log('🚫 Production環境のため、サンプルデータ生成をスキップしました');
+      }
     }
   }, [isSignedIn]);
 

@@ -44,6 +44,89 @@ const removeUserFromStorage = async (): Promise<void> => {
   }
 };
 
+// 🛠️ 開発環境用: 重複匿名ユーザーの確認・削除
+export const cleanupDuplicateUsers = async (): Promise<{ cleaned: number; total: number }> => {
+  try {
+    if (process.env.EXPO_PUBLIC_ENVIRONMENT !== 'development') {
+      console.log('⚠️  本機能は開発環境でのみ使用可能です');
+      return { cleaned: 0, total: 0 };
+    }
+
+    const usersQuery = query(
+      collection(db, 'anonymousUsers'),
+      where('joinedAt', '>', new Date(Date.now() - 24 * 60 * 60 * 1000)) // 過去24時間以内
+    );
+    
+    const querySnapshot = await getDocs(usersQuery);
+    const total = querySnapshot.size;
+    
+    // 最新のユーザー以外を削除対象として特定
+    const users = querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      data: doc.data()
+    })).sort((a, b) => {
+      const aTime = a.data.joinedAt?.toDate() || new Date(0);
+      const bTime = b.data.joinedAt?.toDate() || new Date(0);
+      return bTime.getTime() - aTime.getTime();
+    });
+
+    // 最新の1つを残して削除
+    const toDelete = users.slice(1);
+    const batch = writeBatch(db);
+    
+    toDelete.forEach(user => {
+      batch.delete(doc(db, 'anonymousUsers', user.id));
+    });
+
+    if (toDelete.length > 0) {
+      await batch.commit();
+      console.log(`🧹 ${toDelete.length}個の重複匿名ユーザーを削除しました`);
+    }
+
+    return { cleaned: toDelete.length, total };
+  } catch (error) {
+    console.error('重複ユーザー削除エラー:', error);
+    return { cleaned: 0, total: 0 };
+  }
+};
+
+// 🔍 開発環境用: 匿名ユーザー統計表示
+export const getAnonymousUserStats = async (): Promise<void> => {
+  try {
+    if (process.env.EXPO_PUBLIC_ENVIRONMENT !== 'development') {
+      return;
+    }
+
+    const usersQuery = query(collection(db, 'anonymousUsers'));
+    const querySnapshot = await getDocs(usersQuery);
+    
+    const now = new Date();
+    const stats = {
+      total: querySnapshot.size,
+      last24h: 0,
+      lastWeek: 0,
+      environments: {} as Record<string, number>
+    };
+
+    querySnapshot.docs.forEach(doc => {
+      const data = doc.data();
+      const joinedAt = data.joinedAt?.toDate() || new Date(0);
+      
+      // 時間別統計
+      const diffHours = (now.getTime() - joinedAt.getTime()) / (1000 * 60 * 60);
+      if (diffHours <= 24) stats.last24h++;
+      if (diffHours <= 168) stats.lastWeek++; // 7日 = 168時間
+    });
+
+    console.log('📊 匿名ユーザー統計:');
+    console.log(`   合計: ${stats.total}人`);
+    console.log(`   過去24時間: ${stats.last24h}人`);
+    console.log(`   過去1週間: ${stats.lastWeek}人`);
+  } catch (error) {
+    console.error('統計取得エラー:', error);
+  }
+};
+
 // 匿名ニックネーム生成
 const generateAnonymousNickname = (): string => {
   const adjectives = [
@@ -88,13 +171,49 @@ const generateAnonymousProfile = async (userId: string): Promise<User> => {
   return profile;
 };
 
-// 匿名サインイン
+// 匿名サインイン（既存認証状態をチェック）
 export const signInAnonymous = async (): Promise<User> => {
   try {
+    // 1️⃣ 既存の認証状態をチェック
+    const currentUser = auth.currentUser;
+    
+    if (currentUser && currentUser.isAnonymous) {
+      console.log('🔄 既存の匿名ユーザーを使用:', currentUser.uid);
+      
+      // 既存ユーザーのプロフィールを取得
+      const profileDoc = await getDoc(doc(db, 'anonymousUsers', currentUser.uid));
+      
+      if (profileDoc.exists()) {
+        // 最終アクティブ時刻を更新
+        await updateDoc(doc(db, 'anonymousUsers', currentUser.uid), {
+          lastActive: serverTimestamp()
+        });
+        
+        const data = profileDoc.data();
+        const user = {
+          ...data,
+          joinedAt: data.joinedAt.toDate(),
+          lastActive: new Date()
+        } as User;
+        
+        await saveUserToStorage(user);
+        return user;
+      }
+    }
+    
+    // 2️⃣ AsyncStorageから既存ユーザーをチェック
+    const storedUser = await getUserFromStorage();
+    if (storedUser && currentUser && storedUser.id === currentUser.uid) {
+      console.log('💾 AsyncStorageから既存ユーザーを復元:', storedUser.id);
+      return storedUser;
+    }
+    
+    // 3️⃣ 新規匿名ユーザーを作成（最後の手段）
+    console.log('✨ 新規匿名ユーザーを作成');
     const result = await signInAnonymously(auth);
     const userId = result.user.uid;
 
-    // 既存のプロフィールを確認
+    // 既存のプロフィールを確認（万が一の重複チェック）
     const profileDoc = await getDoc(doc(db, 'anonymousUsers', userId));
     
     if (profileDoc.exists()) {
@@ -110,13 +229,11 @@ export const signInAnonymous = async (): Promise<User> => {
         lastActive: new Date()
       } as User;
       
-      // AsyncStorageに保存
       await saveUserToStorage(user);
       return user;
     } else {
       // 新規ユーザーの場合、プロフィールを作成
       const user = await generateAnonymousProfile(userId);
-      // AsyncStorageに保存
       await saveUserToStorage(user);
       return user;
     }
