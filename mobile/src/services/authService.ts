@@ -38,9 +38,12 @@ const saveUserToStorage = async (user: User): Promise<void> => {
 // AsyncStorageからユーザー情報を削除
 const removeUserFromStorage = async (): Promise<void> => {
   try {
+    console.log('📱 [RemoveUserFromStorage] AsyncStorageからユーザー情報削除開始...');
     await AsyncStorage.removeItem('userData');
+    console.log('✅ [RemoveUserFromStorage] AsyncStorage削除完了');
   } catch (error) {
-    console.error('ユーザー情報削除エラー:', error);
+    console.error('💥 [RemoveUserFromStorage] ユーザー情報削除エラー:', error);
+    throw error; // エラーを再スローして上位でキャッチできるようにする
   }
 };
 
@@ -246,74 +249,40 @@ export const signInAnonymous = async (): Promise<User> => {
 // ユーザーのFirestoreデータを削除する関数
 const deleteUserData = async (userId: string): Promise<{ success: boolean; error?: string }> => {
   try {
+    console.log('🗑️ [DeleteUserData] データ削除開始 - userId:', userId);
     const batch = writeBatch(db);
     
     // 1. ユーザーの投稿を削除
+    console.log('📄 [DeleteUserData] ユーザーの投稿を検索中...');
     const storiesQuery = query(
       collection(db, 'stories'),
       where('authorId', '==', userId)
     );
     
     const storiesSnapshot = await getDocs(storiesQuery);
+    console.log(`📊 [DeleteUserData] 見つかった投稿数: ${storiesSnapshot.size}`);
+    
     storiesSnapshot.forEach((doc) => {
+      console.log(`🗑️ [DeleteUserData] 投稿削除対象: ${doc.id}`);
       batch.delete(doc.ref);
     });
-    
-    // 2. ユーザーのコメントを削除（将来実装予定）
-    // TODO: 将来的にコメント機能が実装された際の削除処理
-    /*
-    const commentsQuery = query(
-      collection(db, 'comments'),
-      where('authorId', '==', userId)
-    );
-    
-    const commentsSnapshot = await getDocs(commentsQuery);
-    commentsSnapshot.forEach((doc) => {
-      batch.delete(doc.ref);
-    });
-    */
-    
-    // 3. ユーザーの学習記録を削除（将来実装予定）
-    // TODO: 将来的に学習記録機能が実装された際の削除処理
-    /*
-    const learningRecordsQuery = query(
-      collection(db, 'learningRecords'),
-      where('userId', '==', userId)
-    );
-    
-    const learningRecordsSnapshot = await getDocs(learningRecordsQuery);
-    learningRecordsSnapshot.forEach((doc) => {
-      batch.delete(doc.ref);
-    });
-    */
-    
-    // 4. ユーザーの支援アクション（いいね・共感）を削除（将来実装予定）
-    // TODO: 将来的に支援アクション機能が実装された際の削除処理
-    /*
-    const supportActionsQuery = query(
-      collection(db, 'supportActions'),
-      where('fromUser', '==', userId)
-    );
-    
-    const supportActionsSnapshot = await getDocs(supportActionsQuery);
-    supportActionsSnapshot.forEach((doc) => {
-      batch.delete(doc.ref);
-    });
-    */
     
     // 5. ユーザープロフィールを削除
+    console.log('👤 [DeleteUserData] ユーザープロフィール削除準備...');
     const userDocRef = doc(db, 'anonymousUsers', userId);
     batch.delete(userDocRef);
     
     // 6. バッチ処理を実行
+    console.log('⚡ [DeleteUserData] バッチ処理実行中...');
     await batch.commit();
+    console.log('✅ [DeleteUserData] バッチ処理完了');
     
     const deletedCount = storiesSnapshot.size + 1; // 投稿数 + ユーザープロフィール
-    console.log(`ユーザー ${userId} のデータを削除しました (${deletedCount}件)`);
+    console.log(`✅ [DeleteUserData] ユーザー ${userId} のデータを削除しました (${deletedCount}件)`);
     
     return { success: true };
   } catch (error) {
-    console.error('ユーザーデータ削除エラー:', error);
+    console.error('💥 [DeleteUserData] ユーザーデータ削除エラー:', error);
     return { 
       success: false, 
       error: error instanceof Error ? error.message : '不明なエラーが発生しました' 
@@ -324,26 +293,39 @@ const deleteUserData = async (userId: string): Promise<{ success: boolean; error
 // サインアウト
 export const signOutUser = async (): Promise<{ success: boolean; dataDeleted: boolean; error?: string }> => {
   try {
+    console.log('🔄 [AuthService] signOutUser開始');
     const currentUser = auth.currentUser;
+    console.log('👤 [AuthService] 現在のユーザー:', currentUser ? currentUser.uid : 'なし');
+    
     let dataDeleted = false;
     let deleteError: string | undefined;
     
     // 現在のユーザーのFirestoreデータを削除
     if (currentUser) {
+      console.log('🗑️ [AuthService] Firestoreデータ削除開始...');
       const deleteResult = await deleteUserData(currentUser.uid);
+      console.log('📋 [AuthService] データ削除結果:', deleteResult);
+      
       dataDeleted = deleteResult.success;
       if (!deleteResult.success) {
         deleteError = deleteResult.error;
+        console.warn('⚠️ [AuthService] データ削除に失敗:', deleteError);
       }
+    } else {
+      console.log('ℹ️ [AuthService] currentUserがnull、データ削除をスキップ');
     }
     
     // Firebase認証からサインアウト
+    console.log('🚪 [AuthService] Firebase認証からサインアウト中...');
     await signOut(auth);
+    console.log('✅ [AuthService] Firebase認証サインアウト完了');
     
     // AsyncStorageからもユーザー情報を削除
+    console.log('📱 [AuthService] AsyncStorageからユーザー情報削除中...');
     await removeUserFromStorage();
+    console.log('✅ [AuthService] AsyncStorage削除完了');
     
-    console.log('サインアウト完了（関連データも削除）');
+    console.log('✅ [AuthService] サインアウト完了（関連データも削除）');
     
     return { 
       success: true, 
@@ -351,7 +333,7 @@ export const signOutUser = async (): Promise<{ success: boolean; dataDeleted: bo
       error: deleteError 
     };
   } catch (error) {
-    console.error('サインアウトエラー:', error);
+    console.error('💥 [AuthService] サインアウトエラー:', error);
     return { 
       success: false, 
       dataDeleted: false, 

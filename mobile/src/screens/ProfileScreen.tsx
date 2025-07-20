@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, StyleSheet, ScrollView, Alert, Platform } from 'react-native';
 import { Text, Card, Button, Avatar, Divider, TextInput, Dialog, Portal, IconButton } from 'react-native-paper';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useAuthStore } from '../stores/authStore';
@@ -15,6 +15,10 @@ interface ProfileScreenProps {
 
 const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   const { user, signOut, isLoading, setUser } = useAuthStore();
+  
+  // デバッグ: 現在の状態をログ出力
+  console.log('🎭 ProfileScreen レンダリング - isLoading:', isLoading, 'user:', user ? user.id : 'null');
+  
   const [nicknameDialogVisible, setNicknameDialogVisible] = useState(false);
   const [avatarDialogVisible, setAvatarDialogVisible] = useState(false);
   const [newNickname, setNewNickname] = useState('');
@@ -22,23 +26,51 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   const [debugLoading, setDebugLoading] = useState(false);
 
   const handleSignOut = async () => {
-    Alert.alert(
-      'サインアウト確認',
-      '匿名ユーザーではサインアウト後に同じアカウントで再ログインできません。\n\n投稿した失敗談やプロフィール情報は完全に削除されます。\n\n本当にサインアウトしますか？',
-      [
-        {
-          text: 'キャンセル',
-          style: 'cancel',
-        },
-        {
-          text: 'サインアウト',
-          style: 'destructive',
-          onPress: async () => {
-            await signOut();
+    console.log('🔧 handleSignOut関数が呼ばれました！');
+    
+    const performSignOut = async () => {
+      try {
+        console.log('🚪 サインアウト開始...');
+        await signOut();
+        console.log('✅ サインアウト完了');
+      } catch (error) {
+        console.error('❌ サインアウトエラー:', error);
+        const errorMessage = `サインアウトに失敗しました:\n${error instanceof Error ? error.message : 'Unknown error'}\n\nコンソールログを確認してください。`;
+        
+        if (Platform.OS === 'web') {
+          window.alert(errorMessage);
+        } else {
+          Alert.alert('サインアウトエラー', errorMessage, [{ text: 'OK' }]);
+        }
+      }
+    };
+
+    // Web環境とネイティブ環境で異なる確認ダイアログを表示
+    if (Platform.OS === 'web') {
+      const confirmed = window.confirm(
+        '匿名ユーザーではサインアウト後に同じアカウントで再ログインできません。\n\n投稿した失敗談やプロフィール情報は完全に削除されます。\n\n本当にサインアウトしますか？'
+      );
+      
+      if (confirmed) {
+        await performSignOut();
+      }
+    } else {
+      Alert.alert(
+        'サインアウト確認',
+        '匿名ユーザーではサインアウト後に同じアカウントで再ログインできません。\n\n投稿した失敗談やプロフィール情報は完全に削除されます。\n\n本当にサインアウトしますか？',
+        [
+          {
+            text: 'キャンセル',
+            style: 'cancel',
           },
-        },
-      ]
-    );
+          {
+            text: 'サインアウト',
+            style: 'destructive',
+            onPress: performSignOut,
+          },
+        ]
+      );
+    }
   };
 
   const handleNicknameEdit = () => {
@@ -329,7 +361,12 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
           </Button>
           <Button
             mode="outlined"
-            onPress={handleSignOut}
+            onPress={() => {
+              console.log('🖱️ サインアウトボタンがクリックされました');
+              console.log('📊 現在のisLoading状態:', isLoading);
+              console.log('📊 現在のuser状態:', user ? user.id : 'null');
+              handleSignOut();
+            }}
             loading={isLoading}
             disabled={isLoading}
             style={styles.signOutButton}

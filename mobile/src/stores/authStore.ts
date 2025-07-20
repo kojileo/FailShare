@@ -82,24 +82,40 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
   
   signOut: async () => {
-    set({ isLoading: true, error: null });
-    const result = await signOutUser();
-    
-    if (result.success) {
-      set({ user: null, isSignedIn: false, isLoading: false });
+    try {
+      console.log('🔄 [AuthStore] サインアウト処理開始');
+      set({ isLoading: true, error: null });
       
-      // データ削除の結果をログに記録
-      if (result.dataDeleted) {
-        console.log('ユーザーデータが正常に削除されました');
-      } else if (result.error) {
-        console.warn('データ削除でエラーが発生しました:', result.error);
+      console.log('📞 [AuthStore] authService.signOutUser()を呼び出し中...');
+      const result = await signOutUser();
+      console.log('📋 [AuthStore] signOutUser結果:', result);
+      
+      if (result.success) {
+        console.log('✅ [AuthStore] サインアウト成功、ステート更新中...');
+        set({ user: null, isSignedIn: false, isLoading: false });
+        
+        // データ削除の結果をログに記録
+        if (result.dataDeleted) {
+          console.log('🗑️ [AuthStore] ユーザーデータが正常に削除されました');
+        } else if (result.error) {
+          console.warn('⚠️ [AuthStore] データ削除でエラーが発生しました:', result.error);
+        }
+        console.log('✅ [AuthStore] サインアウト処理完了');
+      } else {
+        console.error('❌ [AuthStore] サインアウトエラー:', result.error);
+        set({ 
+          error: result.error || 'サインアウトに失敗しました。',
+          isLoading: false 
+        });
+        throw new Error(result.error || 'サインアウトに失敗しました。');
       }
-    } else {
-      console.error('サインアウトエラー:', result.error);
+    } catch (error) {
+      console.error('💥 [AuthStore] signOut内でエラーキャッチ:', error);
       set({ 
-        error: result.error || 'サインアウトに失敗しました。',
+        error: error instanceof Error ? error.message : 'サインアウトに失敗しました。',
         isLoading: false 
       });
+      throw error; // エラーを再スローしてProfileScreenでキャッチできるようにする
     }
   },
   
