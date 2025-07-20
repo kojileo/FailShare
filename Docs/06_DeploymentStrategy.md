@@ -2,52 +2,90 @@
 
 ## 概要
 
-FailShareプロジェクトの安全で効率的なデプロイメントを実現するための包括的なデプロイ戦略を定義します。
+FailShareプロジェクトは、React Native + Expoで開発されたクロスプラットフォームアプリケーションとして、モバイルアプリとWebアプリケーション両方での提供を実現します。本ドキュメントでは、包括的なデプロイメント戦略を定義します。
 
-## 現在の状況
+## 現在の状況（2025年1月更新）
 
 ### プロジェクト状況
 - **Phase 1**: 完了 (MVP完成)
-- **技術スタック**: React Native + Expo, TypeScript, Firebase
-- **デプロイ現状**: 開発環境のみ
-- **デプロイ課題**: 手動デプロイ、環境分離なし
+- **Phase 2**: 完了 (Web対応・Docker化)
+- **技術スタック**: React Native + Expo, TypeScript, Firebase, Docker, Cloud Run
+- **デプロイ現状**: Web環境デプロイ完了、CI/CD整備済み
+- **デプロイ成果**: マルチプラットフォーム対応実現
 
-### デプロイ要件
-- **安全性**: 本番環境の安定性確保
-- **効率性**: 迅速なデプロイサイクル
-- **品質保証**: 自動化されたテスト実行
-- **モニタリング**: デプロイ後の監視体制
+### 達成済みデプロイ要件
+- **✅ 安全性**: Production環境の分離・Firebase設定完了
+- **✅ 効率性**: Docker化・自動ビルド導入
+- **✅ 品質保証**: 環境別ビルド・テスト基盤構築
+- **✅ モニタリング**: Cloud Run・Firebase監視体制
 
-## デプロイ環境構成
+### Web-First戦略
+- **Web**: Cloud Run + Docker（本格運用・メインプラットフォーム）
+- **Future Mobile**: 将来のロードマップで検討中
+- **Backend**: Firebase (Auth, Firestore), 単一コードベース
 
-### 環境戦略
+## Web-Focused デプロイ環境構成
+
+### Webアプリケーション戦略
 
 ```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Development   │    │    Staging      │    │   Production    │
-│                 │    │                 │    │                 │
-│ • 開発・テスト  │───▶│ • 統合テスト    │───▶│ • 本番運用      │
-│ • 機能実装      │    │ • UAT           │    │ • エンドユーザー│
-│ • バグ修正      │    │ • パフォーマンス│    │ • 高可用性      │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        FailShare Web Application Architecture                │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────────────────────┐
+│   Development   │    │    Staging      │    │           Production            │
+│                 │    │                 │    │                                 │
+│ ┌─────────────┐ │    │ ┌─────────────┐ │    │ ┌─────────────────────────────┐ │
+│ │  Web (Local)│ │───▶│ │ Docker Test │ │───▶│ │        Web App              │ │
+│ │  Metro Dev  │ │    │ │  Build      │ │    │ │      Cloud Run              │ │
+│ └─────────────┘ │    │ └─────────────┘ │    │ │     (Production)            │ │
+│                 │    │                 │    │ └─────────────────────────────┘ │
+│ • 開発・テスト  │    │ • 統合テスト    │    │ • 本番運用・エンドユーザー      │
+│ • 機能実装      │    │ • UAT           │    │ • 高可用性・自動スケール        │
+│ • バグ修正      │    │ • パフォーマンス│    │ • CI/CD自動デプロイ             │
+└─────────────────┘    └─────────────────┘    └─────────────────────────────────┘
 ```
+
+### Webプラットフォーム詳細
+
+#### Web Application (Main Platform)
+- **Technology**: React Native Web + Docker + Cloud Run + Express
+- **CI/CD**: Cloud Build + GitHub Actions
+- **URL**: `https://failshare-web-xxx.a.run.app`
+- **Features**: 完全なレスポンシブ対応、PWA機能、SEO最適化
+- **Device Support**: PC・タブレット・スマートフォン完全対応
+
+#### Future Considerations
+- **Native Mobile Apps**: 将来のロードマップで検討中
+- **Desktop Apps**: Electronベースの可能性
+- **Additional Platforms**: 必要に応じて拡張
+
+### 環境別詳細設定
 
 #### 1. Development Environment
 - **目的**: 開発・機能テスト・バグ修正
-- **更新頻度**: 毎回のコミット・プッシュ
-- **品質基準**: 基本的な動作確認
+- **Web**: ローカルMetro開発サーバー (`http://localhost:19006`)
+- **Mobile**: Expo Go + 開発サーバー
+- **Firebase**: `failshare-app` (development profile)
+- **更新頻度**: 毎回のコード変更
 - **アクセス**: 開発者のみ
 
 #### 2. Staging Environment
 - **目的**: 統合テスト・UAT・パフォーマンステスト
-- **更新頻度**: 機能完成・PR マージ時
-- **品質基準**: 本番環境と同等
+- **Web**: Docker local build + Test deployment
+- **Mobile**: EAS Build (internal distribution)
+- **Firebase**: `failshare-app` (staging profile)
+- **更新頻度**: PR マージ・機能完成時
 - **アクセス**: 開発者・テスター・ステークホルダー
 
 #### 3. Production Environment
 - **目的**: 本番運用・エンドユーザー向け
-- **更新頻度**: 計画的なリリース
-- **品質基準**: 最高品質・高可用性
+- **Web**: Cloud Run (`https://failshare-web-xxx.a.run.app`)
+- **Mobile**: App Store・Google Play Store
+- **Firebase**: `failshare-app` (production profile)
+- **更新頻度**: 計画的なリリース（週次/月次）
+- **品質基準**: 最高品質・高可用性・99.9% SLA
 - **アクセス**: エンドユーザー
 
 ## Firebase環境構成
@@ -109,51 +147,34 @@ EXPO_PUBLIC_FIREBASE_APP_ID=prod-app-id
 EXPO_PUBLIC_ENVIRONMENT=production
 ```
 
-## EAS (Expo Application Services) 構成
+## Web-first Deployment 構成
 
-### EAS Build Configuration
+### GitHub Actions CI/CD
 
-#### eas.json
-```json
-{
-  "cli": {
-    "version": ">= 5.0.0"
-  },
-  "build": {
-    "development": {
-      "developmentClient": true,
-      "distribution": "internal",
-      "env": {
-        "ENVIRONMENT": "development"
-      }
-    },
-    "staging": {
-      "distribution": "internal",
-      "env": {
-        "ENVIRONMENT": "staging"
-      }
-    },
-    "production": {
-      "distribution": "store",
-      "env": {
-        "ENVIRONMENT": "production"
-      }
-    }
-  },
-  "submit": {
-    "production": {
-      "ios": {
-        "appleId": "developer@failshare.app",
-        "ascAppId": "app-store-connect-id",
-        "appleTeamId": "team-id"
-      },
-      "android": {
-        "serviceAccountKeyPath": "./service-account.json",
-        "track": "production"
-      }
-    }
-  }
-}
+#### 環境変数管理戦略
+- **ローカル開発**: `.env.development` ファイル
+- **CI/CD**: GitHub Secrets + Variables
+- **Docker**: Build arguments
+
+#### GitHub Secrets設定
+```
+# Firebase Configuration (Environment-specific)
+DEV_FIREBASE_API_KEY=development-api-key
+STAGING_FIREBASE_API_KEY=staging-api-key
+PROD_FIREBASE_API_KEY=production-api-key
+
+# Google Cloud Platform
+GCP_PROJECT_ID=failshare-web-app
+GCP_SA_KEY={service-account-json}
+```
+
+#### GitHub Variables設定
+```
+# Firebase Common Settings
+FIREBASE_AUTH_DOMAIN=failshare-app.firebaseapp.com
+FIREBASE_PROJECT_ID=failshare-app
+FIREBASE_STORAGE_BUCKET=failshare-app.firebasestorage.app
+CLOUD_RUN_REGION=asia-northeast1
 ```
 
 ### App Configuration
