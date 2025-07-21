@@ -84,8 +84,8 @@ function validateStoryData(data) {
          // タイトル検証（個人開発では緩和）
          data.content.title is string &&
          data.content.title.size() >= 3 && data.content.title.size() <= 50 &&
-         // カテゴリ検証
-         data.content.category in ['仕事', '恋愛', 'お金', '健康', '人間関係', '学習', 'その他'] &&
+         // カテゴリ検証（アプリで使用されている実際のカテゴリ）
+         data.content.category in ['エンジニア', '恋愛'] &&
          // 各フィールドの詳細検証（最小文字数を緩和）
          data.content.situation is string &&
          data.content.situation.size() >= 5 && data.content.situation.size() <= 500 &&
