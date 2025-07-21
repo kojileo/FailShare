@@ -92,19 +92,23 @@ jobs:
             --build-arg EXPO_PUBLIC_FIREBASE_APP_ID="${{ env.FIREBASE_APP_ID }}"
           docker push asia-northeast1-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.SERVICE_NAME }}:${{ github.sha }}
 
+      - name: Set Cloud Run flags
+        run: |
+          if [[ "${{ env.ENVIRONMENT }}" == "production" ]]; then
+            echo "CLOUD_RUN_FLAGS=--allow-unauthenticated --port=8080 --memory=512Mi --cpu=1 --max-instances=10 --min-instances=0 --timeout=300 --concurrency=80" >> $GITHUB_ENV
+          elif [[ "${{ env.ENVIRONMENT }}" == "staging" ]]; then
+            echo "CLOUD_RUN_FLAGS=--allow-unauthenticated --port=8080 --memory=256Mi --cpu=0.5 --max-instances=3 --min-instances=0 --timeout=180 --concurrency=50" >> $GITHUB_ENV
+          else
+            echo "CLOUD_RUN_FLAGS=--allow-unauthenticated --port=8080 --memory=256Mi --cpu=0.5 --max-instances=2 --min-instances=0 --timeout=120 --concurrency=30" >> $GITHUB_ENV
+          fi
+
       - name: Deploy to Cloud Run
         uses: google-github-actions/deploy-cloudrun@v2
         with:
           service: ${{ env.SERVICE_NAME }}
           region: ${{ env.REGION }}
           image: asia-northeast1-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.SERVICE_NAME }}:${{ github.sha }}
-          flags: ${{ 
-            env.ENVIRONMENT == 'production' && 
-            '--allow-unauthenticated --port=8080 --memory=512Mi --cpu=1 --max-instances=10 --min-instances=0 --timeout=300 --concurrency=80' ||
-            env.ENVIRONMENT == 'staging' && 
-            '--allow-unauthenticated --port=8080 --memory=256Mi --cpu=0.5 --max-instances=3 --min-instances=0 --timeout=180 --concurrency=50' ||
-            '--allow-unauthenticated --port=8080 --memory=256Mi --cpu=0.5 --max-instances=2 --min-instances=0 --timeout=120 --concurrency=30'
-          }}
+          flags: ${{ env.CLOUD_RUN_FLAGS }}
           env_vars: |
             NODE_ENV=${{ env.ENVIRONMENT == 'production' && 'production' || 'development' }}
             EXPO_PUBLIC_ENVIRONMENT=${{ env.ENVIRONMENT }}
