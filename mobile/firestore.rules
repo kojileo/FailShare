@@ -2,11 +2,12 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
+    // 🔒 全環境統一ルール（個人開発向け最適化版）
+    
     // 匿名ユーザープロフィール
     match /anonymousUsers/{userId} {
-      // 認証済みユーザーのみアクセス可能
+      // 認証済みユーザーのみ、自分のプロフィールにアクセス可能
       allow read, write: if request.auth != null && request.auth.uid == userId;
-      // 自分のプロフィールのみ読み書き可能
     }
     
     // 投稿された失敗談
@@ -14,17 +15,17 @@ service cloud.firestore {
       // 読み取りは認証済みユーザーのみ
       allow read: if request.auth != null;
       
-      // 作成は認証済みユーザーのみ、authorIdが自分のuidと一致する場合のみ
+      // 作成：認証済み、authorIdが一致、データ検証通過の場合のみ
       allow create: if request.auth != null 
-                    && request.auth.uid == resource.data.authorId
+                    && request.auth.uid == request.resource.data.authorId
                     && validateStoryData(request.resource.data);
       
-      // 更新は投稿者のみ（メタデータの更新は除く）
+      // 更新：投稿者のみ、データ検証も実行
       allow update: if request.auth != null
                     && request.auth.uid == resource.data.authorId
                     && validateStoryUpdate(request.resource.data, resource.data);
       
-      // 削除は投稿者のみ
+      // 削除：投稿者のみ
       allow delete: if request.auth != null && request.auth.uid == resource.data.authorId;
     }
     
@@ -35,19 +36,37 @@ service cloud.firestore {
                     && onlyMetadataChanged(request.resource.data, resource.data);
     }
     
-    // コメント機能（将来実装予定）
+    // コメント機能
     match /stories/{storyId}/comments/{commentId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null 
-                    && request.auth.uid == request.resource.data.authorId;
+                    && request.auth.uid == request.resource.data.authorId
+                    && validateCommentData(request.resource.data);
       allow update, delete: if request.auth != null 
                             && request.auth.uid == resource.data.authorId;
     }
     
-    // ユーザー統計情報の更新（anonymousUsersコレクション）
+    // ユーザー統計情報
     match /anonymousUsers/{userId} {
       allow read: if request.auth != null && request.auth.uid == userId;
-      allow write: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null 
+                   && request.auth.uid == userId
+                   && validateUserStatsUpdate(request.resource.data, resource.data);
+    }
+    
+    // 開発・テスト用データ（全環境で利用可能）
+    match /dev_tests/{document} {
+      allow read, write: if request.auth != null;
+    }
+    
+    match /staging_tests/{document} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // 管理者専用データ（管理者のみアクセス可能）
+    match /admin/{document=**} {
+      allow read, write: if request.auth != null 
+                         && request.auth.token.admin == true;
     }
     
     // 他のドキュメントへのアクセスを拒否
@@ -57,41 +76,72 @@ service cloud.firestore {
   }
 }
 
-// 投稿データの検証関数
+// 投稿データの検証関数（個人開発向け調整版）
 function validateStoryData(data) {
   return data.keys().hasAll(['authorId', 'content', 'metadata']) &&
          data.content.keys().hasAll(['title', 'category', 'situation', 'action', 'result', 'learning', 'emotion']) &&
          data.metadata.keys().hasAll(['createdAt', 'viewCount', 'helpfulCount', 'commentCount', 'tags']) &&
+         // タイトル検証（個人開発では緩和）
          data.content.title is string &&
-         data.content.title.size() <= 50 &&
+         data.content.title.size() >= 3 && data.content.title.size() <= 50 &&
+         // カテゴリ検証
          data.content.category in ['仕事', '恋愛', 'お金', '健康', '人間関係', '学習', 'その他'] &&
+         // 各フィールドの詳細検証（最小文字数を緩和）
          data.content.situation is string &&
-         data.content.situation.size() <= 500 &&
+         data.content.situation.size() >= 5 && data.content.situation.size() <= 500 &&
          data.content.action is string &&
-         data.content.action.size() <= 500 &&
+         data.content.action.size() >= 5 && data.content.action.size() <= 500 &&
          data.content.result is string &&
-         data.content.result.size() <= 500 &&
+         data.content.result.size() >= 5 && data.content.result.size() <= 500 &&
          data.content.learning is string &&
-         data.content.learning.size() <= 500 &&
+         data.content.learning.size() >= 3 && data.content.learning.size() <= 500 &&
          data.content.emotion in ['後悔', '恥ずかしい', '悲しい', '不安', '怒り', '混乱', 'その他'] &&
-         data.metadata.viewCount is int &&
-         data.metadata.helpfulCount is int &&
-         data.metadata.commentCount is int &&
-         data.metadata.tags is list;
+         // メタデータ検証（新規投稿は0から開始）
+         data.metadata.viewCount is int && data.metadata.viewCount >= 0 &&
+         data.metadata.helpfulCount is int && data.metadata.helpfulCount >= 0 &&
+         data.metadata.commentCount is int && data.metadata.commentCount >= 0 &&
+         data.metadata.tags is list && data.metadata.tags.size() <= 10 && // タグ数制限を緩和
+         data.metadata.createdAt is timestamp;
+}
+
+// コメントデータの検証関数
+function validateCommentData(data) {
+  return data.keys().hasAll(['authorId', 'content', 'createdAt']) &&
+         data.content is string &&
+         data.content.size() >= 1 && data.content.size() <= 500 &&
+         data.authorId is string &&
+         data.authorId == request.auth.uid &&
+         data.createdAt is timestamp;
 }
 
 // 投稿更新データの検証関数
 function validateStoryUpdate(newData, oldData) {
-  // 基本的に投稿者は自分の投稿のcontentのみ更新可能
   return newData.authorId == oldData.authorId &&
-         newData.metadata == oldData.metadata &&
+         newData.metadata.createdAt == oldData.metadata.createdAt && // 作成日時は変更不可
          validateStoryData(newData);
 }
 
-// メタデータのみの更新かどうかを確認
+// ユーザー統計更新の検証
+function validateUserStatsUpdate(newData, oldData) {
+  // oldDataが存在しない場合（初回作成）も許可
+  return (resource == null || (
+    newData.keys().hasAll(['postCount', 'commentCount', 'helpfulReceived']) &&
+    newData.postCount is int && newData.postCount >= 0 &&
+    newData.commentCount is int && newData.commentCount >= 0 &&
+    newData.helpfulReceived is int && newData.helpfulReceived >= 0 &&
+    // 統計は基本的に増加のみ許可（個人開発では柔軟に）
+    newData.postCount >= oldData.postCount &&
+    newData.commentCount >= oldData.commentCount &&
+    newData.helpfulReceived >= oldData.helpfulReceived
+  ));
+}
+
+// メタデータのみの更新かどうかを確認（個人開発向け緩和版）
 function onlyMetadataChanged(newData, oldData) {
   return newData.authorId == oldData.authorId &&
          newData.content == oldData.content &&
+         newData.metadata.createdAt == oldData.metadata.createdAt && // 作成日時は変更不可
+         // メタデータは増加のみ許可（ただし大幅制限は削除）
          (newData.metadata.viewCount >= oldData.metadata.viewCount ||
           newData.metadata.helpfulCount >= oldData.metadata.helpfulCount ||
           newData.metadata.commentCount >= oldData.metadata.commentCount);

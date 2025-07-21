@@ -98,7 +98,13 @@ jobs:
           service: ${{ env.SERVICE_NAME }}
           region: ${{ env.REGION }}
           image: asia-northeast1-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.SERVICE_NAME }}:${{ github.sha }}
-          flags: '--allow-unauthenticated --port=8080 --memory=512Mi --cpu=1 --max-instances=10 --min-instances=0 --timeout=300 --concurrency=80'
+          flags: ${{ 
+            env.ENVIRONMENT == 'production' && 
+            '--allow-unauthenticated --port=8080 --memory=512Mi --cpu=1 --max-instances=10 --min-instances=0 --timeout=300 --concurrency=80' ||
+            env.ENVIRONMENT == 'staging' && 
+            '--allow-unauthenticated --port=8080 --memory=256Mi --cpu=0.5 --max-instances=3 --min-instances=0 --timeout=180 --concurrency=50' ||
+            '--allow-unauthenticated --port=8080 --memory=256Mi --cpu=0.5 --max-instances=2 --min-instances=0 --timeout=120 --concurrency=30'
+          }}
           env_vars: |
             NODE_ENV=${{ env.ENVIRONMENT == 'production' && 'production' || 'development' }}
             EXPO_PUBLIC_ENVIRONMENT=${{ env.ENVIRONMENT }}

@@ -3,23 +3,33 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import Constants from 'expo-constants';
 
-// Firebase設定を環境変数から取得（Web環境対応）
+// Firebase設定を環境変数から取得（環境変数を優先）
 const firebaseConfig = {
-  apiKey: Constants.expoConfig?.extra?.firebase?.apiKey || process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
-  authDomain: Constants.expoConfig?.extra?.firebase?.authDomain || process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: Constants.expoConfig?.extra?.firebase?.projectId || process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: Constants.expoConfig?.extra?.firebase?.storageBucket || process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: Constants.expoConfig?.extra?.firebase?.messagingSenderId || process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: Constants.expoConfig?.extra?.firebase?.appId || process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
+  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY || Constants.expoConfig?.extra?.firebase?.apiKey,
+  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN || Constants.expoConfig?.extra?.firebase?.authDomain,
+  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID || Constants.expoConfig?.extra?.firebase?.projectId,
+  storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET || Constants.expoConfig?.extra?.firebase?.storageBucket,
+  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || Constants.expoConfig?.extra?.firebase?.messagingSenderId,
+  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID || Constants.expoConfig?.extra?.firebase?.appId,
 };
 
-// 🐛 Debug: 環境情報をコンソールに出力
-console.log('🔧 Firebase Environment Debug Info:');
-console.log('  Environment:', process.env.EXPO_PUBLIC_ENVIRONMENT);
-console.log('  App ID:', firebaseConfig.appId);
-console.log('  Project ID:', firebaseConfig.projectId);
-console.log('  Firebase Config Valid:', !!firebaseConfig.apiKey);
-console.log('=====================================');
+// 🔒 プロダクション環境では詳細なデバッグ情報を出力しない
+if (process.env.EXPO_PUBLIC_ENVIRONMENT !== 'production') {
+  console.log('🔧 Firebase Environment Debug Info:');
+  console.log('  Environment:', process.env.EXPO_PUBLIC_ENVIRONMENT);
+  console.log('  Project ID:', firebaseConfig.projectId);
+  console.log('  Auth Domain:', firebaseConfig.authDomain);
+  console.log('  API Key (first 10 chars):', firebaseConfig.apiKey?.substring(0, 10) + '...');
+  console.log('  Firebase Config Valid:', !!firebaseConfig.apiKey);
+  console.log('=====================================');
+  
+  // 🔍 詳細デバッグ：環境変数の生の値を表示
+  console.log('🔍 Raw Environment Variables:');
+  console.log('  EXPO_PUBLIC_FIREBASE_PROJECT_ID:', process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID);
+  console.log('  EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN:', process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN);
+  console.log('  Constants.expoConfig projectId:', Constants.expoConfig?.extra?.firebase?.projectId);
+  console.log('=====================================');
+}
 
 // 🛠️ 開発環境での匿名ユーザー管理
 if (process.env.EXPO_PUBLIC_ENVIRONMENT === 'development') {
@@ -50,13 +60,17 @@ const validateFirebaseConfig = () => {
     missingFields.forEach(field => {
       console.error(`- ${field.envVar}: ${firebaseConfig[field.key as keyof typeof firebaseConfig] || 'undefined'}`);
     });
-    console.error('現在の設定:', JSON.stringify(firebaseConfig, null, 2));
-    console.error('Process env check:', {
-      apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY ? '設定済み' : 'なし',
-      authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN ? '設定済み' : 'なし',
-      projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID ? '設定済み' : 'なし',
-      appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID ? '設定済み' : 'なし',
-    });
+    
+    // 🔒 プロダクション環境では詳細なエラー情報を出力しない
+    if (process.env.EXPO_PUBLIC_ENVIRONMENT !== 'production') {
+      console.error('現在の設定:', JSON.stringify(firebaseConfig, null, 2));
+      console.error('Process env check:', {
+        apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY ? '設定済み' : 'なし',
+        authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN ? '設定済み' : 'なし',
+        projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID ? '設定済み' : 'なし',
+        appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID ? '設定済み' : 'なし',
+      });
+    }
     throw new Error('Firebase設定が不完全です');
   }
 };
@@ -77,12 +91,16 @@ try {
     // Web環境でのみSessionStorage永続化を使用
     import('firebase/auth').then(({ setPersistence, browserSessionPersistence }) => {
       setPersistence(auth, browserSessionPersistence).catch((error) => {
-        console.warn('Firebase persistence設定エラー:', error);
+        if (process.env.EXPO_PUBLIC_ENVIRONMENT !== 'production') {
+          console.warn('Firebase persistence設定エラー:', error);
+        }
       });
     });
   }
 } catch (error) {
-  console.warn('Firebase認証設定の初期化エラー:', error);
+  if (process.env.EXPO_PUBLIC_ENVIRONMENT !== 'production') {
+    console.warn('Firebase認証設定の初期化エラー:', error);
+  }
 }
 
 export default app; 
