@@ -11,9 +11,10 @@ import {
   ActivityIndicator
 } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { StoryCategory, EmotionType } from '../types';
+import { StoryCategory, EmotionType, FailureStory } from '../types';
 import { storyService } from '../services/storyService';
 import { useAuthStore } from '../stores/authStore';
+import { useStoryStore } from '../stores/storyStore';
 import { getCategoryNames } from '../utils/categories';
 
 interface CreateStoryScreenProps {
@@ -22,6 +23,7 @@ interface CreateStoryScreenProps {
 
 const CreateStoryScreen: React.FC<CreateStoryScreenProps> = ({ navigation }) => {
   const { user } = useAuthStore();
+  const { addStory } = useStoryStore();
   const [formData, setFormData] = useState({
     title: '',
     category: '' as StoryCategory,
@@ -61,18 +63,74 @@ const CreateStoryScreen: React.FC<CreateStoryScreenProps> = ({ navigation }) => 
   };
 
   const handleSubmit = async () => {
-    if (!validateForm() || !user) return;
+    console.log('🚀 投稿処理開始');
+    console.log('👤 現在のユーザー:', user ? user.id : 'null');
+    console.log('🔐 認証状態:', user ? '認証済み' : '未認証');
+    console.log('📝 投稿データ:', formData);
+
+    if (!validateForm() || !user) {
+      console.error('❌ バリデーション失敗またはユーザー未認証');
+      return;
+    }
 
     setLoading(true);
     try {
+      console.log('📨 storyService.createStory 呼び出し中...');
       // storyServiceを使用して投稿を保存
       const storyId = await storyService.createStory(user.id, formData);
+      console.log('✅ 投稿成功! storyId:', storyId);
       
-      Alert.alert('投稿完了', '失敗談が投稿されました', [
-        { text: 'OK', onPress: () => navigation.goBack() }
-      ]);
+      // 投稿成功時に即座にストーリーリストに追加（楽観的更新）
+      const newStory: FailureStory = {
+        id: storyId,
+        authorId: user.id,
+        content: {
+          title: formData.title.trim(),
+          category: formData.category,
+          situation: formData.situation.trim(),
+          action: formData.action.trim(),
+          result: formData.result.trim(),
+          learning: formData.learning.trim(),
+          emotion: formData.emotion,
+        },
+        metadata: {
+          createdAt: new Date(),
+          viewCount: 0,
+          helpfulCount: 0,
+          commentCount: 0,
+          tags: [formData.category, formData.emotion],
+        },
+      };
+      
+             console.log('📋 ストーリーリストに新しい投稿を追加中...');
+       addStory(newStory);
+       
+       // フォームをリセット
+       setFormData({
+         title: '',
+         category: '' as StoryCategory,
+         situation: '',
+         action: '',
+         result: '',
+         learning: '',
+         emotion: '' as EmotionType
+       });
+       
+       // 投稿成功後すぐにホーム画面に戻る
+       navigation.goBack();
+       
+       // 少し遅延してからアラートを表示（画面遷移後）
+       setTimeout(() => {
+         Alert.alert('🎉 投稿完了', '失敗談が投稿されました！\n一番上に表示されています。', [
+           { text: 'OK' }
+         ]);
+       }, 500);
     } catch (error) {
-      console.error('投稿エラー:', error);
+      console.error('❌ 投稿エラー:', error);
+      if (error instanceof Error) {
+        console.error('エラー詳細:', error.message);
+        console.error('エラースタック:', error.stack);
+      }
       const errorMessage = error instanceof Error ? error.message : '投稿に失敗しました。もう一度お試しください。';
       Alert.alert('エラー', errorMessage);
     } finally {

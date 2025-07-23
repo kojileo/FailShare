@@ -84,8 +84,8 @@ function validateStoryData(data) {
          // タイトル検証（個人開発では緩和）
          data.content.title is string &&
          data.content.title.size() >= 3 && data.content.title.size() <= 50 &&
-         // カテゴリ検証（アプリで使用されている実際のカテゴリ）
-         data.content.category in ['エンジニア', '恋愛'] &&
+         // カテゴリ検証（恋愛特化カテゴリ）
+         data.content.category in ['デート', '告白', 'カップル', '片想い', '別れ', 'その他'] &&
          // 各フィールドの詳細検証（最小文字数を緩和）
          data.content.situation is string &&
          data.content.situation.size() >= 5 && data.content.situation.size() <= 500 &&
@@ -125,14 +125,12 @@ function validateStoryUpdate(newData, oldData) {
 function validateUserStatsUpdate(newData, oldData) {
   // oldDataが存在しない場合（初回作成）も許可
   return (resource == null || (
-    newData.keys().hasAll(['postCount', 'commentCount', 'helpfulReceived']) &&
-    newData.postCount is int && newData.postCount >= 0 &&
-    newData.commentCount is int && newData.commentCount >= 0 &&
-    newData.helpfulReceived is int && newData.helpfulReceived >= 0 &&
-    // 統計は基本的に増加のみ許可（個人開発では柔軟に）
-    newData.postCount >= oldData.postCount &&
-    newData.commentCount >= oldData.commentCount &&
-    newData.helpfulReceived >= oldData.helpfulReceived
+    newData.keys().hasAll(['stats']) &&
+    newData.stats.keys().hasAll(['totalPosts', 'totalComments', 'helpfulVotes', 'learningPoints']) &&
+    newData.stats.totalPosts is int && newData.stats.totalPosts >= 0 &&
+    newData.stats.totalComments is int && newData.stats.totalComments >= 0 &&
+    newData.stats.helpfulVotes is int && newData.stats.helpfulVotes >= 0 &&
+    newData.stats.learningPoints is int && newData.stats.learningPoints >= 0
   ));
 }
 

@@ -11,29 +11,15 @@ import {
   Divider
 } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { RouteProp } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
+import { StackScreenProps } from '@react-navigation/stack';
 import { RootStackParamList, FailureStory } from '../types';
 import { storyService } from '../services/storyService';
 import { useAuthStore } from '../stores/authStore';
 import { getCategoryColor } from '../utils/categories';
 
-type StoryDetailScreenNavigationProp = StackNavigationProp<
-  RootStackParamList,
-  'StoryDetail'
->;
+type StoryDetailScreenProps = StackScreenProps<RootStackParamList, 'StoryDetail'>;
 
-type StoryDetailScreenRouteProp = RouteProp<
-  RootStackParamList,
-  'StoryDetail'
->;
-
-interface StoryDetailScreenProps {
-  navigation: StoryDetailScreenNavigationProp;
-  route: StoryDetailScreenRouteProp;
-}
-
-const StoryDetailScreen: React.FC<StoryDetailScreenProps> = ({ navigation, route }) => {
+const StoryDetailScreen = ({ navigation, route }: StoryDetailScreenProps) => {
   const { storyId } = route.params;
   const { user } = useAuthStore();
   const [story, setStory] = useState<FailureStory | null>(null);

@@ -1,50 +1,49 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, FlatList, Alert } from 'react-native';
+import { View, StyleSheet, FlatList, Alert, RefreshControl } from 'react-native';
 import { Text, Card, FAB, IconButton, ActivityIndicator, Button } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { RouteProp } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
+import { StackScreenProps } from '@react-navigation/stack';
 import { RootStackParamList, FailureStory } from '../types';
 import { storyService } from '../services/storyService';
 import { useAuthStore } from '../stores/authStore';
+import { useStoryStore } from '../stores/storyStore';
 
-type MyStoriesScreenNavigationProp = StackNavigationProp<
-  RootStackParamList,
-  'MyStories'
->;
+type MyStoriesScreenProps = StackScreenProps<RootStackParamList, 'MyStories'>;
 
-type MyStoriesScreenRouteProp = RouteProp<
-  RootStackParamList,
-  'MyStories'
->;
-
-interface MyStoriesScreenProps {
-  navigation: MyStoriesScreenNavigationProp;
-  route?: MyStoriesScreenRouteProp;
-}
-
-const MyStoriesScreen: React.FC<MyStoriesScreenProps> = ({ navigation }) => {
+const MyStoriesScreen = ({ navigation }: MyStoriesScreenProps) => {
   const { user } = useAuthStore();
+  const { removeStory } = useStoryStore();
   const [stories, setStories] = useState<FailureStory[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     loadMyStories();
   }, []);
 
-  const loadMyStories = async () => {
+  const loadMyStories = async (showLoading = true) => {
     if (!user) return;
 
     try {
-      setLoading(true);
+      if (showLoading) setLoading(true);
       const { stories: fetchedStories } = await storyService.getUserStories(user.id);
       setStories(fetchedStories);
     } catch (error) {
       console.error('投稿一覧の読み込みエラー:', error);
       Alert.alert('エラー', 'データの取得に失敗しました');
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
+    }
+  };
+
+  // プルリフレッシュ機能
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await loadMyStories(false);
+    } finally {
+      setRefreshing(false);
     }
   };
 
@@ -63,7 +62,9 @@ const MyStoriesScreen: React.FC<MyStoriesScreenProps> = ({ navigation }) => {
             setDeleting(storyId);
             try {
               await storyService.deleteStory(storyId, user.id);
+              // ローカル状態とグローバル状態の両方から削除
               setStories(prev => prev.filter(story => story.id !== storyId));
+              removeStory(storyId);
               Alert.alert('完了', '投稿を削除しました');
             } catch (error) {
               console.error('投稿削除エラー:', error);
@@ -153,6 +154,9 @@ const MyStoriesScreen: React.FC<MyStoriesScreenProps> = ({ navigation }) => {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Text variant="bodyLarge" style={styles.emptyText}>

@@ -27,13 +27,13 @@ const AuthScreen: React.FC = () => {
         <Card style={styles.descriptionCard}>
           <Card.Content>
             <Text variant="titleMedium" style={styles.cardTitle}>
-              二大コンテンツで学ぶ匿名コミュニティ
+              恋愛特化の匿名学習コミュニティ
             </Text>
             <Text variant="bodyMedium" style={styles.cardDescription}>
               • 完全匿名で身バレしない安全な環境{'\n'}
-              • エンジニア関連と恋愛関連の失敗談を共有{'\n'}
+              • 恋愛の失敗談を通じて学び合い{'\n'}
               • 実体験に基づくアドバイスを交換{'\n'}
-              • あなたの失敗が誰かの学びになる
+              • あなたの失敗が誰かの恋愛力向上になる
             </Text>
           </Card.Content>
         </Card>
@@ -45,10 +45,10 @@ const AuthScreen: React.FC = () => {
               📱 使い方は簡単
             </Text>
             <Text variant="bodyMedium" style={styles.cardDescription}>
-              1. 📝 エンジニア・恋愛関連の失敗談を投稿{'\n'}
-              2. 👀 カテゴリー別に他の人の体験を検索{'\n'}
+              1. 📝 デート・告白・恋愛の失敗談を投稿{'\n'}
+              2. 👀 カテゴリー別に他の人の恋愛体験を検索{'\n'}
               3. 💬 共感とアドバイスを交換{'\n'}
-              4. 📈 失敗から学んで成長する
+              4. 📈 失敗から学んで恋愛力を向上する
             </Text>
           </Card.Content>
         </Card>
@@ -57,13 +57,15 @@ const AuthScreen: React.FC = () => {
         <Card style={styles.valueCard}>
           <Card.Content>
             <Text variant="titleMedium" style={styles.cardTitle}>
-              🌟 二大コンテンツの特徴
+              🌟 恋愛特化コミュニティの特徴
             </Text>
             <Text variant="bodyMedium" style={styles.cardDescription}>
-              💻 エンジニア関連：開発・転職・技術習得の失敗{'\n'}
-              💕 恋愛関連：デート・告白・人間関係の失敗{'\n'}
-              🔍 カテゴリー別に失敗事例を検索{'\n'}
-              🎯 構造化された振り返りで成長促進
+              💕 デート：初デートやプランニングの失敗{'\n'}
+              💌 告白：告白やプロポーズの失敗{'\n'}
+              💑 カップル：交際中の関係性の失敗{'\n'}
+              💭 片想い：片思いやアプローチの失敗{'\n'}
+              💔 別れ：別れや復縁の失敗{'\n'}
+              🎯 構造化された振り返りで恋愛力向上
             </Text>
           </Card.Content>
         </Card>

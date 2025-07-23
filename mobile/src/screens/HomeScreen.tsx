@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, FlatList } from 'react-native';
+import { View, StyleSheet, FlatList, RefreshControl } from 'react-native';
 import { Text, Card, FAB, Searchbar, Avatar } from 'react-native-paper';
 import { useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -19,6 +19,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const { user } = useAuthStore();
   const [searchQuery, setSearchQuery] = React.useState('');
   const [loading, setLoading] = React.useState(false);
+  const [refreshing, setRefreshing] = React.useState(false);
 
   // 実際のデータをロード
   const loadStories = React.useCallback(async (filters?: { searchText?: string }) => {
@@ -41,6 +42,16 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       loadStories();
     }
   }, [searchQuery, loadStories]);
+
+  // プルリフレッシュ機能
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await loadStories();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [loadStories]);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -98,6 +109,9 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
         ListEmptyComponent={
           !loading ? (
             <View style={styles.emptyContainer}>

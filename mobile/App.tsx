@@ -22,7 +22,7 @@ export default function App() {
     };
   }, [initializeAuth]);
 
-  // サンプルデータの初期化（エンジニア向けデータに更新）
+  // サンプルデータの初期化（恋愛関連データに更新）
   React.useEffect(() => {
     if (isSignedIn) {
       // Development環境のみでサンプルデータをリセット＆更新

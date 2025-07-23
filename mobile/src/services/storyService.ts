@@ -99,72 +99,13 @@ class StoryService {
         });
       }
 
-      // 二大コンテンツのサンプル失敗談データ（エンジニア関連・恋愛関連）
+      // 恋愛特化のサンプル失敗談データ
       const sampleStories = [
-        // エンジニア関連の失敗談
         {
           authorId: 'sample_user_1',
           content: {
-            title: 'コードレビューで痛烈な指摘を受けた',
-            category: 'エンジニア' as StoryCategory,
-            situation: '入社して3ヶ月目、初めて大きな機能開発を任されました。先輩エンジニアにコードレビューを依頼する時が来ました。自分では良いコードが書けたと思っていました。',
-            action: 'セキュリティやパフォーマンスを深く考えずに、とりあえず動くコードを書いてレビュー依頼しました。コメントも少なく、変数名も適当でした。',
-            result: 'レビューで20箇所以上の修正指摘を受けました。「このコードは本番に出せない」と言われ、ほぼ全面的な書き直しになりました。',
-            learning: 'コードは書いて終わりではなく、可読性・保守性・セキュリティが重要だと学びました。レビュー前の自己確認の大切さも実感しています。',
-            emotion: '恥ずかしい' as EmotionType
-          },
-          metadata: {
-            createdAt: Timestamp.fromDate(new Date(2024, 0, 1)),
-            viewCount: 156,
-            helpfulCount: 23,
-            commentCount: 8,
-            tags: ['コードレビュー', '可読性', '保守性', 'セキュリティ']
-          }
-        },
-        {
-          authorId: 'sample_user_2',
-          content: {
-            title: '本番環境で大規模障害を起こした',
-            category: 'エンジニア' as StoryCategory,
-            situation: 'ECサイトの決済システム改修で、金曜日の夕方にデプロイ作業を行いました。テスト環境では正常に動作していたので安心していました。',
-            action: '本番環境とテスト環境の設定差異を十分に確認せず、そのままデプロイしました。また、デプロイ後の動作確認も最小限でした。',
-            result: '決済処理が全て失敗するようになり、1時間で数百万円の機会損失が発生しました。週末に緊急対応でロールバック作業を行いました。',
-            learning: '本番デプロイは慎重に行うべきで、特に金曜日の夜は避けるべきだと学びました。環境差異の確認とモニタリングの重要性を痛感しています。',
-            emotion: '不安' as EmotionType
-          },
-          metadata: {
-            createdAt: Timestamp.fromDate(new Date(2024, 0, 2)),
-            viewCount: 289,
-            helpfulCount: 45,
-            commentCount: 15,
-            tags: ['デプロイ', '本番障害', 'ロールバック', 'モニタリング']
-          }
-        },
-        {
-          authorId: 'sample_user_3',
-          content: {
-            title: '転職面接で技術力不足を露呈した',
-            category: 'エンジニア' as StoryCategory,
-            situation: '憧れの大手IT企業の中途採用面接を受けることになりました。履歴書の経験をアピールして書類選考は通過していました。',
-            action: '面接で聞かれそうな技術について表面的な勉強しかせず、実際に手を動かした経験が少ないまま面接に臨みました。',
-            result: 'ライブコーディングで基本的なアルゴリズムが書けず、使用技術の深い質問に答えられませんでした。面接官に呆れられました。',
-            learning: '技術は知識だけでなく実践経験が重要だと痛感しました。今後は必ず手を動かして学習し、ポートフォリオも充実させます。',
-            emotion: '恥ずかしい' as EmotionType
-          },
-          metadata: {
-            createdAt: Timestamp.fromDate(new Date(2024, 0, 3)),
-            viewCount: 201,
-            helpfulCount: 35,
-            commentCount: 12,
-            tags: ['転職', '面接', 'ライブコーディング', '技術力']
-          }
-        },
-        // 恋愛関連の失敗談
-        {
-          authorId: 'sample_user_4',
-          content: {
             title: '初デートで高級レストランを選んで失敗',
-            category: '恋愛' as StoryCategory,
+            category: 'デート' as StoryCategory,
             situation: 'マッチングアプリで知り合った人と初デートの約束をしました。相手に良い印象を与えたくて、特別な場所を選ぼうと考えました。',
             action: '相手の好みや予算を確認せず、一人で高級フレンチレストランを予約してしまいました。サプライズのつもりでした。',
             result: '相手はカジュアルな服装で来たため、場の雰囲気に困惑していました。緊張して会話も弾まず、気まずい時間を過ごしました。',
@@ -172,7 +113,7 @@ class StoryService {
             emotion: '後悔' as EmotionType
           },
           metadata: {
-            createdAt: Timestamp.fromDate(new Date(2024, 0, 4)),
+            createdAt: Timestamp.fromDate(new Date(2024, 0, 1)),
             viewCount: 178,
             helpfulCount: 28,
             commentCount: 6,
@@ -180,10 +121,10 @@ class StoryService {
           }
         },
         {
-          authorId: 'sample_user_5',
+          authorId: 'sample_user_2',
           content: {
             title: '友人の恋人に告白してしまった',
-            category: '恋愛' as StoryCategory,
+            category: '告白' as StoryCategory,
             situation: '大学時代の友人グループで遊んでいたとき、友人の恋人に好意を抱いてしまいました。相手も私に優しく接してくれるので、勘違いしていました。',
             action: '友人関係を壊すかもしれないと思いつつも、気持ちを抑えきれずに告白してしまいました。',
             result: '当然断られ、友人にもバレて大きく関係が悪化しました。グループからも距離を置かれ、大切な友人たちを失いました。',
@@ -191,7 +132,7 @@ class StoryService {
             emotion: '後悔' as EmotionType
           },
           metadata: {
-            createdAt: Timestamp.fromDate(new Date(2024, 0, 5)),
+            createdAt: Timestamp.fromDate(new Date(2024, 0, 2)),
             viewCount: 243,
             helpfulCount: 19,
             commentCount: 11,
@@ -199,10 +140,10 @@ class StoryService {
           }
         },
         {
-          authorId: 'sample_user_6',
+          authorId: 'sample_user_3',
           content: {
             title: 'LINEの既読スルーに過剰反応した',
-            category: '恋愛' as StoryCategory,
+            category: 'カップル' as StoryCategory,
             situation: '付き合って2ヶ月の恋人とLINEでやりとりしていました。いつも即レスしてくれるのに、その日は8時間既読スルーされました。',
             action: '不安になって「何かあった？」「怒ってる？」「返事して」と立て続けにメッセージを送ってしまいました。',
             result: '恋人は仕事で忙しかっただけでしたが、私の過剰な反応に疲れてしまい、「重い」と言われて距離を置かれました。',
@@ -210,11 +151,68 @@ class StoryService {
             emotion: '不安' as EmotionType
           },
           metadata: {
-            createdAt: Timestamp.fromDate(new Date(2024, 0, 6)),
+            createdAt: Timestamp.fromDate(new Date(2024, 0, 3)),
             viewCount: 167,
             helpfulCount: 31,
             commentCount: 9,
             tags: ['LINE', '既読スルー', '束縛', '距離感']
+          }
+        },
+        {
+          authorId: 'sample_user_4',
+          content: {
+            title: '好きな人に全く振り向いてもらえなかった',
+            category: '片想い' as StoryCategory,
+            situation: '職場の先輩に恋をしました。毎日一緒に働いているうちに、どんどん好きになっていきました。',
+            action: '遠回しなアプローチばかりで、直接的に気持ちを伝えることができませんでした。お疲れ様でしたメールを送ったり、差し入れをしたりしていました。',
+            result: '先輩は私のことを後輩として見ているだけで、恋愛対象として全く意識してもらえませんでした。他の人と付き合い始めました。',
+            learning: '曖昧な態度では何も伝わらないことを学びました。勇気を出して気持ちをはっきり伝えることの大切さを実感しています。',
+            emotion: '悲しい' as EmotionType
+          },
+          metadata: {
+            createdAt: Timestamp.fromDate(new Date(2024, 0, 4)),
+            viewCount: 134,
+            helpfulCount: 22,
+            commentCount: 7,
+            tags: ['職場恋愛', 'アプローチ', '片思い', '告白']
+          }
+        },
+        {
+          authorId: 'sample_user_5',
+          content: {
+            title: '復縁を迫って嫌われてしまった',
+            category: '別れ' as StoryCategory,
+            situation: '2年付き合った恋人から別れを告げられました。まだ好きだったので、どうしても諦めることができませんでした。',
+            action: '毎日のようにLINEを送り、職場や家の近くで待ち伏せをしてしまいました。復縁してほしいと何度も頼みました。',
+            result: '相手にストーカー扱いされ、最終的には友人経由で「もう連絡しないで」と言われました。完全に嫌われてしまいました。',
+            learning: '別れた相手の気持ちを尊重することの大切さを学びました。しつこくすればするほど嫌われることを痛感しています。',
+            emotion: '混乱' as EmotionType
+          },
+          metadata: {
+            createdAt: Timestamp.fromDate(new Date(2024, 0, 5)),
+            viewCount: 198,
+            helpfulCount: 25,
+            commentCount: 13,
+            tags: ['復縁', 'しつこい', '別れ', 'ストーカー']
+          }
+        },
+        {
+          authorId: 'sample_user_6',
+          content: {
+            title: 'SNSの投稿で恋人を傷つけてしまった',
+            category: 'その他' as StoryCategory,
+            situation: '恋人と一緒にいる時間をSNSに投稿するのが習慣になっていました。いつも楽しそうな写真をアップしていました。',
+            action: '恋人が写真映りを気にしているのに、無断で写真をアップしてしまいました。また、プライベートな内容も投稿していました。',
+            result: '恋人から「プライバシーを考えてほしい」と怒られました。SNSに依存している私に嫌気がさしたようでした。',
+            learning: 'SNSと恋愛のバランスの大切さを学びました。相手のプライバシーを尊重し、2人だけの時間も大切にするべきでした。',
+            emotion: '恥ずかしい' as EmotionType
+          },
+          metadata: {
+            createdAt: Timestamp.fromDate(new Date(2024, 0, 6)),
+            viewCount: 156,
+            helpfulCount: 18,
+            commentCount: 8,
+            tags: ['SNS', 'プライバシー', '写真', 'バランス']
           }
         }
       ];
@@ -266,6 +264,11 @@ class StoryService {
    */
   async createStory(authorId: string, storyData: CreateStoryData): Promise<string> {
     try {
+      console.log('🔍 投稿デバッグ情報:');
+      console.log('  authorId:', authorId);
+      console.log('  category:', storyData.category);
+      console.log('  emotion:', storyData.emotion);
+      
       // 入力データの検証
       this.validateStoryData(storyData);
 
@@ -290,16 +293,26 @@ class StoryService {
         },
       };
 
+      console.log('📝 投稿データ構造:', JSON.stringify(storyDoc, null, 2));
+
       // Firestoreに投稿を保存
+      console.log('💾 Firestoreに投稿を保存中...');
       const docRef = await addDoc(collection(db, this.COLLECTION_NAME), storyDoc);
+      console.log('✅ 投稿保存成功:', docRef.id);
       
       // ユーザーの投稿数を更新
+      console.log('📊 ユーザー統計を更新中...');
       await this.updateUserStats(authorId, 'totalPosts', 1);
+      console.log('✅ ユーザー統計更新完了');
 
-      console.log('失敗談投稿成功:', docRef.id);
+      console.log('🎉 失敗談投稿成功:', docRef.id);
       return docRef.id;
     } catch (error) {
-      console.error('失敗談投稿エラー:', error);
+      console.error('❌ 失敗談投稿エラー:', error);
+      if (error instanceof Error) {
+        console.error('エラー詳細:', error.message);
+        console.error('エラースタック:', error.stack);
+      }
       throw new Error('投稿に失敗しました');
     }
   }
@@ -640,10 +653,20 @@ class StoryService {
   private async updateUserStats(userId: string, field: string, increment_value: number): Promise<void> {
     try {
       const userDocRef = doc(db, this.USERS_COLLECTION, userId);
-      await updateDoc(userDocRef, {
-        [`stats.${field}`]: increment(increment_value),
-        lastActive: Timestamp.now(),
-      });
+      
+      // ドキュメントの存在を確認
+      const userDoc = await getDoc(userDocRef);
+      
+      if (userDoc.exists()) {
+        // ドキュメントが存在する場合は更新
+        await updateDoc(userDocRef, {
+          [`stats.${field}`]: increment(increment_value),
+          lastActive: Timestamp.now(),
+        });
+      } else {
+        // ドキュメントが存在しない場合は作成
+        console.log(`ユーザードキュメント ${userId} が存在しないため、統計更新をスキップしました`);
+      }
     } catch (error) {
       console.error('ユーザー統計更新エラー:', error);
       // 統計更新の失敗は投稿成功を阻害しないよう、エラーを投げない
