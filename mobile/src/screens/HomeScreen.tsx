@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { View, FlatList, StyleSheet, RefreshControl, ScrollView } from 'react-native';
+import { View, FlatList, StyleSheet, RefreshControl, ScrollView, TouchableOpacity, StatusBar } from 'react-native';
 import { 
   Text, 
-  Card, 
   Avatar, 
   FAB, 
   Searchbar,
-  Chip
+  Chip,
+  IconButton,
+  Surface
 } from 'react-native-paper';
+import { LinearGradient } from 'expo-linear-gradient';
 import { FailureStory, MainCategory, SubCategory } from '../types';
 import { storyService } from '../services/storyService';
 import { useAuthStore } from '../stores/authStore';
@@ -16,7 +18,8 @@ import {
   getCategoryDisplayString, 
   getCategoryHierarchyColor,
   getMainCategories,
-  getSubCategories
+  getSubCategories,
+  getCategoryHierarchyIcon
 } from '../utils/categories';
 
 interface HomeScreenProps {
@@ -101,7 +104,17 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
   const handleMainCategorySelect = (category: MainCategory | null) => {
     setSelectedMainCategory(category);
-    setSelectedSubCategory(null); // サブカテゴリをリセット
+    setSelectedSubCategory(null);
+  };
+
+  const getTimeAgo = (date: Date): string => {
+    const now = new Date();
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) return '今';
+    if (diffInHours < 24) return `${diffInHours}時間`;
+    if (diffInHours < 168) return `${Math.floor(diffInHours / 24)}日`;
+    return date.toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' });
   };
 
   const getEmotionColor = (emotion: string): string => {
@@ -118,185 +131,233 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   };
 
   const renderStoryItem = ({ item }: { item: FailureStory }) => (
-    <Card style={styles.storyCard} onPress={() => navigation?.navigate('StoryDetail', { storyId: item.id })}>
-      <Card.Title 
-        title={item.content.title} 
-        subtitle={getCategoryDisplayString(item.content.category)} 
-      />
-      <Card.Content>
-        <Text variant="bodyMedium" numberOfLines={3}>
-          {item.content.situation}
-        </Text>
-        <View style={styles.chipContainer}>
-          <Chip 
-            icon="tag" 
-            style={[styles.chip, { backgroundColor: getCategoryHierarchyColor(item.content.category) }]}
-            textStyle={styles.chipText}
-          >
-            {item.content.category.sub}
-          </Chip>
-          <Chip 
-            icon="emoticon" 
-            style={[styles.chip, { backgroundColor: getEmotionColor(item.content.emotion) }]}
-            textStyle={styles.chipText}
-          >
-            {item.content.emotion}
-          </Chip>
+    <TouchableOpacity 
+      onPress={() => navigation?.navigate('StoryDetail', { storyId: item.id })}
+      activeOpacity={0.7}
+    >
+      <Surface style={styles.storyCard} elevation={1}>
+        <View style={styles.cardContent}>
+          {/* ヘッダー部分 */}
+          <View style={styles.cardHeader}>
+            <Avatar.Image 
+              size={44} 
+              source={{ uri: `https://robohash.org/user${item.authorId}?set=set4` }}
+              style={styles.avatar}
+            />
+            <View style={styles.userDetails}>
+              <View style={styles.userInfoRow}>
+                <Text style={styles.userName}>匿名ユーザー</Text>
+                <Text style={styles.timeAgo}>・{getTimeAgo(item.metadata.createdAt)}</Text>
+              </View>
+              <View style={styles.categoryContainer}>
+                <Chip 
+                  compact
+                  style={[styles.categoryChip, { backgroundColor: getCategoryHierarchyColor(item.content.category) + '15' }]}
+                  textStyle={[styles.categoryText, { color: getCategoryHierarchyColor(item.content.category) }]}
+                >
+                  {getCategoryHierarchyIcon(item.content.category)} {item.content.category.sub}
+                </Chip>
+                <Chip 
+                  compact
+                  style={[styles.emotionChip, { backgroundColor: getEmotionColor(item.content.emotion) + '15' }]}
+                  textStyle={[styles.emotionText, { color: getEmotionColor(item.content.emotion) }]}
+                >
+                  {item.content.emotion}
+                </Chip>
+              </View>
+            </View>
+          </View>
+
+          {/* メインコンテンツ */}
+          <View style={styles.mainContent}>
+            <Text style={styles.storyTitle} numberOfLines={2}>
+              {item.content.title}
+            </Text>
+            <Text style={styles.storyPreview} numberOfLines={3}>
+              {item.content.situation}
+            </Text>
+          </View>
+
+          {/* アクション部分 */}
+          <View style={styles.cardActions}>
+            <TouchableOpacity style={styles.actionItem}>
+              <IconButton icon="eye-outline" size={18} iconColor="#8E9AAF" style={styles.actionIcon} />
+              <Text style={styles.actionText}>{item.metadata.viewCount}</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.actionItem}>
+              <IconButton icon="heart-outline" size={18} iconColor="#8E9AAF" style={styles.actionIcon} />
+              <Text style={styles.actionText}>{item.metadata.helpfulCount}</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.actionItem}>
+              <IconButton icon="message-outline" size={18} iconColor="#8E9AAF" style={styles.actionIcon} />
+              <Text style={styles.actionText}>{item.metadata.commentCount}</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.actionItem}>
+              <IconButton icon="share-outline" size={18} iconColor="#8E9AAF" style={styles.actionIcon} />
+            </TouchableOpacity>
+          </View>
         </View>
-        <View style={styles.metadata}>
-          <Text variant="bodySmall">
-            👀 {item.metadata.viewCount} • 
-            👍 {item.metadata.helpfulCount} • 
-            💬 {item.metadata.commentCount}
-          </Text>
-        </View>
-      </Card.Content>
-    </Card>
+      </Surface>
+    </TouchableOpacity>
   );
 
-  // 表示するデータを決定
   const displayStories = searchQuery || selectedMainCategory || selectedSubCategory ? filteredStories : allStories;
 
   return (
     <View style={styles.container}>
-      {/* ユーザー情報ヘッダー */}
-      {user && (
-        <View style={styles.userHeader}>
-          <Avatar.Image 
-            size={40} 
-            source={{ uri: `https://robohash.org/${user.displayName}?set=set4` }}
-          />
-          <View style={styles.userInfo}>
-            <Text variant="titleMedium">{user.displayName}</Text>
-            <Text variant="bodySmall" style={styles.userStats}>
-              投稿: {user.stats.totalPosts} • コメント: {user.stats.totalComments}
-            </Text>
+      <StatusBar barStyle="light-content" backgroundColor="#1DA1F2" />
+      
+      {/* モダンヘッダー */}
+      <LinearGradient
+        colors={['#1DA1F2', '#1991DB']}
+        style={styles.modernHeader}
+      >
+        <View style={styles.headerContent}>
+          <View style={styles.headerLeft}>
+            <Text style={styles.modernHeaderTitle}>FailShare</Text>
+            <Text style={styles.headerSubtitle}>失敗から学ぶコミュニティ</Text>
           </View>
+          {user && (
+            <Avatar.Image 
+              size={36} 
+              source={{ uri: `https://robohash.org/${user.displayName}?set=set4` }}
+              style={styles.headerAvatar}
+            />
+          )}
         </View>
-      )}
+      </LinearGradient>
 
-      {/* 検索バー */}
-      <Searchbar
-        placeholder="失敗談を検索..."
-        value={searchQuery}
-        onChangeText={setSearchQuery}
-        style={styles.searchbar}
-      />
+      {/* 検索セクション */}
+      <View style={styles.searchSection}>
+        <Searchbar
+          placeholder="失敗談を検索..."
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          style={styles.modernSearchbar}
+          inputStyle={styles.searchInput}
+          iconColor="#8E9AAF"
+          placeholderTextColor="#8E9AAF"
+        />
+        
+        {/* アクティブフィルター */}
+        {(selectedMainCategory || selectedSubCategory || searchQuery) && (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.activeFilters}>
+            <View style={styles.filterRow}>
+              {searchQuery && (
+                <Chip
+                  icon="magnify"
+                  onClose={() => setSearchQuery('')}
+                  style={styles.activeFilterChip}
+                  textStyle={styles.activeFilterText}
+                >
+                  「{searchQuery}」
+                </Chip>
+              )}
+              {selectedMainCategory && (
+                <Chip
+                  onClose={() => handleMainCategorySelect(null)}
+                  style={styles.activeFilterChip}
+                  textStyle={styles.activeFilterText}
+                >
+                  {selectedMainCategory}
+                </Chip>
+              )}
+              {selectedSubCategory && (
+                <Chip
+                  onClose={() => setSelectedSubCategory(null)}
+                  style={styles.activeFilterChip}
+                  textStyle={styles.activeFilterText}
+                >
+                  {selectedSubCategory}
+                </Chip>
+              )}
+            </View>
+          </ScrollView>
+        )}
+      </View>
 
-      {/* メインカテゴリフィルター */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterSection}>
-        <View style={styles.filterRow}>
-          <Text variant="bodyMedium" style={styles.filterLabel}>カテゴリ:</Text>
-          <Chip
-            selected={selectedMainCategory === null}
-            onPress={() => handleMainCategorySelect(null)}
-            style={[styles.filterChip, selectedMainCategory === null && styles.selectedChip]}
-          >
-            すべて
-          </Chip>
-          {mainCategories.map((category) => (
-            <Chip
-              key={category}
-              selected={selectedMainCategory === category}
-              onPress={() => handleMainCategorySelect(category)}
-              style={[
-                styles.filterChip,
-                selectedMainCategory === category && styles.selectedChip
-              ]}
+      {/* カテゴリフィルター */}
+      {!searchQuery && (
+        <View style={styles.categorySection}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScrollContent}>
+            <TouchableOpacity
+              style={[styles.categoryFilterButton, selectedMainCategory === null && styles.categoryFilterButtonActive]}
+              onPress={() => handleMainCategorySelect(null)}
             >
-              {category}
-            </Chip>
-          ))}
-        </View>
-      </ScrollView>
-
-      {/* サブカテゴリフィルター */}
-      {selectedMainCategory && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterSection}>
-          <View style={styles.filterRow}>
-            <Text variant="bodyMedium" style={styles.filterLabel}>詳細:</Text>
-            <Chip
-              selected={selectedSubCategory === null}
-              onPress={() => setSelectedSubCategory(null)}
-              style={[styles.filterChip, selectedSubCategory === null && styles.selectedChip]}
-            >
-              すべて
-            </Chip>
-            {getSubCategories(selectedMainCategory).map((category) => (
-              <Chip
+              <Text style={[styles.categoryFilterText, selectedMainCategory === null && styles.categoryFilterTextActive]}>
+                すべて
+              </Text>
+            </TouchableOpacity>
+            {mainCategories.map((category) => (
+              <TouchableOpacity
                 key={category}
-                selected={selectedSubCategory === category}
-                onPress={() => setSelectedSubCategory(category)}
-                style={[
-                  styles.filterChip,
-                  selectedSubCategory === category && styles.selectedChip
-                ]}
+                style={[styles.categoryFilterButton, selectedMainCategory === category && styles.categoryFilterButtonActive]}
+                onPress={() => handleMainCategorySelect(category)}
               >
-                {category}
-              </Chip>
+                <Text style={[styles.categoryFilterText, selectedMainCategory === category && styles.categoryFilterTextActive]}>
+                  {category}
+                </Text>
+              </TouchableOpacity>
             ))}
-          </View>
-        </ScrollView>
+          </ScrollView>
+        </View>
       )}
 
-      {/* ストーリー一覧 */}
+      {/* ストーリータイムライン */}
       <FlatList
         data={displayStories}
         renderItem={renderStoryItem}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContainer}
+        style={styles.timeline}
+        contentContainerStyle={styles.timelineContent}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl 
+            refreshing={refreshing} 
+            onRefresh={onRefresh}
+            colors={['#1DA1F2']}
+            tintColor="#1DA1F2"
+          />
         }
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
         ListEmptyComponent={
           !isLoading ? (
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyIcon}>
-                {searchQuery || selectedMainCategory || selectedSubCategory ? '🔍' : '📖'}
+                {searchQuery || selectedMainCategory || selectedSubCategory ? '🔍' : '📱'}
               </Text>
-              <Text variant="headlineSmall" style={styles.emptyTitle}>
+              <Text style={styles.emptyTitle}>
                 {searchQuery || selectedMainCategory || selectedSubCategory 
                   ? '該当する失敗談が見つかりませんでした' 
-                  : '失敗談を探索してみましょう'
+                  : '最初の失敗談を投稿してみましょう'
                 }
               </Text>
-              <Text variant="bodyLarge" style={styles.emptyText}>
+              <Text style={styles.emptyText}>
                 {searchQuery || selectedMainCategory || selectedSubCategory
-                  ? '検索条件を変更して再度お試しください'
-                  : 'まだ投稿がないようですが、'
+                  ? '検索条件を変更してお試しください'
+                  : 'あなたの経験が誰かの学びになります'
                 }
               </Text>
-              {!(searchQuery || selectedMainCategory || selectedSubCategory) && (
-                <>
-                  <Text variant="bodyMedium" style={styles.emptySubtext}>
-                    あなたの最初の失敗談を投稿して、{'\n'}
-                    他の人の学びに貢献してみませんか？
-                  </Text>
-                  <View style={styles.emptyHints}>
-                    <Text variant="bodyMedium" style={styles.hintTitle}>
-                      💡 ヒント
-                    </Text>
-                    <Text variant="bodySmall" style={styles.hintText}>
-                      • 小さな失敗でも大丈夫です{'\n'}
-                      • 構造化されたテンプレートで簡単投稿{'\n'}
-                      • 完全匿名なので安心して共有できます
-                    </Text>
-                  </View>
-                </>
-              )}
             </View>
           ) : null
         }
       />
 
-      <FAB
-        icon="plus"
-        style={styles.fab}
-        onPress={() => {
-          navigation?.navigate('CreateStory');
-        }}
-      />
+      {/* モダンFAB */}
+      <LinearGradient
+        colors={['#1DA1F2', '#1991DB']}
+        style={styles.modernFab}
+      >
+        <TouchableOpacity 
+          style={styles.fabButton}
+          onPress={() => navigation?.navigate('CreateStory')}
+        >
+          <IconButton icon="plus" size={24} iconColor="#FFFFFF" />
+        </TouchableOpacity>
+      </LinearGradient>
     </View>
   );
 };
@@ -304,122 +365,262 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#F8FAFC',
   },
-  userHeader: {
+  modernHeader: {
+    paddingTop: 50,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+    borderBottomLeftRadius: 25,
+    borderBottomRightRadius: 25,
+  },
+  headerContent: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
   },
-  userInfo: {
-    marginLeft: 12,
+  headerLeft: {
     flex: 1,
   },
-  userStats: {
-    color: '#666',
-    marginTop: 2,
+  modernHeaderTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
+    marginBottom: 2,
   },
-  searchbar: {
-    margin: 16,
-    marginBottom: 8,
+  headerSubtitle: {
+    fontSize: 12,
+    color: '#FFFFFF',
+    opacity: 0.9,
   },
-  filterSection: {
+  headerAvatar: {
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+  searchSection: {
     paddingHorizontal: 16,
-    marginBottom: 8,
+    paddingVertical: 16,
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: 16,
+    marginTop: -10,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  modernSearchbar: {
+    elevation: 0,
+    backgroundColor: '#F1F5F9',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  searchInput: {
+    fontSize: 14,
+    color: '#334155',
+  },
+  activeFilters: {
+    marginTop: 12,
   },
   filterRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 4,
+    paddingHorizontal: 4,
   },
-  filterLabel: {
+  activeFilterChip: {
     marginRight: 8,
-    color: '#666',
-    minWidth: 60,
+    backgroundColor: '#1DA1F2',
   },
-  filterChip: {
-    marginRight: 8,
-    height: 32,
+  activeFilterText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '500',
   },
-  selectedChip: {
-    backgroundColor: '#e3f2fd',
+  categorySection: {
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: 16,
+    marginTop: 12,
+    borderRadius: 12,
+    paddingVertical: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  listContainer: {
+  categoryScrollContent: {
     paddingHorizontal: 16,
-    paddingBottom: 80,
+  },
+  categoryFilterButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    marginRight: 8,
+    borderRadius: 20,
+    backgroundColor: '#F1F5F9',
+  },
+  categoryFilterButtonActive: {
+    backgroundColor: '#1DA1F2',
+  },
+  categoryFilterText: {
+    fontSize: 14,
+    color: '#64748B',
+    fontWeight: '500',
+  },
+  categoryFilterTextActive: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  timeline: {
+    flex: 1,
+    paddingTop: 16,
+  },
+  timelineContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 100,
   },
   storyCard: {
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    overflow: 'hidden',
+  },
+  cardContent: {
+    padding: 16,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  avatar: {
+    marginRight: 12,
+  },
+  userDetails: {
+    flex: 1,
+  },
+  userInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  userName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1E293B',
+  },
+  timeAgo: {
+    fontSize: 14,
+    color: '#8E9AAF',
+    marginLeft: 4,
+  },
+  categoryContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+  },
+  categoryChip: {
+    marginRight: 6,
+    marginBottom: 2,
+    height: 26,
+    borderRadius: 13,
+  },
+  categoryText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  emotionChip: {
+    marginRight: 6,
+    marginBottom: 2,
+    height: 26,
+    borderRadius: 13,
+  },
+  emotionText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  mainContent: {
     marginBottom: 16,
   },
-  chipContainer: {
-    flexDirection: 'row',
-    marginTop: 8,
+  storyTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1E293B',
+    lineHeight: 24,
     marginBottom: 8,
   },
-  chip: {
-    marginRight: 8,
-    height: 28,
+  storyPreview: {
+    fontSize: 15,
+    color: '#475569',
+    lineHeight: 22,
   },
-  chipText: {
-    fontSize: 12,
-    color: '#fff',
-    fontWeight: 'bold',
+  cardActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
   },
-  metadata: {
-    marginTop: 8,
+  actionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  actionIcon: {
+    margin: 0,
+  },
+  actionText: {
+    fontSize: 13,
+    color: '#8E9AAF',
+    fontWeight: '500',
+    marginLeft: -6,
+  },
+  separator: {
+    height: 12,
   },
   emptyContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: 60,
+    paddingTop: 80,
     paddingHorizontal: 32,
   },
   emptyIcon: {
     fontSize: 64,
-    marginBottom: 24,
+    marginBottom: 16,
   },
   emptyTitle: {
+    fontSize: 20,
+    fontWeight: '700',
     textAlign: 'center',
-    marginBottom: 16,
-    fontWeight: 'bold',
-    color: '#333',
+    marginBottom: 8,
+    color: '#1E293B',
   },
   emptyText: {
+    fontSize: 16,
     textAlign: 'center',
-    marginBottom: 8,
-    color: '#666',
+    color: '#64748B',
+    lineHeight: 24,
   },
-  emptySubtext: {
-    textAlign: 'center',
-    marginBottom: 32,
-    color: '#666',
-    lineHeight: 20,
-  },
-  emptyHints: {
-    backgroundColor: '#f8f9fa',
-    padding: 16,
-    borderRadius: 12,
-    width: '100%',
-    maxWidth: 300,
-  },
-  hintTitle: {
-    fontWeight: 'bold',
-    marginBottom: 8,
-    color: '#333',
-  },
-  hintText: {
-    color: '#666',
-    lineHeight: 18,
-  },
-  fab: {
+  modernFab: {
     position: 'absolute',
-    margin: 16,
-    right: 0,
-    bottom: 0,
+    bottom: 24,
+    right: 24,
+    borderRadius: 28,
+    shadowColor: '#1DA1F2',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  fabButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 

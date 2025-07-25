@@ -1,600 +1,525 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, Alert, Platform } from 'react-native';
-import { Text, Card, Button, Avatar, Divider, TextInput, Dialog, Portal, IconButton } from 'react-native-paper';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { useAuthStore } from '../stores/authStore';
-import { updateDisplayName, updateAvatar, generateNewNickname } from '../services/authService';
+import React, { useState, useEffect } from 'react';
+import { ScrollView, View, StyleSheet, Alert, TouchableOpacity, StatusBar } from 'react-native';
+import { 
+  Text, 
+  Avatar, 
+  Button, 
+  Chip,
+  IconButton,
+  Surface,
+  Divider,
+  Switch
+} from 'react-native-paper';
+import { LinearGradient } from 'expo-linear-gradient';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { FailureStory } from '../types';
 import { storyService } from '../services/storyService';
-import { RootStackParamList } from '../types';
-
-type ProfileScreenNavigationProp = StackNavigationProp<RootStackParamList>;
+import { useAuthStore } from '../stores/authStore';
+import { useStoryStore } from '../stores/storyStore';
 
 interface ProfileScreenProps {
-  navigation?: ProfileScreenNavigationProp;
+  navigation: any;
 }
 
 const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
-  const { user, signOut, isLoading, setUser } = useAuthStore();
-  
-  // デバッグ: 現在の状態をログ出力
-  console.log('🎭 ProfileScreen レンダリング - isLoading:', isLoading, 'user:', user ? user.id : 'null');
-  
-  const [nicknameDialogVisible, setNicknameDialogVisible] = useState(false);
-  const [avatarDialogVisible, setAvatarDialogVisible] = useState(false);
-  const [newNickname, setNewNickname] = useState('');
-  const [updating, setUpdating] = useState(false);
-  const [debugLoading, setDebugLoading] = useState(false);
+  const { user, signOut } = useAuthStore();
+  const { stories } = useStoryStore();
+  const [userStories, setUserStories] = useState<FailureStory[]>([]);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [privateMode, setPrivateMode] = useState(false);
 
-  const handleSignOut = async () => {
-    console.log('🔧 handleSignOut関数が呼ばれました！');
-    
-    const performSignOut = async () => {
-      try {
-        console.log('🚪 サインアウト開始...');
-        await signOut();
-        console.log('✅ サインアウト完了');
-      } catch (error) {
-        console.error('❌ サインアウトエラー:', error);
-        const errorMessage = `サインアウトに失敗しました:\n${error instanceof Error ? error.message : 'Unknown error'}\n\nコンソールログを確認してください。`;
-        
-        if (Platform.OS === 'web') {
-          window.alert(errorMessage);
-        } else {
-          Alert.alert('サインアウトエラー', errorMessage, [{ text: 'OK' }]);
+  useEffect(() => {
+    if (user) {
+      const filtered = stories.filter(story => story.authorId === user.id);
+      setUserStories(filtered);
+    }
+  }, [user, stories]);
+
+    const handleLogout = () => {
+    Alert.alert(
+      'ログアウト',
+      'ログアウトしますか？',
+      [
+        { text: 'キャンセル', style: 'cancel' },
+        { 
+          text: 'ログアウト', 
+          style: 'destructive',
+          onPress: () => {
+            signOut();
+            Alert.alert('完了', 'ログアウトしました');
+          }
         }
-      }
+      ]
+    );
+  };
+
+  const handleEditProfile = () => {
+    Alert.alert('プロフィール編集', 'この機能は開発中です');
+  };
+
+  const handleSupport = () => {
+    Alert.alert('サポート', 'この機能は開発中です');
+  };
+
+  const handlePrivacy = () => {
+    Alert.alert('プライバシー', 'この機能は開発中です');
+  };
+
+  const handleTerms = () => {
+    Alert.alert('利用規約', 'この機能は開発中です');
+  };
+
+  const getJoinedDays = () => {
+    if (!user) return 0;
+    const now = new Date();
+    const joined = new Date(user.joinedAt || now);
+    const diffTime = Math.abs(now.getTime() - joined.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
+
+  const getTotalStats = () => {
+    return {
+      totalViews: userStories.reduce((sum, story) => sum + story.metadata.viewCount, 0),
+      totalLikes: userStories.reduce((sum, story) => sum + story.metadata.helpfulCount, 0),
+      totalComments: userStories.reduce((sum, story) => sum + story.metadata.commentCount, 0),
     };
-
-    // Web環境とネイティブ環境で異なる確認ダイアログを表示
-    if (Platform.OS === 'web') {
-      const confirmed = window.confirm(
-        '匿名ユーザーではサインアウト後に同じアカウントで再ログインできません。\n\n投稿した失敗談やプロフィール情報は完全に削除されます。\n\n本当にサインアウトしますか？'
-      );
-      
-      if (confirmed) {
-        await performSignOut();
-      }
-    } else {
-      Alert.alert(
-        'サインアウト確認',
-        '匿名ユーザーではサインアウト後に同じアカウントで再ログインできません。\n\n投稿した失敗談やプロフィール情報は完全に削除されます。\n\n本当にサインアウトしますか？',
-        [
-          {
-            text: 'キャンセル',
-            style: 'cancel',
-          },
-          {
-            text: 'サインアウト',
-            style: 'destructive',
-            onPress: performSignOut,
-          },
-        ]
-      );
-    }
   };
 
-  const handleNicknameEdit = () => {
-    setNewNickname(user?.displayName || '');
-    setNicknameDialogVisible(true);
-  };
+  const stats = getTotalStats();
 
-  const handleNicknameUpdate = async () => {
-    if (!user) return;
+  const menuItems = [
+    {
+      title: 'マイ投稿',
+      subtitle: `${userStories.length}件の投稿`,
+      icon: 'file-document-outline',
+      onPress: () => navigation?.navigate('MyStories'),
+      showBadge: userStories.length > 0,
+    },
+    {
+      title: 'プロフィール編集',
+      subtitle: 'アバターと表示名を変更',
+      icon: 'account-edit-outline',
+      onPress: handleEditProfile,
+    },
+    {
+      title: '通知設定',
+      subtitle: 'プッシュ通知とメール設定',
+      icon: 'bell-outline',
+      rightElement: (
+        <Switch
+          value={notificationsEnabled}
+          onValueChange={setNotificationsEnabled}
+          color="#1DA1F2"
+        />
+      ),
+    },
+    {
+      title: 'プライベートモード',
+      subtitle: '投稿を非公開にする',
+      icon: 'eye-off-outline',
+      rightElement: (
+        <Switch
+          value={privateMode}
+          onValueChange={setPrivateMode}
+          color="#1DA1F2"
+        />
+      ),
+    },
+  ];
 
-    setUpdating(true);
-    try {
-      const updatedUser = await updateDisplayName(user.id, newNickname);
-      if (updatedUser) {
-        setUser(updatedUser);
-        setNicknameDialogVisible(false);
-        Alert.alert('完了', 'ニックネームを更新しました');
-      }
-    } catch (error) {
-      console.error('ニックネーム更新エラー:', error);
-      Alert.alert('エラー', error instanceof Error ? error.message : 'ニックネームの更新に失敗しました');
-    } finally {
-      setUpdating(false);
-    }
-  };
-
-  const handleGenerateNewNickname = () => {
-    const newName = generateNewNickname();
-    setNewNickname(newName);
-  };
-
-  const handleAvatarChange = async (avatarNumber: number) => {
-    if (!user) return;
-
-    setUpdating(true);
-    try {
-      const newAvatar = `avatar_${avatarNumber}.png`;
-      const updatedUser = await updateAvatar(user.id, newAvatar);
-      if (updatedUser) {
-        setUser(updatedUser);
-        setAvatarDialogVisible(false);
-        Alert.alert('完了', 'アバターを更新しました');
-      }
-    } catch (error) {
-      console.error('アバター更新エラー:', error);
-      Alert.alert('エラー', error instanceof Error ? error.message : 'アバターの更新に失敗しました');
-    } finally {
-      setUpdating(false);
-    }
-  };
-
-  const handleCleanupUsers = async () => {
-    Alert.alert(
-      '重複ユーザークリーンアップ',
-      '重複している匿名ユーザーを削除しますか？\n\n※この操作は元に戻せません',
-      [
-        { text: 'キャンセル', style: 'cancel' },
-        {
-          text: '実行',
-          style: 'destructive',
-          onPress: async () => {
-            setDebugLoading(true);
-            try {
-              const { cleanupDuplicates } = useAuthStore.getState();
-              const result = await cleanupDuplicates();
-              Alert.alert('完了', `${result.cleaned}個のユーザーを削除しました\n（全体: ${result.total}）`);
-            } catch (error) {
-              Alert.alert('エラー', error instanceof Error ? error.message : 'クリーンアップに失敗しました');
-            } finally {
-              setDebugLoading(false);
-            }
-          }
-        }
-      ]
-    );
-  };
-
-  const handleShowStats = async () => {
-    setDebugLoading(true);
-    try {
-      const { showStats } = useAuthStore.getState();
-      await showStats();
-      Alert.alert('統計情報', 'コンソールログを確認してください');
-    } catch (error) {
-      Alert.alert('エラー', error instanceof Error ? error.message : '統計取得に失敗しました');
-    } finally {
-      setDebugLoading(false);
-    }
-  };
-
-  const handleCleanupSampleData = async () => {
-    Alert.alert(
-      'サンプルデータクリーンアップ',
-      '重複しているサンプルデータを削除しますか？\n\n※この操作は元に戻せません',
-      [
-        { text: 'キャンセル', style: 'cancel' },
-        {
-          text: '実行',
-          style: 'destructive',
-          onPress: async () => {
-            setDebugLoading(true);
-            try {
-              await storyService.resetSampleData();
-              Alert.alert('完了', 'サンプルデータをリセットしました');
-            } catch (error) {
-              Alert.alert('エラー', error instanceof Error ? error.message : 'クリーンアップに失敗しました');
-            } finally {
-              setDebugLoading(false);
-            }
-          }
-        }
-      ]
-    );
-  };
-
-  if (!user) {
-    return (
-      <View style={styles.container}>
-        <Text>ユーザー情報を読み込めません</Text>
-      </View>
-    );
-  }
+  const supportItems = [
+    {
+      title: 'ヘルプ・サポート',
+      subtitle: 'よくある質問とお問い合わせ',
+      icon: 'help-circle-outline',
+      onPress: handleSupport,
+    },
+    {
+      title: 'プライバシーポリシー',
+      subtitle: '個人情報の取り扱いについて',
+      icon: 'shield-account-outline',
+      onPress: handlePrivacy,
+    },
+    {
+      title: '利用規約',
+      subtitle: 'サービス利用時の規約',
+      icon: 'file-document-outline',
+      onPress: handleTerms,
+    },
+  ];
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.content}>
-        {/* プロフィール情報 */}
-        <Card style={styles.profileCard}>
-          <Card.Content>
-            <View style={styles.profileHeader}>
-              <View style={styles.avatarContainer}>
-                <Avatar.Image 
-                  size={80} 
-                  source={{ uri: `https://robohash.org/${user.displayName}?set=set4` }}
-                />
-                <IconButton
-                  icon="pencil"
-                  size={20}
-                  style={styles.editAvatarButton}
-                  onPress={() => setAvatarDialogVisible(true)}
-                />
-              </View>
-              <View style={styles.profileInfo}>
-                <View style={styles.nicknameContainer}>
-                  <Text variant="headlineSmall" style={styles.displayName}>
-                    {user.displayName}
-                  </Text>
-                  <IconButton
-                    icon="pencil"
-                    size={20}
-                    style={styles.editNicknameButton}
-                    onPress={handleNicknameEdit}
-                  />
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#1DA1F2" />
+      
+      {/* モダンヘッダー */}
+      <LinearGradient
+        colors={['#1DA1F2', '#1991DB']}
+        style={styles.modernHeader}
+      >
+        <View style={styles.headerContent}>
+          <Text style={styles.modernHeaderTitle}>プロフィール</Text>
+                     <TouchableOpacity onPress={() => signOut()}>
+            <IconButton icon="logout" size={24} iconColor="#FFFFFF" />
+          </TouchableOpacity>
+        </View>
+      </LinearGradient>
+
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {/* ユーザー情報カード */}
+        <Surface style={styles.userCard} elevation={3}>
+          <LinearGradient
+            colors={['#FFFFFF', '#F8FAFC']}
+            style={styles.userCardGradient}
+          >
+            <View style={styles.userHeader}>
+              <Avatar.Image 
+                size={80} 
+                source={{ uri: `https://robohash.org/${user?.displayName}?set=set4` }}
+                style={styles.userAvatar}
+              />
+              <View style={styles.userInfo}>
+                <Text style={styles.displayName}>{user?.displayName || '匿名ユーザー'}</Text>
+                                 <Text style={styles.userEmail}>匿名アカウント</Text>
+                <View style={styles.joinedInfo}>
+                  <IconButton icon="calendar-outline" size={16} iconColor="#8E9AAF" style={styles.joinedIcon} />
+                  <Text style={styles.joinedText}>{getJoinedDays()}日前に参加</Text>
                 </View>
-                <Text variant="bodyMedium" style={styles.joinDate}>
-                  {user.joinedAt instanceof Date ? user.joinedAt.toLocaleDateString('ja-JP') : '不明'} から参加
-                </Text>
               </View>
             </View>
-          </Card.Content>
-        </Card>
 
-        {/* 統計情報 */}
-        <Card style={styles.statsCard}>
-          <Card.Content>
-            <Text variant="titleMedium" style={styles.statsTitle}>
-              あなたの活動
-            </Text>
-            <View style={styles.statsGrid}>
+            {/* 統計情報 */}
+            <View style={styles.statsContainer}>
               <View style={styles.statItem}>
-                <Text variant="headlineSmall" style={styles.statNumber}>
-                  {user.stats.totalPosts}
-                </Text>
-                <Text variant="bodySmall" style={styles.statLabel}>
-                  投稿数
-                </Text>
+                <Text style={styles.statNumber}>{userStories.length}</Text>
+                <Text style={styles.statLabel}>投稿</Text>
               </View>
+              <View style={styles.statDivider} />
               <View style={styles.statItem}>
-                <Text variant="headlineSmall" style={styles.statNumber}>
-                  {user.stats.totalComments}
-                </Text>
-                <Text variant="bodySmall" style={styles.statLabel}>
-                  コメント数
-                </Text>
+                <Text style={styles.statNumber}>{stats.totalViews}</Text>
+                <Text style={styles.statLabel}>閲覧</Text>
               </View>
+              <View style={styles.statDivider} />
               <View style={styles.statItem}>
-                <Text variant="headlineSmall" style={styles.statNumber}>
-                  {user.stats.helpfulVotes}
-                </Text>
-                <Text variant="bodySmall" style={styles.statLabel}>
-                  役立った数
-                </Text>
+                <Text style={styles.statNumber}>{stats.totalLikes}</Text>
+                <Text style={styles.statLabel}>いいね</Text>
               </View>
+              <View style={styles.statDivider} />
               <View style={styles.statItem}>
-                <Text variant="headlineSmall" style={styles.statNumber}>
-                  {user.stats.learningPoints}
-                </Text>
-                <Text variant="bodySmall" style={styles.statLabel}>
-                  学習ポイント
-                </Text>
+                <Text style={styles.statNumber}>{stats.totalComments}</Text>
+                <Text style={styles.statLabel}>コメント</Text>
               </View>
             </View>
-          </Card.Content>
-        </Card>
 
-        {/* 設定セクション */}
-        <Card style={styles.settingsCard}>
-          <Card.Content>
-            <Text variant="titleMedium" style={styles.settingsTitle}>
-              設定
-            </Text>
-            <View style={styles.settingItem}>
-              <Text variant="bodyMedium">匿名モード</Text>
-              <Text variant="bodySmall" style={styles.settingDescription}>
-                常に匿名で投稿・コメントします
-              </Text>
+            {/* アクションボタン */}
+            <View style={styles.actionRow}>
+              <Button
+                mode="contained"
+                onPress={() => navigation?.navigate('CreateStory')}
+                style={styles.createButton}
+                labelStyle={styles.createButtonText}
+                icon="plus"
+              >
+                投稿する
+              </Button>
+              <Button
+                mode="outlined"
+                onPress={() => navigation?.navigate('MyStories')}
+                style={styles.viewButton}
+                labelStyle={styles.viewButtonText}
+              >
+                投稿を見る
+              </Button>
             </View>
-            <Divider style={styles.divider} />
-            <View style={styles.settingItem}>
-              <Text variant="bodyMedium">プライバシー</Text>
-              <Text variant="bodySmall" style={styles.settingDescription}>
-                個人情報は一切収集されません
-              </Text>
-            </View>
-          </Card.Content>
-        </Card>
+          </LinearGradient>
+        </Surface>
 
-        {/* 開発者デバッグツール (Development環境のみ) */}
-        {(__DEV__ || process.env.NODE_ENV === 'development') && (
-          <Card style={styles.debugCard}>
-            <Card.Content>
-              <Text variant="titleMedium" style={styles.debugTitle}>
-                🛠️ 開発者ツール
-              </Text>
-              <Text variant="bodySmall" style={styles.debugDescription}>
-                ※ Development環境でのみ表示されます
-              </Text>
-              <Divider style={styles.divider} />
-              
-              <View style={styles.debugButtonRow}>
-                <Button
-                  mode="outlined"
-                  onPress={handleShowStats}
-                  loading={debugLoading}
-                  disabled={debugLoading}
-                  style={styles.debugButton}
-                  compact
-                >
-                  📊 統計表示
-                </Button>
-                <Button
-                  mode="outlined"
-                  onPress={handleCleanupUsers}
-                  loading={debugLoading}
-                  disabled={debugLoading}
-                  style={styles.debugButton}
-                  compact
-                >
-                  🧹 重複ユーザー削除
-                </Button>
-              </View>
-              
-              <View style={styles.debugButtonRow}>
-                <Button
-                  mode="outlined"
-                  onPress={handleCleanupSampleData}
-                  loading={debugLoading}
-                  disabled={debugLoading}
-                  style={styles.debugButton}
-                  compact
-                >
-                  🗑️ サンプルデータ削除
-                </Button>
-              </View>
-            </Card.Content>
-          </Card>
-        )}
-
-        {/* アクションボタン */}
-        <View style={styles.actionButtons}>
-          <Button
-            mode="contained"
-            onPress={() => navigation?.navigate('MyStories')}
-            style={styles.myStoriesButton}
-            icon="folder"
-          >
-            マイ投稿
-          </Button>
-          <Button
-            mode="outlined"
-            onPress={() => {
-              console.log('🖱️ サインアウトボタンがクリックされました');
-              console.log('📊 現在のisLoading状態:', isLoading);
-              console.log('📊 現在のuser状態:', user ? user.id : 'null');
-              handleSignOut();
-            }}
-            loading={isLoading}
-            disabled={isLoading}
-            style={styles.signOutButton}
-          >
-            サインアウト
-          </Button>
+        {/* メニューセクション */}
+        <View style={styles.menuSection}>
+          <Text style={styles.sectionTitle}>アカウント</Text>
+          {menuItems.map((item, index) => (
+            <Surface key={index} style={styles.menuCard} elevation={1}>
+              <TouchableOpacity 
+                style={styles.menuItem}
+                onPress={item.onPress}
+                disabled={!item.onPress}
+              >
+                <View style={styles.menuItemLeft}>
+                  <View style={styles.menuIcon}>
+                    <IconButton icon={item.icon} size={24} iconColor="#1DA1F2" />
+                  </View>
+                  <View style={styles.menuTextContainer}>
+                    <View style={styles.menuTitleRow}>
+                      <Text style={styles.menuTitle}>{item.title}</Text>
+                      {item.showBadge && (
+                        <View style={styles.badge}>
+                          <Text style={styles.badgeText}>{userStories.length}</Text>
+                        </View>
+                      )}
+                    </View>
+                    <Text style={styles.menuSubtitle}>{item.subtitle}</Text>
+                  </View>
+                </View>
+                <View style={styles.menuItemRight}>
+                  {item.rightElement || (
+                    <IconButton icon="chevron-right" size={20} iconColor="#8E9AAF" />
+                  )}
+                </View>
+              </TouchableOpacity>
+            </Surface>
+          ))}
         </View>
 
-        {/* フッター */}
-        <View style={styles.footer}>
-          <Text variant="bodySmall" style={styles.footerText}>
-            FailShare v1.0.0
-          </Text>
-          <Text variant="bodySmall" style={styles.footerText}>
-            失敗を成長の糧に変える
-          </Text>
+        {/* サポートセクション */}
+        <View style={styles.menuSection}>
+          <Text style={styles.sectionTitle}>サポート</Text>
+          {supportItems.map((item, index) => (
+            <Surface key={index} style={styles.menuCard} elevation={1}>
+              <TouchableOpacity 
+                style={styles.menuItem}
+                onPress={item.onPress}
+              >
+                <View style={styles.menuItemLeft}>
+                  <View style={styles.menuIcon}>
+                    <IconButton icon={item.icon} size={24} iconColor="#8E9AAF" />
+                  </View>
+                  <View style={styles.menuTextContainer}>
+                    <Text style={styles.menuTitle}>{item.title}</Text>
+                    <Text style={styles.menuSubtitle}>{item.subtitle}</Text>
+                  </View>
+                </View>
+                <IconButton icon="chevron-right" size={20} iconColor="#8E9AAF" />
+              </TouchableOpacity>
+            </Surface>
+          ))}
         </View>
-      </View>
 
-      {/* ニックネーム編集ダイアログ */}
-      <Portal>
-        <Dialog visible={nicknameDialogVisible} onDismiss={() => setNicknameDialogVisible(false)}>
-          <Dialog.Title>ニックネーム変更</Dialog.Title>
-          <Dialog.Content>
-            <TextInput
-              label="新しいニックネーム"
-              value={newNickname}
-              onChangeText={setNewNickname}
-              maxLength={20}
-              style={styles.dialogInput}
-            />
-            <Button
-              mode="outlined"
-              onPress={handleGenerateNewNickname}
-              style={styles.generateButton}
-            >
-              ランダム生成
-            </Button>
-          </Dialog.Content>
-          <Dialog.Actions>
-            <Button onPress={() => setNicknameDialogVisible(false)}>
-              キャンセル
-            </Button>
-            <Button
-              onPress={handleNicknameUpdate}
-              loading={updating}
-              disabled={updating || !newNickname.trim()}
-            >
-              更新
-            </Button>
-          </Dialog.Actions>
-        </Dialog>
+        {/* ログアウトボタン */}
+        <Surface style={styles.logoutCard} elevation={1}>
+                     <TouchableOpacity style={styles.logoutButton} onPress={() => signOut()}>
+            <IconButton icon="logout" size={24} iconColor="#EF4444" />
+            <Text style={styles.logoutText}>ログアウト</Text>
+          </TouchableOpacity>
+        </Surface>
 
-        {/* アバター選択ダイアログ */}
-        <Dialog visible={avatarDialogVisible} onDismiss={() => setAvatarDialogVisible(false)}>
-          <Dialog.Title>アバター変更</Dialog.Title>
-          <Dialog.Content>
-            <View style={styles.avatarGrid}>
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((number) => (
-                <Button
-                  key={number}
-                  mode="outlined"
-                  onPress={() => handleAvatarChange(number)}
-                  style={styles.avatarOption}
-                  disabled={updating}
-                >
-                  <Avatar.Image
-                    size={40}
-                    source={{ uri: `https://robohash.org/avatar_${number}?set=set4` }}
-                  />
-                </Button>
-              ))}
-            </View>
-          </Dialog.Content>
-          <Dialog.Actions>
-            <Button onPress={() => setAvatarDialogVisible(false)}>
-              キャンセル
-            </Button>
-          </Dialog.Actions>
-        </Dialog>
-      </Portal>
-    </ScrollView>
+        <View style={styles.bottomSpace} />
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#F8FAFC',
+  },
+  modernHeader: {
+    paddingTop: 50,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+    borderBottomLeftRadius: 25,
+    borderBottomRightRadius: 25,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  modernHeaderTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
   },
   content: {
-    padding: 16,
-  },
-  profileCard: {
-    marginBottom: 16,
-  },
-  profileHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  avatarContainer: {
-    position: 'relative',
-  },
-  editAvatarButton: {
-    position: 'absolute',
-    top: -5,
-    right: -5,
-    backgroundColor: '#6200EE',
-  },
-  profileInfo: {
-    marginLeft: 16,
     flex: 1,
   },
-  nicknameContainer: {
+  userCard: {
+    margin: 16,
+    marginTop: -10,
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  userCardGradient: {
+    padding: 24,
+  },
+  userHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 24,
+  },
+  userAvatar: {
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  userInfo: {
+    marginLeft: 20,
+    flex: 1,
   },
   displayName: {
+    fontSize: 24,
     fontWeight: 'bold',
+    color: '#1E293B',
     marginBottom: 4,
-    flex: 1,
   },
-  editNicknameButton: {
-    marginLeft: 4,
+  userEmail: {
+    fontSize: 16,
+    color: '#64748B',
+    marginBottom: 8,
   },
-  joinDate: {
-    color: '#666',
-  },
-  statsCard: {
-    marginBottom: 16,
-  },
-  statsTitle: {
-    marginBottom: 16,
-  },
-  statsGrid: {
+  joinedInfo: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-around',
+    alignItems: 'center',
+  },
+  joinedIcon: {
+    margin: 0,
+  },
+  joinedText: {
+    fontSize: 14,
+    color: '#8E9AAF',
+    marginLeft: -6,
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 20,
   },
   statItem: {
+    flex: 1,
     alignItems: 'center',
-    marginBottom: 16,
-    width: '25%',
   },
   statNumber: {
+    fontSize: 20,
     fontWeight: 'bold',
-    color: '#6200EE',
-  },
-  statLabel: {
-    color: '#666',
-    marginTop: 4,
-  },
-  settingsCard: {
-    marginBottom: 16,
-  },
-  settingsTitle: {
-    marginBottom: 16,
-  },
-  settingItem: {
-    marginBottom: 8,
-  },
-  settingDescription: {
-    color: '#666',
-    marginTop: 4,
-  },
-  divider: {
-    marginVertical: 16,
-  },
-  actionButtons: {
-    marginBottom: 32,
-  },
-  myStoriesButton: {
-    marginBottom: 16,
-  },
-  signOutButton: {
-    marginBottom: 16,
-  },
-  footer: {
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  footerText: {
-    color: '#888',
+    color: '#1E293B',
     marginBottom: 4,
   },
-  dialogInput: {
-    marginBottom: 16,
+  statLabel: {
+    fontSize: 12,
+    color: '#8E9AAF',
+    fontWeight: '500',
   },
-  generateButton: {
-    marginBottom: 16,
+  statDivider: {
+    width: 1,
+    height: 32,
+    backgroundColor: '#E2E8F0',
+    marginHorizontal: 8,
   },
-  avatarGrid: {
+  actionRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     justifyContent: 'space-between',
-    gap: 8,
   },
-  avatarOption: {
-    width: '18%',
+  createButton: {
+    flex: 1,
+    marginRight: 8,
+    backgroundColor: '#1DA1F2',
+    borderRadius: 12,
+  },
+  createButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  viewButton: {
+    flex: 1,
+    marginLeft: 8,
+    borderColor: '#1DA1F2',
+    borderRadius: 12,
+  },
+  viewButtonText: {
+    color: '#1DA1F2',
+    fontWeight: '600',
+  },
+  menuSection: {
+    paddingHorizontal: 16,
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1E293B',
+    marginBottom: 12,
+    marginLeft: 4,
+  },
+  menuCard: {
     marginBottom: 8,
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
   },
-  // デバッグツール用スタイル
-  debugCard: {
-    marginBottom: 16,
-    backgroundColor: '#fff3cd',
-    borderLeftWidth: 4,
-    borderLeftColor: '#ffc107',
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
   },
-  debugTitle: {
-    marginBottom: 8,
-    color: '#856404',
+  menuItemLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  menuIcon: {
+    marginRight: 16,
+  },
+  menuTextContainer: {
+    flex: 1,
+  },
+  menuTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  menuTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1E293B',
+    marginBottom: 2,
+  },
+  badge: {
+    backgroundColor: '#1DA1F2',
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    marginLeft: 8,
+  },
+  badgeText: {
+    fontSize: 12,
+    color: '#FFFFFF',
     fontWeight: 'bold',
   },
-  debugDescription: {
-    color: '#856404',
-    fontStyle: 'italic',
-    marginBottom: 8,
+  menuSubtitle: {
+    fontSize: 14,
+    color: '#8E9AAF',
   },
-  debugButtonRow: {
+  menuItemRight: {
+    marginLeft: 12,
+  },
+  logoutCard: {
+    marginHorizontal: 16,
+    marginBottom: 16,
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+  },
+  logoutButton: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: 8,
-    gap: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
   },
-  debugButton: {
-    flex: 1,
-    backgroundColor: '#fff',
-    borderColor: '#ffc107',
+  logoutText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#EF4444',
+    marginLeft: 8,
+  },
+  bottomSpace: {
+    height: 40,
   },
 });
 

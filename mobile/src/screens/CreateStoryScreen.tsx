@@ -1,21 +1,22 @@
 import React, { useState } from 'react';
-import { ScrollView, View, StyleSheet, Alert } from 'react-native';
+import { ScrollView, View, StyleSheet, Alert, TouchableOpacity, StatusBar } from 'react-native';
 import { 
   Text, 
   TextInput, 
   Button, 
-  Card, 
-  Divider, 
-  SegmentedButtons,
   HelperText,
-  ActivityIndicator
+  Chip,
+  Avatar,
+  Surface,
+  IconButton
 } from 'react-native-paper';
+import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StoryCategory, EmotionType, FailureStory, MainCategory, SubCategory, CategoryHierarchy } from '../types';
 import { storyService } from '../services/storyService';
 import { useAuthStore } from '../stores/authStore';
 import { useStoryStore } from '../stores/storyStore';
-import { getMainCategories, getSubCategories, getCategoryHierarchyInfo } from '../utils/categories';
+import { getMainCategories, getSubCategories, getCategoryHierarchyColor } from '../utils/categories';
 
 interface CreateStoryScreenProps {
   navigation: any;
@@ -36,6 +37,7 @@ const CreateStoryScreen: React.FC<CreateStoryScreenProps> = ({ navigation }) => 
 
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [currentStep, setCurrentStep] = useState(1);
 
   const mainCategories = getMainCategories();
   const subCategories = formData.category.main ? getSubCategories(formData.category.main) : [];
@@ -45,7 +47,7 @@ const CreateStoryScreen: React.FC<CreateStoryScreenProps> = ({ navigation }) => 
     const newErrors: { [key: string]: string } = {};
     
     if (!formData.title.trim()) newErrors.title = 'タイトルは必須です';
-    if (!formData.category.main) newErrors.mainCategory = 'メインカテゴリーを選択してください';
+    if (!formData.category.main) newErrors.mainCategory = 'カテゴリーを選択してください';
     if (!formData.category.sub) newErrors.subCategory = 'サブカテゴリーを選択してください';
     if (!formData.situation.trim()) newErrors.situation = '状況の説明は必須です';
     if (!formData.action.trim()) newErrors.action = '行動の説明は必須です';
@@ -54,11 +56,11 @@ const CreateStoryScreen: React.FC<CreateStoryScreenProps> = ({ navigation }) => 
     if (!formData.emotion) newErrors.emotion = '感情を選択してください';
 
     // 文字数チェック
-    if (formData.title.length > 50) newErrors.title = 'タイトルは50文字以内で入力してください';
-    if (formData.situation.length > 500) newErrors.situation = '状況は500文字以内で入力してください';
-    if (formData.action.length > 500) newErrors.action = '行動は500文字以内で入力してください';
-    if (formData.result.length > 500) newErrors.result = '結果は500文字以内で入力してください';
-    if (formData.learning.length > 500) newErrors.learning = '学びは500文字以内で入力してください';
+    if (formData.title.length > 100) newErrors.title = 'タイトルは100文字以内で入力してください';
+    if (formData.situation.length > 280) newErrors.situation = '状況は280文字以内で入力してください';
+    if (formData.action.length > 280) newErrors.action = '行動は280文字以内で入力してください';
+    if (formData.result.length > 280) newErrors.result = '結果は280文字以内で入力してください';
+    if (formData.learning.length > 280) newErrors.learning = '学びは280文字以内で入力してください';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -85,7 +87,6 @@ const CreateStoryScreen: React.FC<CreateStoryScreenProps> = ({ navigation }) => 
 
       const storyId = await storyService.createStory(user.id, storyData);
       
-      // 投稿成功時にストーリーリストに追加用のデータを作成
       const newStory: FailureStory = {
         id: storyId,
         authorId: user.id,
@@ -108,7 +109,7 @@ const CreateStoryScreen: React.FC<CreateStoryScreenProps> = ({ navigation }) => 
       };
       
       addStory(newStory);
-      Alert.alert('成功', '失敗談を投稿しました', [
+      Alert.alert('投稿完了', '失敗談を投稿しました！', [
         { text: 'OK', onPress: () => navigation.goBack() }
       ]);
     } catch (error) {
@@ -118,22 +119,19 @@ const CreateStoryScreen: React.FC<CreateStoryScreenProps> = ({ navigation }) => 
     }
   };
 
-  // メインカテゴリ変更時の処理
   const handleMainCategoryChange = (mainCategory: MainCategory) => {
     setFormData({
       ...formData,
       category: {
         main: mainCategory,
-        sub: '' as SubCategory // サブカテゴリをリセット
+        sub: '' as SubCategory
       }
     });
-    // エラーをクリア
     if (errors.mainCategory) {
       setErrors({ ...errors, mainCategory: '', subCategory: '' });
     }
   };
 
-  // サブカテゴリ変更時の処理
   const handleSubCategoryChange = (subCategory: SubCategory) => {
     setFormData({
       ...formData,
@@ -142,189 +140,378 @@ const CreateStoryScreen: React.FC<CreateStoryScreenProps> = ({ navigation }) => 
         sub: subCategory
       }
     });
-    // エラーをクリア
     if (errors.subCategory) {
       setErrors({ ...errors, subCategory: '' });
     }
   };
 
+  const getCharacterCount = (text: string, limit: number) => {
+    const percentage = (text.length / limit) * 100;
+    let color = '#8E9AAF';
+    if (percentage > 90) color = '#EF4444';
+    else if (percentage > 75) color = '#F59E0B';
+    return { count: text.length, limit, color };
+  };
+
+  const isStepValid = () => {
+    switch (currentStep) {
+      case 1: return formData.title.trim() && formData.category.main && formData.category.sub;
+      case 2: return formData.situation.trim() && formData.action.trim();
+      case 3: return formData.result.trim() && formData.learning.trim() && formData.emotion;
+      default: return false;
+    }
+  };
+
+  const renderStepIndicator = () => (
+    <View style={styles.stepIndicator}>
+      {[1, 2, 3].map((step) => (
+        <View key={step} style={styles.stepContainer}>
+          <View style={[
+            styles.stepCircle, 
+            currentStep >= step ? styles.stepCircleActive : styles.stepCircleInactive
+          ]}>
+            <Text style={[
+              styles.stepText,
+              currentStep >= step ? styles.stepTextActive : styles.stepTextInactive
+            ]}>
+              {step}
+            </Text>
+          </View>
+          {step < 3 && (
+            <View style={[
+              styles.stepLine,
+              currentStep > step ? styles.stepLineActive : styles.stepLineInactive
+            ]} />
+          )}
+        </View>
+      ))}
+    </View>
+  );
+
+  const renderStep1 = () => (
+    <View style={styles.stepContent}>
+      {/* タイトル */}
+      <Surface style={styles.inputSection} elevation={1}>
+        <Text style={styles.sectionTitle}>📝 失敗談のタイトル</Text>
+        <Text style={styles.sectionDesc}>何についての失敗でしたか？</Text>
+        <TextInput
+          mode="outlined"
+          placeholder="例: 初デートで大失敗..."
+          value={formData.title}
+          onChangeText={(value) => {
+            setFormData(prev => ({ ...prev, title: value }));
+            if (errors.title) setErrors(prev => ({ ...prev, title: '' }));
+          }}
+          style={styles.textInput}
+          multiline
+          error={!!errors.title}
+          outlineColor="transparent"
+          activeOutlineColor="#1DA1F2"
+          theme={{ colors: { background: '#F8FAFC' } }}
+        />
+        <View style={styles.charCountContainer}>
+          <Text style={[styles.charCount, { color: getCharacterCount(formData.title, 100).color }]}>
+            {getCharacterCount(formData.title, 100).count}/100
+          </Text>
+        </View>
+        <HelperText type="error" visible={!!errors.title}>
+          {errors.title}
+        </HelperText>
+      </Surface>
+
+      {/* カテゴリ選択 */}
+      <Surface style={styles.inputSection} elevation={1}>
+        <Text style={styles.sectionTitle}>🏷️ カテゴリー選択</Text>
+        <Text style={styles.sectionDesc}>どの分野の失敗ですか？</Text>
+        
+        <View style={styles.chipGrid}>
+          {mainCategories.map((category) => (
+            <Chip
+              key={category}
+              selected={formData.category.main === category}
+              onPress={() => handleMainCategoryChange(category)}
+              style={[
+                styles.categoryChip,
+                formData.category.main === category && styles.selectedChip
+              ]}
+              textStyle={[
+                styles.chipText,
+                formData.category.main === category && styles.selectedChipText
+              ]}
+            >
+              {category}
+            </Chip>
+          ))}
+        </View>
+        <HelperText type="error" visible={!!errors.mainCategory}>
+          {errors.mainCategory}
+        </HelperText>
+
+        {formData.category.main && (
+          <>
+            <Text style={styles.subSectionTitle}>詳細カテゴリー</Text>
+            <View style={styles.chipGrid}>
+              {subCategories.map((category) => (
+                <Chip
+                  key={category}
+                  selected={formData.category.sub === category}
+                  onPress={() => handleSubCategoryChange(category)}
+                  style={[
+                    styles.subCategoryChip,
+                    formData.category.sub === category && styles.selectedSubChip
+                  ]}
+                  textStyle={[
+                    styles.chipText,
+                    formData.category.sub === category && styles.selectedChipText
+                  ]}
+                >
+                  {category}
+                </Chip>
+              ))}
+            </View>
+            <HelperText type="error" visible={!!errors.subCategory}>
+              {errors.subCategory}
+            </HelperText>
+          </>
+        )}
+      </Surface>
+    </View>
+  );
+
+  const renderStep2 = () => (
+    <View style={styles.stepContent}>
+      {/* 状況 */}
+      <Surface style={styles.inputSection} elevation={1}>
+        <Text style={styles.sectionTitle}>📍 状況</Text>
+        <Text style={styles.sectionDesc}>どんな状況でしたか？</Text>
+        <TextInput
+          mode="outlined"
+          placeholder="その時の状況を詳しく教えてください..."
+          value={formData.situation}
+          onChangeText={(value) => {
+            setFormData(prev => ({ ...prev, situation: value }));
+            if (errors.situation) setErrors(prev => ({ ...prev, situation: '' }));
+          }}
+          style={styles.textAreaInput}
+          multiline
+          numberOfLines={4}
+          error={!!errors.situation}
+          outlineColor="transparent"
+          activeOutlineColor="#1DA1F2"
+          theme={{ colors: { background: '#F8FAFC' } }}
+        />
+        <View style={styles.charCountContainer}>
+          <Text style={[styles.charCount, { color: getCharacterCount(formData.situation, 280).color }]}>
+            {getCharacterCount(formData.situation, 280).count}/280
+          </Text>
+        </View>
+        <HelperText type="error" visible={!!errors.situation}>
+          {errors.situation}
+        </HelperText>
+      </Surface>
+
+      {/* 行動 */}
+      <Surface style={styles.inputSection} elevation={1}>
+        <Text style={styles.sectionTitle}>⚡ 行動</Text>
+        <Text style={styles.sectionDesc}>何をしましたか？</Text>
+        <TextInput
+          mode="outlined"
+          placeholder="どのような行動を取りましたか？"
+          value={formData.action}
+          onChangeText={(value) => {
+            setFormData(prev => ({ ...prev, action: value }));
+            if (errors.action) setErrors(prev => ({ ...prev, action: '' }));
+          }}
+          style={styles.textAreaInput}
+          multiline
+          numberOfLines={4}
+          error={!!errors.action}
+          outlineColor="transparent"
+          activeOutlineColor="#1DA1F2"
+          theme={{ colors: { background: '#F8FAFC' } }}
+        />
+        <View style={styles.charCountContainer}>
+          <Text style={[styles.charCount, { color: getCharacterCount(formData.action, 280).color }]}>
+            {getCharacterCount(formData.action, 280).count}/280
+          </Text>
+        </View>
+        <HelperText type="error" visible={!!errors.action}>
+          {errors.action}
+        </HelperText>
+      </Surface>
+    </View>
+  );
+
+  const renderStep3 = () => (
+    <View style={styles.stepContent}>
+      {/* 結果 */}
+      <Surface style={styles.inputSection} elevation={1}>
+        <Text style={styles.sectionTitle}>💥 結果</Text>
+        <Text style={styles.sectionDesc}>何が起こりましたか？</Text>
+        <TextInput
+          mode="outlined"
+          placeholder="その結果、何が起こりましたか？"
+          value={formData.result}
+          onChangeText={(value) => {
+            setFormData(prev => ({ ...prev, result: value }));
+            if (errors.result) setErrors(prev => ({ ...prev, result: '' }));
+          }}
+          style={styles.textAreaInput}
+          multiline
+          numberOfLines={4}
+          error={!!errors.result}
+          outlineColor="transparent"
+          activeOutlineColor="#1DA1F2"
+          theme={{ colors: { background: '#F8FAFC' } }}
+        />
+        <View style={styles.charCountContainer}>
+          <Text style={[styles.charCount, { color: getCharacterCount(formData.result, 280).color }]}>
+            {getCharacterCount(formData.result, 280).count}/280
+          </Text>
+        </View>
+        <HelperText type="error" visible={!!errors.result}>
+          {errors.result}
+        </HelperText>
+      </Surface>
+
+      {/* 学び */}
+      <Surface style={styles.inputSection} elevation={1}>
+        <Text style={styles.sectionTitle}>💡 学び</Text>
+        <Text style={styles.sectionDesc}>何を学びましたか？</Text>
+        <TextInput
+          mode="outlined"
+          placeholder="この経験から何を学びましたか？"
+          value={formData.learning}
+          onChangeText={(value) => {
+            setFormData(prev => ({ ...prev, learning: value }));
+            if (errors.learning) setErrors(prev => ({ ...prev, learning: '' }));
+          }}
+          style={styles.textAreaInput}
+          multiline
+          numberOfLines={4}
+          error={!!errors.learning}
+          outlineColor="transparent"
+          activeOutlineColor="#1DA1F2"
+          theme={{ colors: { background: '#F8FAFC' } }}
+        />
+        <View style={styles.charCountContainer}>
+          <Text style={[styles.charCount, { color: getCharacterCount(formData.learning, 280).color }]}>
+            {getCharacterCount(formData.learning, 280).count}/280
+          </Text>
+        </View>
+        <HelperText type="error" visible={!!errors.learning}>
+          {errors.learning}
+        </HelperText>
+      </Surface>
+
+      {/* 感情 */}
+      <Surface style={styles.inputSection} elevation={1}>
+        <Text style={styles.sectionTitle}>😔 その時の気持ち</Text>
+        <Text style={styles.sectionDesc}>どんな気持ちでしたか？</Text>
+        <View style={styles.chipGrid}>
+          {emotions.map((emotion) => (
+            <Chip
+              key={emotion}
+              selected={formData.emotion === emotion}
+              onPress={() => {
+                setFormData(prev => ({ ...prev, emotion }));
+                if (errors.emotion) setErrors(prev => ({ ...prev, emotion: '' }));
+              }}
+              style={[
+                styles.emotionChip,
+                formData.emotion === emotion && styles.selectedEmotionChip
+              ]}
+              textStyle={[
+                styles.chipText,
+                formData.emotion === emotion && styles.selectedChipText
+              ]}
+            >
+              {emotion}
+            </Chip>
+          ))}
+        </View>
+        <HelperText type="error" visible={!!errors.emotion}>
+          {errors.emotion}
+        </HelperText>
+      </Surface>
+    </View>
+  );
+
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        <View style={styles.content}>
-          <Text variant="headlineSmall" style={styles.title}>
-            失敗談を投稿する
-          </Text>
-          <Text variant="bodyMedium" style={styles.subtitle}>
-            あなたの体験を共有し、他の人の学びに貢献しましょう
-          </Text>
-
-          <Card style={styles.card}>
-            <Card.Content>
-              <Text variant="titleMedium" style={styles.sectionTitle}>
-                📝 基本情報
-              </Text>
-              
-              <TextInput
-                label="タイトル"
-                value={formData.title}
-                onChangeText={(value) => setFormData(prev => ({ ...prev, title: value }))}
-                style={styles.input}
-                error={!!errors.title}
-                placeholder="例: 転職活動での大きな失敗"
-                maxLength={50}
+      <StatusBar barStyle="light-content" backgroundColor="#1DA1F2" />
+      
+      {/* モダンヘッダー */}
+      <LinearGradient
+        colors={['#1DA1F2', '#1991DB']}
+        style={styles.modernHeader}
+      >
+        <View style={styles.headerContent}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <IconButton icon="arrow-left" size={24} iconColor="#FFFFFF" />
+          </TouchableOpacity>
+          <View style={styles.headerCenter}>
+            <Text style={styles.headerTitle}>失敗談を投稿</Text>
+            <Text style={styles.headerSubtitle}>ステップ {currentStep}/3</Text>
+          </View>
+          <View style={styles.headerRight}>
+            {user && (
+              <Avatar.Image 
+                size={32} 
+                source={{ uri: `https://robohash.org/${user.displayName}?set=set4` }}
+                style={styles.headerAvatar}
               />
-              <HelperText type="error" visible={!!errors.title}>
-                {errors.title}
-              </HelperText>
-
-              <Text variant="bodyMedium" style={styles.label}>
-                メインカテゴリー
-              </Text>
-              <SegmentedButtons
-                value={formData.category.main}
-                onValueChange={handleMainCategoryChange}
-                buttons={mainCategories.map(cat => ({
-                  value: cat,
-                  label: cat
-                }))}
-                style={styles.segmentedButtons}
-              />
-              <HelperText type="error" visible={!!errors.mainCategory}>
-                {errors.mainCategory}
-              </HelperText>
-
-              <Text variant="bodyMedium" style={styles.label}>
-                サブカテゴリー
-              </Text>
-              <SegmentedButtons
-                value={formData.category.sub}
-                onValueChange={handleSubCategoryChange}
-                buttons={subCategories.map(cat => ({
-                  value: cat,
-                  label: cat
-                }))}
-                style={styles.segmentedButtons}
-              />
-              <HelperText type="error" visible={!!errors.subCategory}>
-                {errors.subCategory}
-              </HelperText>
-            </Card.Content>
-          </Card>
-
-          <Card style={styles.card}>
-            <Card.Content>
-              <Text variant="titleMedium" style={styles.sectionTitle}>
-                🎭 体験の詳細
-              </Text>
-              
-              <TextInput
-                label="状況（どんな状況だったか）"
-                value={formData.situation}
-                onChangeText={(value) => setFormData(prev => ({ ...prev, situation: value }))}
-                style={styles.input}
-                error={!!errors.situation}
-                multiline
-                numberOfLines={4}
-                placeholder="どのような状況・環境で起こったことか詳しく説明してください"
-                maxLength={500}
-              />
-              <HelperText type="error" visible={!!errors.situation}>
-                {errors.situation}
-              </HelperText>
-
-              <TextInput
-                label="行動（何をしたか）"
-                value={formData.action}
-                onChangeText={(value) => setFormData(prev => ({ ...prev, action: value }))}
-                style={styles.input}
-                error={!!errors.action}
-                multiline
-                numberOfLines={4}
-                placeholder="具体的にどのような行動を取ったか説明してください"
-                maxLength={500}
-              />
-              <HelperText type="error" visible={!!errors.action}>
-                {errors.action}
-              </HelperText>
-
-              <TextInput
-                label="結果（何が起こったか）"
-                value={formData.result}
-                onChangeText={(value) => setFormData(prev => ({ ...prev, result: value }))}
-                style={styles.input}
-                error={!!errors.result}
-                multiline
-                numberOfLines={4}
-                placeholder="その行動の結果、どんなことが起こったか説明してください"
-                maxLength={500}
-              />
-              <HelperText type="error" visible={!!errors.result}>
-                {errors.result}
-              </HelperText>
-            </Card.Content>
-          </Card>
-
-          <Card style={styles.card}>
-            <Card.Content>
-              <Text variant="titleMedium" style={styles.sectionTitle}>
-                💡 学びと感情
-              </Text>
-              
-              <TextInput
-                label="学び（何を学んだか）"
-                value={formData.learning}
-                onChangeText={(value) => setFormData(prev => ({ ...prev, learning: value }))}
-                style={styles.input}
-                error={!!errors.learning}
-                multiline
-                numberOfLines={4}
-                placeholder="この体験から得た学びや気づきを教えてください"
-                maxLength={500}
-              />
-              <HelperText type="error" visible={!!errors.learning}>
-                {errors.learning}
-              </HelperText>
-
-              <Text variant="bodyMedium" style={styles.label}>
-                そのときの感情
-              </Text>
-              <SegmentedButtons
-                value={formData.emotion}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, emotion: value }))}
-                buttons={emotions.map(emotion => ({
-                  value: emotion,
-                  label: emotion
-                }))}
-                style={styles.segmentedButtons}
-              />
-              <HelperText type="error" visible={!!errors.emotion}>
-                {errors.emotion}
-              </HelperText>
-            </Card.Content>
-          </Card>
-
-          <View style={styles.buttonContainer}>
-            <Button
-              mode="contained"
-              onPress={handleSubmit}
-              disabled={loading}
-              style={styles.submitButton}
-            >
-              {loading ? <ActivityIndicator size="small" /> : '投稿する'}
-            </Button>
-            
-            <Button
-              mode="outlined"
-              onPress={() => navigation.goBack()}
-              disabled={loading}
-              style={styles.cancelButton}
-            >
-              キャンセル
-            </Button>
+            )}
           </View>
         </View>
+      </LinearGradient>
+
+      {/* ステップインジケーター */}
+      {renderStepIndicator()}
+
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {currentStep === 1 && renderStep1()}
+        {currentStep === 2 && renderStep2()}
+        {currentStep === 3 && renderStep3()}
+        
+        <View style={styles.bottomSpace} />
       </ScrollView>
+
+      {/* ナビゲーションボタン */}
+      <View style={styles.navigationContainer}>
+        {currentStep > 1 && (
+          <Button
+            mode="outlined"
+            onPress={() => setCurrentStep(currentStep - 1)}
+            style={styles.prevButton}
+            labelStyle={styles.prevButtonText}
+          >
+            前へ
+          </Button>
+        )}
+        
+        {currentStep < 3 ? (
+          <Button
+            mode="contained"
+            onPress={() => setCurrentStep(currentStep + 1)}
+            disabled={!isStepValid()}
+            style={[styles.nextButton, !isStepValid() && styles.disabledButton]}
+            labelStyle={styles.nextButtonText}
+          >
+            次へ
+          </Button>
+        ) : (
+          <Button
+            mode="contained"
+            onPress={handleSubmit}
+            disabled={loading || !isStepValid()}
+            style={[styles.submitButton, (!isStepValid() || loading) && styles.disabledButton]}
+            labelStyle={styles.submitButtonText}
+          >
+            {loading ? '投稿中...' : '投稿する'}
+          </Button>
+        )}
+      </View>
     </SafeAreaView>
   );
 };
@@ -332,48 +519,223 @@ const CreateStoryScreen: React.FC<CreateStoryScreenProps> = ({ navigation }) => 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#F8FAFC',
   },
-  scrollView: {
+  modernHeader: {
+    paddingTop: 10,
+    paddingBottom: 16,
+    paddingHorizontal: 16,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  backButton: {
+    width: 40,
+  },
+  headerCenter: {
     flex: 1,
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  headerSubtitle: {
+    fontSize: 12,
+    color: '#FFFFFF',
+    opacity: 0.9,
+  },
+  headerRight: {
+    width: 40,
+    alignItems: 'center',
+  },
+  headerAvatar: {
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+  stepIndicator: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 20,
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: 16,
+    marginTop: -8,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  stepContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  stepCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepCircleActive: {
+    backgroundColor: '#1DA1F2',
+  },
+  stepCircleInactive: {
+    backgroundColor: '#E2E8F0',
+  },
+  stepText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  stepTextActive: {
+    color: '#FFFFFF',
+  },
+  stepTextInactive: {
+    color: '#8E9AAF',
+  },
+  stepLine: {
+    width: 40,
+    height: 2,
+    marginHorizontal: 8,
+  },
+  stepLineActive: {
+    backgroundColor: '#1DA1F2',
+  },
+  stepLineInactive: {
+    backgroundColor: '#E2E8F0',
   },
   content: {
-    padding: 16,
+    flex: 1,
+    paddingTop: 16,
   },
-  title: {
-    textAlign: 'center',
-    marginBottom: 8,
+  stepContent: {
+    paddingHorizontal: 16,
   },
-  subtitle: {
-    textAlign: 'center',
-    marginBottom: 24,
-    color: '#666',
-  },
-  card: {
-    marginBottom: 16,
+  inputSection: {
+    marginBottom: 20,
+    padding: 20,
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
   },
   sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1E293B',
+    marginBottom: 4,
+  },
+  sectionDesc: {
+    fontSize: 14,
+    color: '#8E9AAF',
     marginBottom: 16,
   },
-  input: {
+  subSectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1E293B',
+    marginTop: 20,
+    marginBottom: 12,
+  },
+  textInput: {
+    backgroundColor: '#F8FAFC',
     marginBottom: 8,
   },
-  label: {
+  textAreaInput: {
+    backgroundColor: '#F8FAFC',
     marginBottom: 8,
-    marginTop: 16,
+    minHeight: 100,
   },
-  segmentedButtons: {
+  charCountContainer: {
+    alignItems: 'flex-end',
+    marginBottom: 4,
+  },
+  charCount: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  chipGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     marginBottom: 8,
   },
-  buttonContainer: {
-    marginTop: 24,
-    marginBottom: 32,
+  categoryChip: {
+    marginRight: 8,
+    marginBottom: 8,
+    backgroundColor: '#F1F5F9',
+  },
+  subCategoryChip: {
+    marginRight: 8,
+    marginBottom: 8,
+    backgroundColor: '#F1F5F9',
+  },
+  emotionChip: {
+    marginRight: 8,
+    marginBottom: 8,
+    backgroundColor: '#F1F5F9',
+  },
+  selectedChip: {
+    backgroundColor: '#1DA1F2',
+  },
+  selectedSubChip: {
+    backgroundColor: '#1DA1F2',
+  },
+  selectedEmotionChip: {
+    backgroundColor: '#E0245E',
+  },
+  chipText: {
+    fontSize: 14,
+    color: '#64748B',
+    fontWeight: '500',
+  },
+  selectedChipText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  navigationContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
+    justifyContent: 'space-between',
+  },
+  prevButton: {
+    flex: 1,
+    marginRight: 8,
+    borderColor: '#1DA1F2',
+  },
+  prevButtonText: {
+    color: '#1DA1F2',
+    fontWeight: '600',
+  },
+  nextButton: {
+    flex: 1,
+    marginLeft: 8,
+    backgroundColor: '#1DA1F2',
+  },
+  nextButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
   },
   submitButton: {
-    marginBottom: 12,
+    flex: 1,
+    marginLeft: 8,
+    backgroundColor: '#10B981',
   },
-  cancelButton: {
-    marginBottom: 12,
+  submitButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  disabledButton: {
+    backgroundColor: '#E2E8F0',
+  },
+  bottomSpace: {
+    height: 40,
   },
 });
 

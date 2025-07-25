@@ -18,8 +18,20 @@ const TabNavigator: React.FC = () => {
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#6200EE',
-        tabBarInactiveTintColor: '#757575',
+        tabBarActiveTintColor: '#1DA1F2',
+        tabBarInactiveTintColor: '#657786',
+        tabBarStyle: {
+          backgroundColor: '#fff',
+          borderTopColor: '#E1E8ED',
+          borderTopWidth: 0.5,
+          paddingTop: 8,
+          height: 60,
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '500',
+          marginBottom: 8,
+        },
       }}
     >
       <Tab.Screen
@@ -28,7 +40,7 @@ const TabNavigator: React.FC = () => {
         options={{
           tabBarLabel: 'ホーム',
           tabBarIcon: ({ color, size }) => (
-            <MaterialIcons name="home" size={size} color={color} />
+            <MaterialIcons name="home" size={24} color={color} />
           ),
         }}
       />
@@ -38,7 +50,7 @@ const TabNavigator: React.FC = () => {
         options={{
           tabBarLabel: 'プロフィール',
           tabBarIcon: ({ color, size }) => (
-            <MaterialIcons name="person" size={size} color={color} />
+            <MaterialIcons name="person" size={24} color={color} />
           ),
         }}
       />
@@ -61,26 +73,34 @@ const AppNavigator: React.FC = () => {
           options={{
             title: '失敗談を投稿',
             headerStyle: {
-              backgroundColor: '#6200EE',
+              backgroundColor: '#1DA1F2',
+              shadowColor: 'transparent',
+              elevation: 0,
             },
             headerTintColor: '#fff',
             headerTitleStyle: {
               fontWeight: 'bold',
+              fontSize: 18,
             },
+            headerTitleAlign: 'center',
           }}
         />
         <Stack.Screen
           name="StoryDetail"
           component={StoryDetailScreen}
           options={{
-            title: '失敗談の詳細',
+            title: '失敗談',
             headerStyle: {
-              backgroundColor: '#6200EE',
+              backgroundColor: '#1DA1F2',
+              shadowColor: 'transparent',
+              elevation: 0,
             },
             headerTintColor: '#fff',
             headerTitleStyle: {
               fontWeight: 'bold',
+              fontSize: 18,
             },
+            headerTitleAlign: 'center',
           }}
         />
         <Stack.Screen
@@ -89,12 +109,16 @@ const AppNavigator: React.FC = () => {
           options={{
             title: 'マイ投稿',
             headerStyle: {
-              backgroundColor: '#6200EE',
+              backgroundColor: '#1DA1F2',
+              shadowColor: 'transparent',
+              elevation: 0,
             },
             headerTintColor: '#fff',
             headerTitleStyle: {
               fontWeight: 'bold',
+              fontSize: 18,
             },
+            headerTitleAlign: 'center',
           }}
         />
       </Stack.Navigator>

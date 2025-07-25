@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Dimensions } from 'react-native';
-import { Text, Button, Card, Icon } from 'react-native-paper';
+import { View, StyleSheet, Dimensions, StatusBar, TouchableOpacity } from 'react-native';
+import { Text, Button, Surface, IconButton } from 'react-native-paper';
+import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 
 interface OnboardingScreenProps {
   onComplete: () => void;
@@ -15,31 +15,57 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
     {
       icon: '💫',
       title: 'FailShareへようこそ！',
-      description: '恋愛の失敗を成長の糧に変える安全なコミュニティです。\n\n完全匿名で恋愛失敗体験を共有し、同じ経験をした人同士で学び合えます。\n\nデート・告白・カップル関係・片想い・別れなど、恋愛のあらゆる失敗から学べます。',
+      description: '失敗を成長の糧に変える\n安全なコミュニティです',
+      details: [
+        '完全匿名で失敗体験を共有',
+        '同じ経験をした人同士で学び合い',
+        '恋愛・仕事・その他の失敗から学習'
+      ],
       buttonText: '始める'
     },
     {
       icon: '📝',
-      title: '失敗談を構造化して投稿しよう',
-      description: 'テンプレートに沿って体験を整理：\n\n• 状況: どんな状況だったか\n• 行動: どう行動したか\n• 結果: どうなったか\n• 学び: 何を学んだか\n\nこの流れで振り返ることで、失敗が貴重な経験談に変わります。',
+      title: '失敗談を構造化して投稿',
+      description: 'テンプレートに沿って\n体験を整理しよう',
+      details: [
+        '状況: どんな状況だったか',
+        '行動: どう行動したか',
+        '結果: どうなったか',
+        '学び: 何を学んだか'
+      ],
       buttonText: '次へ'
     },
     {
       icon: '🔍',
-      title: '二大コンテンツから学ぼう',
-      description: 'カテゴリーや感情で恋愛失敗談を検索できます：\n\n• デート：初デート・プランニングの失敗\n• 告白：告白・プロポーズの失敗\n• カップル：交際中の関係性の失敗\n• 片想い：片思い・アプローチの失敗\n• 別れ：別れ・復縁の失敗\n• 感情タグで検索（後悔、恥ずかしい、不安など）\n\n同じような恋愛経験をした人の知恵を活用できます。',
+      title: 'カテゴリーから学ぼう',
+      description: 'あなたに合った失敗談を\n見つけられます',
+      details: [
+        '恋愛: デート・告白・カップル・片想い・別れ',
+        '仕事: 人間関係・キャリア・プレゼン・管理',
+        '感情タグで検索（後悔・恥ずかしい・不安など）'
+      ],
       buttonText: '次へ'
     },
     {
       icon: '🤝',
       title: 'みんなで支え合う',
-      description: '共感と励ましで成長し合い：\n\n• 「役に立った」で共感を表現\n• 同じ失敗を経験した人からの励まし\n• 実体験に基づくアドバイス\n\n失敗の痛みを分かち合い、一緒に成長していきましょう。',
+      description: '共感と励ましで\n成長し合おう',
+      details: [
+        '「参考になった」で共感を表現',
+        '同じ失敗を経験した人からの励まし',
+        '実体験に基づくアドバイス交換'
+      ],
       buttonText: '次へ'
     },
     {
       icon: '🚀',
       title: '準備完了！',
-      description: 'あなたも今日からFailShareの一員です！\n\n最初は他の人の失敗談を読んでみて、どんな体験があるか感じてください。\n\n準備ができたら、あなたの体験も共有してみましょう。\n\nあなたの失敗談が、誰かの貴重な学びになります。',
+      description: 'あなたも今日から\nFailShareの一員です',
+      details: [
+        '最初は他の人の失敗談を読んでみよう',
+        '準備ができたらあなたの体験も共有',
+        'あなたの失敗談が誰かの学びになる'
+      ],
       buttonText: 'スタート！'
     }
   ];
@@ -58,59 +84,92 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
     onComplete();
   };
 
+  const handleBack = () => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        {/* プログレスインジケーター */}
-        <View style={styles.progressContainer}>
-          {steps.map((_, index) => (
-            <View
-              key={index}
-              style={[
-                styles.progressDot,
-                index <= currentStep ? styles.progressDotActive : styles.progressDotInactive
-              ]}
-            />
-          ))}
+      <StatusBar barStyle="light-content" backgroundColor="#1DA1F2" />
+      
+      {/* モダンヘッダー */}
+      <LinearGradient
+        colors={['#1DA1F2', '#1991DB']}
+        style={styles.modernHeader}
+      >
+        <View style={styles.headerContent}>
+          {currentStep > 0 ? (
+            <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+              <IconButton icon="arrow-left" size={24} iconColor="#FFFFFF" />
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.backButton} />
+          )}
+          <Text style={styles.headerTitle}>はじめに</Text>
+          <TouchableOpacity onPress={handleSkip} style={styles.skipButton}>
+            <Text style={styles.skipText}>スキップ</Text>
+          </TouchableOpacity>
         </View>
+        
+        {/* プログレスバー */}
+        <View style={styles.progressContainer}>
+          <LinearGradient
+            colors={['#FFFFFF30', '#FFFFFF10']}
+            style={styles.progressTrack}
+          >
+            <LinearGradient
+              colors={['#FFFFFF', '#FFFFFFCC']}
+              style={[styles.progressFill, { width: `${((currentStep + 1) / steps.length) * 100}%` }]}
+            />
+          </LinearGradient>
+          <Text style={styles.progressText}>
+            {currentStep + 1}/{steps.length}
+          </Text>
+        </View>
+      </LinearGradient>
 
+      <View style={styles.content}>
         {/* メインコンテンツ */}
         <View style={styles.mainContent}>
-          <Text style={styles.icon}>{currentStepData.icon}</Text>
+          <Surface style={styles.iconContainer} elevation={3}>
+            <Text style={styles.icon}>{currentStepData.icon}</Text>
+          </Surface>
           
-          <Text variant="headlineMedium" style={styles.title}>
+          <Text style={styles.title}>
             {currentStepData.title}
           </Text>
           
-          <Card style={styles.card}>
-            <Card.Content>
-              <Text variant="bodyLarge" style={styles.description}>
-                {currentStepData.description}
-              </Text>
-            </Card.Content>
-          </Card>
+          <Text style={styles.description}>
+            {currentStepData.description}
+          </Text>
+
+          <Surface style={styles.detailsCard} elevation={2}>
+            {currentStepData.details.map((detail, index) => (
+              <View key={index} style={styles.detailItem}>
+                <View style={styles.detailDot} />
+                <Text style={styles.detailText}>{detail}</Text>
+              </View>
+            ))}
+          </Surface>
         </View>
 
-        {/* ボタンエリア */}
-        <View style={styles.buttonContainer}>
-          <Button
-            mode="contained"
-            onPress={handleNext}
+        {/* ナビゲーションボタン */}
+        <View style={styles.navigationContainer}>
+          <LinearGradient
+            colors={['#1DA1F2', '#1991DB']}
             style={styles.nextButton}
-            contentStyle={styles.buttonContent}
           >
-            {currentStepData.buttonText}
-          </Button>
-          
-          {currentStep < steps.length - 1 && (
-            <Button
-              mode="text"
-              onPress={handleSkip}
-              style={styles.skipButton}
-            >
-              スキップ
-            </Button>
-          )}
+            <TouchableOpacity style={styles.nextButtonInner} onPress={handleNext}>
+              <Text style={styles.nextButtonText}>
+                {currentStepData.buttonText}
+              </Text>
+              {currentStep < steps.length - 1 && (
+                <IconButton icon="arrow-right" size={20} iconColor="#FFFFFF" style={styles.nextIcon} />
+              )}
+            </TouchableOpacity>
+          </LinearGradient>
         </View>
       </View>
     </SafeAreaView>
@@ -120,66 +179,146 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#F8FAFC',
   },
-  content: {
+  modernHeader: {
+    paddingTop: 10,
+    paddingBottom: 20,
+    paddingHorizontal: 16,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  backButton: {
+    width: 40,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
     flex: 1,
-    paddingHorizontal: 24,
-    paddingVertical: 32,
+    textAlign: 'center',
+  },
+  skipButton: {
+    width: 60,
+    alignItems: 'flex-end',
+  },
+  skipText: {
+    fontSize: 14,
+    color: '#FFFFFF',
+    opacity: 0.9,
   },
   progressContainer: {
     flexDirection: 'row',
-    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 48,
   },
-  progressDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginHorizontal: 6,
+  progressTrack: {
+    flex: 1,
+    height: 6,
+    borderRadius: 3,
+    marginRight: 12,
   },
-  progressDotActive: {
-    backgroundColor: '#6200EE',
+  progressFill: {
+    height: '100%',
+    borderRadius: 3,
   },
-  progressDotInactive: {
-    backgroundColor: '#E0E0E0',
+  progressText: {
+    fontSize: 12,
+    color: '#FFFFFF',
+    opacity: 0.9,
+    fontWeight: '600',
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 20,
   },
   mainContent: {
     flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 32,
   },
   icon: {
-    fontSize: 72,
-    marginBottom: 24,
+    fontSize: 48,
   },
   title: {
-    textAlign: 'center',
-    marginBottom: 32,
+    fontSize: 28,
     fontWeight: 'bold',
-    color: '#333',
-  },
-  card: {
-    width: '100%',
-    maxWidth: 400,
+    textAlign: 'center',
+    marginBottom: 16,
+    color: '#1E293B',
+    lineHeight: 36,
   },
   description: {
+    fontSize: 18,
     textAlign: 'center',
-    lineHeight: 24,
-    color: '#666',
+    marginBottom: 32,
+    color: '#64748B',
+    lineHeight: 26,
   },
-  buttonContainer: {
-    paddingTop: 32,
+  detailsCard: {
+    width: '100%',
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    padding: 24,
   },
-  nextButton: {
+  detailItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
     marginBottom: 16,
   },
-  buttonContent: {
-    paddingVertical: 8,
+  detailDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#1DA1F2',
+    marginTop: 8,
+    marginRight: 12,
   },
-  skipButton: {
-    alignSelf: 'center',
+  detailText: {
+    fontSize: 16,
+    color: '#475569',
+    lineHeight: 24,
+    flex: 1,
+  },
+  navigationContainer: {
+    paddingVertical: 24,
+  },
+  nextButton: {
+    borderRadius: 16,
+    shadowColor: '#1DA1F2',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  nextButtonInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+  },
+  nextButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  nextIcon: {
+    margin: 0,
+    marginLeft: 8,
   },
 });
 

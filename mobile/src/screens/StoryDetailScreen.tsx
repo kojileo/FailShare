@@ -1,36 +1,37 @@
 import React, { useState, useEffect } from 'react';
-import { ScrollView, View, StyleSheet, Alert } from 'react-native';
+import { ScrollView, View, StyleSheet, Alert, TouchableOpacity, StatusBar } from 'react-native';
 import { 
   Text, 
-  Card, 
-  Button, 
-  Chip, 
   Avatar, 
-  ActivityIndicator,
-  IconButton,
+  IconButton, 
+  Chip,
+  Surface,
+  Button,
   Divider
 } from 'react-native-paper';
+import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { StackScreenProps } from '@react-navigation/stack';
-import { RootStackParamList, FailureStory } from '../types';
+import { FailureStory } from '../types';
 import { storyService } from '../services/storyService';
 import { useAuthStore } from '../stores/authStore';
 import { 
   getCategoryDisplayString, 
-  getCategoryHierarchyColor, 
-  getCategoryHierarchyIcon,
-  getMainCategoryString,
-  getSubCategoryString
+  getCategoryHierarchyColor,
+  getCategoryHierarchyIcon
 } from '../utils/categories';
 
-type StoryDetailScreenProps = StackScreenProps<RootStackParamList, 'StoryDetail'>;
+interface StoryDetailScreenProps {
+  route: any;
+  navigation: any;
+}
 
-const StoryDetailScreen = ({ navigation, route }: StoryDetailScreenProps) => {
+const StoryDetailScreen: React.FC<StoryDetailScreenProps> = ({ route, navigation }) => {
   const { storyId } = route.params;
   const { user } = useAuthStore();
   const [story, setStory] = useState<FailureStory | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLiked, setIsLiked] = useState(false);
+  const [likesCount, setLikesCount] = useState(0);
 
   useEffect(() => {
     loadStory();
@@ -38,40 +39,32 @@ const StoryDetailScreen = ({ navigation, route }: StoryDetailScreenProps) => {
 
   const loadStory = async () => {
     try {
-      setLoading(true);
-      const fetchedStory = await storyService.getStoryById(storyId);
-      setStory(fetchedStory);
+      setIsLoading(true);
+      const { stories } = await storyService.getStories();
+      const foundStory = stories.find(s => s.id === storyId);
+      if (foundStory) {
+        setStory(foundStory);
+        setLikesCount(foundStory.metadata.helpfulCount);
+      } else {
+        Alert.alert('エラー', 'ストーリーが見つかりません');
+        navigation.goBack();
+      }
     } catch (error) {
-      console.error('失敗談詳細取得エラー:', error);
-      Alert.alert('エラー', 'データの取得に失敗しました', [
-        { text: 'OK', onPress: () => navigation.goBack() }
-      ]);
+      console.error('ストーリー取得エラー:', error);
+      Alert.alert('エラー', 'ストーリーの取得に失敗しました');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const handleMarkAsHelpful = async () => {
-    if (!story) return;
-
-    setActionLoading(true);
-    try {
-      await storyService.markStoryAsHelpful(story.id);
-      // 統計を更新
-      setStory(prev => prev ? {
-        ...prev,
-        metadata: {
-          ...prev.metadata,
-          helpfulCount: prev.metadata.helpfulCount + 1
-        }
-      } : null);
-      Alert.alert('完了', 'この失敗談を「役に立った」にマークしました');
-    } catch (error) {
-      console.error('役に立ったマークエラー:', error);
-      Alert.alert('エラー', '操作に失敗しました');
-    } finally {
-      setActionLoading(false);
-    }
+  const getTimeAgo = (date: Date): string => {
+    const now = new Date();
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) return '今';
+    if (diffInHours < 24) return `${diffInHours}時間前`;
+    if (diffInHours < 168) return `${Math.floor(diffInHours / 24)}日前`;
+    return date.toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' });
   };
 
   const getEmotionColor = (emotion: string): string => {
@@ -87,40 +80,37 @@ const StoryDetailScreen = ({ navigation, route }: StoryDetailScreenProps) => {
     return emotionColors[emotion] || '#B0BEC5';
   };
 
-  const getEmotionEmoji = (emotion: string) => {
-    const emojis: { [key: string]: string } = {
-      '後悔': '😔',
-      '恥ずかしい': '😳',
-      '悲しい': '😢',
-      '不安': '😰',
-      '怒り': '😠',
-      '混乱': '😵',
-      'その他': '🤔'
-    };
-    return emojis[emotion] || '🤔';
+  const handleLike = () => {
+    setIsLiked(!isLiked);
+    setLikesCount(prev => isLiked ? prev - 1 : prev + 1);
   };
 
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" />
-          <Text style={styles.loadingText}>読み込み中...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
+  const handleShare = () => {
+    Alert.alert('シェア', 'この機能は開発中です');
+  };
 
-  if (!story) {
+  const handleComment = () => {
+    Alert.alert('コメント', 'この機能は開発中です');
+  };
+
+  if (isLoading || !story) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.errorContainer}>
-          <Text variant="headlineSmall" style={styles.errorText}>
-            失敗談が見つかりません
-          </Text>
-          <Button mode="contained" onPress={() => navigation.goBack()}>
-            戻る
-          </Button>
+        <StatusBar barStyle="light-content" backgroundColor="#1DA1F2" />
+        <LinearGradient
+          colors={['#1DA1F2', '#1991DB']}
+          style={styles.modernHeader}
+        >
+          <View style={styles.headerContent}>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+              <IconButton icon="arrow-left" size={24} iconColor="#FFFFFF" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>失敗談</Text>
+            <View style={styles.headerRight} />
+          </View>
+        </LinearGradient>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>読み込み中...</Text>
         </View>
       </SafeAreaView>
     );
@@ -128,148 +118,155 @@ const StoryDetailScreen = ({ navigation, route }: StoryDetailScreenProps) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        <View style={styles.content}>
-          {/* ヘッダー情報 */}
-          <Card style={styles.headerCard}>
-            <Card.Content>
-              <View style={styles.headerRow}>
-                <Avatar.Image 
-                  size={50} 
-                  source={{ uri: `https://robohash.org/anonymous_${story.authorId}?set=set4` }}
-                />
-                <View style={styles.headerInfo}>
-                  <Text variant="bodyLarge" style={styles.authorName}>
-                    匿名ユーザー
-                  </Text>
-                  <Text variant="bodySmall" style={styles.postDate}>
-                    {story.metadata.createdAt.toLocaleDateString('ja-JP')}
-                  </Text>
-                </View>
-              </View>
-              
-              <Text variant="headlineSmall" style={styles.title}>
-                {story.content.title}
-              </Text>
-              
-              <View style={styles.chipRow}>
-                <Chip 
-                  icon="tag"
-                  style={[styles.categoryChip, { backgroundColor: getCategoryHierarchyColor(story.content.category) }]}
-                  textStyle={styles.chipText}
-                >
-                  {getCategoryDisplayString(story.content.category)}
-                </Chip>
-                <Chip 
-                  icon="emoticon"
-                  style={[styles.emotionChip, { backgroundColor: getEmotionColor(story.content.emotion) }]}
-                  textStyle={styles.chipText}
-                >
-                  {getEmotionEmoji(story.content.emotion)} {story.content.emotion}
-                </Chip>
-              </View>
-            </Card.Content>
-          </Card>
-
-          {/* 統計情報 */}
-          <Card style={styles.statsCard}>
-            <Card.Content>
-              <View style={styles.statsRow}>
-                <View style={styles.statItem}>
-                  <Text variant="titleMedium" style={styles.statNumber}>
-                    {story.metadata.viewCount}
-                  </Text>
-                  <Text variant="bodySmall" style={styles.statLabel}>
-                    閲覧数
-                  </Text>
-                </View>
-                <View style={styles.statItem}>
-                  <Text variant="titleMedium" style={styles.statNumber}>
-                    {story.metadata.helpfulCount}
-                  </Text>
-                  <Text variant="bodySmall" style={styles.statLabel}>
-                    役に立った
-                  </Text>
-                </View>
-                <View style={styles.statItem}>
-                  <Text variant="titleMedium" style={styles.statNumber}>
-                    {story.metadata.commentCount}
-                  </Text>
-                  <Text variant="bodySmall" style={styles.statLabel}>
-                    コメント
-                  </Text>
-                </View>
-              </View>
-            </Card.Content>
-          </Card>
-
-          {/* 失敗談の詳細 */}
-          <Card style={styles.contentCard}>
-            <Card.Content>
-              <View style={styles.sectionContainer}>
-                <Text variant="titleMedium" style={styles.sectionTitle}>
-                  🎯 状況
-                </Text>
-                <Text variant="bodyLarge" style={styles.sectionContent}>
-                  {story.content.situation}
-                </Text>
-              </View>
-              
-              <Divider style={styles.divider} />
-              
-              <View style={styles.sectionContainer}>
-                <Text variant="titleMedium" style={styles.sectionTitle}>
-                  🚀 行動
-                </Text>
-                <Text variant="bodyLarge" style={styles.sectionContent}>
-                  {story.content.action}
-                </Text>
-              </View>
-              
-              <Divider style={styles.divider} />
-              
-              <View style={styles.sectionContainer}>
-                <Text variant="titleMedium" style={styles.sectionTitle}>
-                  💥 結果
-                </Text>
-                <Text variant="bodyLarge" style={styles.sectionContent}>
-                  {story.content.result}
-                </Text>
-              </View>
-              
-              <Divider style={styles.divider} />
-              
-              <View style={styles.sectionContainer}>
-                <Text variant="titleMedium" style={styles.sectionTitle}>
-                  💡 学び
-                </Text>
-                <Text variant="bodyLarge" style={styles.sectionContent}>
-                  {story.content.learning}
-                </Text>
-              </View>
-            </Card.Content>
-          </Card>
-
-          {/* アクションボタン */}
-          <Card style={styles.actionCard}>
-            <Card.Content>
-              <Button
-                mode="contained"
-                onPress={handleMarkAsHelpful}
-                loading={actionLoading}
-                disabled={actionLoading}
-                style={styles.helpfulButton}
-                icon="thumb-up"
-              >
-                役に立った
-              </Button>
-              <Text variant="bodySmall" style={styles.actionDescription}>
-                この失敗談があなたの学びになった場合、「役に立った」をタップしてください
-              </Text>
-            </Card.Content>
-          </Card>
+      <StatusBar barStyle="light-content" backgroundColor="#1DA1F2" />
+      
+      {/* モダンヘッダー */}
+      <LinearGradient
+        colors={['#1DA1F2', '#1991DB']}
+        style={styles.modernHeader}
+      >
+        <View style={styles.headerContent}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <IconButton icon="arrow-left" size={24} iconColor="#FFFFFF" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>失敗談</Text>
+          <TouchableOpacity style={styles.headerRight}>
+            <IconButton icon="dots-horizontal" size={24} iconColor="#FFFFFF" />
+          </TouchableOpacity>
         </View>
+      </LinearGradient>
+
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {/* ユーザー情報ヘッダー */}
+        <Surface style={styles.userSection} elevation={2}>
+          <View style={styles.userHeader}>
+            <Avatar.Image 
+              size={56} 
+              source={{ uri: `https://robohash.org/user${story.authorId}?set=set4` }}
+              style={styles.avatar}
+            />
+            <View style={styles.userDetails}>
+              <Text style={styles.userName}>匿名ユーザー</Text>
+              <Text style={styles.postTime}>{getTimeAgo(story.metadata.createdAt)}</Text>
+              <View style={styles.metaRow}>
+                <View style={styles.metaItem}>
+                  <IconButton icon="eye-outline" size={16} iconColor="#8E9AAF" style={styles.metaIcon} />
+                  <Text style={styles.metaText}>{story.metadata.viewCount}</Text>
+                </View>
+                <View style={styles.metaItem}>
+                  <IconButton icon="message-outline" size={16} iconColor="#8E9AAF" style={styles.metaIcon} />
+                  <Text style={styles.metaText}>{story.metadata.commentCount}</Text>
+                </View>
+              </View>
+            </View>
+          </View>
+          
+          <View style={styles.tagsRow}>
+            <Chip 
+              style={[styles.categoryChip, { backgroundColor: getCategoryHierarchyColor(story.content.category) + '15' }]}
+              textStyle={[styles.categoryText, { color: getCategoryHierarchyColor(story.content.category) }]}
+              compact
+            >
+              {getCategoryHierarchyIcon(story.content.category)} {story.content.category.sub}
+            </Chip>
+            <Chip 
+              style={[styles.emotionChip, { backgroundColor: getEmotionColor(story.content.emotion) + '15' }]}
+              textStyle={[styles.emotionText, { color: getEmotionColor(story.content.emotion) }]}
+              compact
+            >
+              {story.content.emotion}
+            </Chip>
+          </View>
+        </Surface>
+
+        {/* タイトル */}
+        <Surface style={styles.titleSection} elevation={1}>
+          <Text style={styles.storyTitle}>{story.content.title}</Text>
+        </Surface>
+
+        {/* ストーリー内容 */}
+        <View style={styles.storyContent}>
+          {/* 状況 */}
+          <Surface style={styles.contentSection} elevation={1}>
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionIcon}>
+                <Text style={styles.emoji}>📍</Text>
+              </View>
+              <Text style={styles.sectionTitle}>状況</Text>
+            </View>
+            <Text style={styles.sectionText}>{story.content.situation}</Text>
+          </Surface>
+
+          {/* 行動 */}
+          <Surface style={styles.contentSection} elevation={1}>
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionIcon}>
+                <Text style={styles.emoji}>⚡</Text>
+              </View>
+              <Text style={styles.sectionTitle}>行動</Text>
+            </View>
+            <Text style={styles.sectionText}>{story.content.action}</Text>
+          </Surface>
+
+          {/* 結果 */}
+          <Surface style={styles.contentSection} elevation={1}>
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionIcon}>
+                <Text style={styles.emoji}>💥</Text>
+              </View>
+              <Text style={styles.sectionTitle}>結果</Text>
+            </View>
+            <Text style={styles.sectionText}>{story.content.result}</Text>
+          </Surface>
+
+          {/* 学び */}
+          <Surface style={styles.learningSection} elevation={1}>
+            <View style={styles.sectionHeader}>
+              <View style={[styles.sectionIcon, styles.learningIcon]}>
+                <Text style={styles.emoji}>💡</Text>
+              </View>
+              <Text style={[styles.sectionTitle, styles.learningTitle]}>学び・気づき</Text>
+            </View>
+            <Text style={[styles.sectionText, styles.learningText]}>{story.content.learning}</Text>
+          </Surface>
+        </View>
+
+        <View style={styles.bottomSpace} />
       </ScrollView>
+
+      {/* アクションバー */}
+      <Surface style={styles.actionBar} elevation={5}>
+        <TouchableOpacity style={styles.actionButton} onPress={handleLike}>
+          <IconButton 
+            icon={isLiked ? "heart" : "heart-outline"} 
+            size={24} 
+            iconColor={isLiked ? "#E0245E" : "#8E9AAF"} 
+          />
+          <Text style={[styles.actionText, isLiked && styles.likedText]}>{likesCount}</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.actionButton} onPress={handleComment}>
+          <IconButton icon="message-outline" size={24} iconColor="#8E9AAF" />
+          <Text style={styles.actionText}>{story.metadata.commentCount}</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
+          <IconButton icon="share-outline" size={24} iconColor="#8E9AAF" />
+          <Text style={styles.actionText}>シェア</Text>
+        </TouchableOpacity>
+
+        <View style={styles.actionSpacer} />
+
+        <LinearGradient
+          colors={['#1DA1F2', '#1991DB']}
+          style={styles.supportButton}
+        >
+          <TouchableOpacity style={styles.supportButtonInner} onPress={handleLike}>
+            <IconButton icon="thumb-up" size={20} iconColor="#FFFFFF" style={styles.supportIcon} />
+            <Text style={styles.supportText}>参考になった</Text>
+          </TouchableOpacity>
+        </LinearGradient>
+      </Surface>
     </SafeAreaView>
   );
 };
@@ -277,13 +274,34 @@ const StoryDetailScreen = ({ navigation, route }: StoryDetailScreenProps) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#F8FAFC',
   },
-  scrollView: {
+  modernHeader: {
+    paddingTop: 10,
+    paddingBottom: 16,
+    paddingHorizontal: 16,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  backButton: {
+    width: 40,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
     flex: 1,
+    textAlign: 'center',
+  },
+  headerRight: {
+    width: 40,
+    alignItems: 'center',
   },
   content: {
-    padding: 16,
+    flex: 1,
   },
   loadingContainer: {
     flex: 1,
@@ -291,104 +309,197 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    marginTop: 16,
-    textAlign: 'center',
+    fontSize: 16,
+    color: '#8E9AAF',
   },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 32,
+  userSection: {
+    margin: 16,
+    padding: 20,
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
   },
-  errorText: {
-    marginBottom: 24,
-    textAlign: 'center',
-  },
-  headerCard: {
+  userHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
     marginBottom: 16,
   },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
+  avatar: {
+    marginRight: 16,
   },
-  headerInfo: {
-    marginLeft: 12,
+  userDetails: {
     flex: 1,
   },
-  authorName: {
+  userName: {
+    fontSize: 18,
     fontWeight: 'bold',
+    color: '#1E293B',
+    marginBottom: 4,
   },
-  postDate: {
-    color: '#666',
-    marginTop: 2,
+  postTime: {
+    fontSize: 14,
+    color: '#8E9AAF',
+    marginBottom: 8,
   },
-  title: {
-    fontWeight: 'bold',
-    marginBottom: 12,
-  },
-  chipRow: {
+  metaRow: {
     flexDirection: 'row',
+    alignItems: 'center',
+  },
+  metaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  metaIcon: {
+    margin: 0,
+  },
+  metaText: {
+    fontSize: 13,
+    color: '#8E9AAF',
+    marginLeft: -6,
+  },
+  tagsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     flexWrap: 'wrap',
-    gap: 8,
   },
   categoryChip: {
     marginRight: 8,
-    marginBottom: 4,
+    height: 28,
+    borderRadius: 14,
+  },
+  categoryText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   emotionChip: {
-    marginRight: 8,
-    marginBottom: 4,
-    backgroundColor: '#E8F5E8',
+    height: 28,
+    borderRadius: 14,
   },
-  chipText: {
-    color: '#fff',
+  emotionText: {
     fontSize: 12,
+    fontWeight: '600',
   },
-  statsCard: {
+  titleSection: {
+    marginHorizontal: 16,
     marginBottom: 16,
+    padding: 20,
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
   },
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  statItem: {
-    alignItems: 'center',
-  },
-  statNumber: {
+  storyTitle: {
+    fontSize: 24,
     fontWeight: 'bold',
-    color: '#6200EE',
+    color: '#1E293B',
+    lineHeight: 32,
+    textAlign: 'center',
   },
-  statLabel: {
-    color: '#666',
-    marginTop: 4,
+  storyContent: {
+    paddingHorizontal: 16,
   },
-  contentCard: {
+  contentSection: {
     marginBottom: 16,
+    padding: 20,
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
   },
-  sectionContainer: {
-    marginVertical: 8,
+  learningSection: {
+    marginBottom: 16,
+    padding: 20,
+    borderRadius: 16,
+    backgroundColor: 'linear-gradient(135deg, #FFF7ED, #FFFBEB)',
+    borderWidth: 1,
+    borderColor: '#F59E0B20',
   },
-  sectionTitle: {
-    marginBottom: 8,
-    color: '#333',
-  },
-  sectionContent: {
-    lineHeight: 24,
-    color: '#555',
-  },
-  divider: {
-    marginVertical: 16,
-  },
-  actionCard: {
-    marginBottom: 32,
-  },
-  helpfulButton: {
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 12,
   },
-  actionDescription: {
-    textAlign: 'center',
-    color: '#666',
+  sectionIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  learningIcon: {
+    backgroundColor: '#FEF3C7',
+  },
+  emoji: {
+    fontSize: 16,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#1E293B',
+  },
+  learningTitle: {
+    color: '#D97706',
+  },
+  sectionText: {
+    fontSize: 16,
+    color: '#475569',
+    lineHeight: 24,
+  },
+  learningText: {
+    color: '#92400E',
+    fontWeight: '500',
+  },
+  actionBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  actionText: {
+    fontSize: 13,
+    color: '#8E9AAF',
+    fontWeight: '500',
+    marginLeft: -6,
+  },
+  likedText: {
+    color: '#E0245E',
+  },
+  actionSpacer: {
+    flex: 1,
+  },
+  supportButton: {
+    borderRadius: 20,
+    shadowColor: '#1DA1F2',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  supportButtonInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  supportIcon: {
+    margin: 0,
+  },
+  supportText: {
+    fontSize: 14,
+    color: '#FFFFFF',
+    fontWeight: '600',
+    marginLeft: -4,
+  },
+  bottomSpace: {
+    height: 40,
   },
 });
 
