@@ -67,13 +67,22 @@ const CreateStoryScreen: React.FC<CreateStoryScreenProps> = ({ navigation }) => 
   };
 
   const handleSubmit = async () => {
-    if (!validateForm()) return;
+    console.log('🚀 投稿処理開始');
+    
+    if (!validateForm()) {
+      console.log('❌ バリデーション失敗');
+      return;
+    }
+    
     if (!user) {
+      console.log('❌ ユーザーログインなし');
       Alert.alert('エラー', 'ログインが必要です');
       return;
     }
 
+    console.log('✅ バリデーション成功、投稿処理中...');
     setLoading(true);
+    
     try {
       const storyData = {
         title: formData.title,
@@ -85,7 +94,9 @@ const CreateStoryScreen: React.FC<CreateStoryScreenProps> = ({ navigation }) => 
         emotion: formData.emotion
       };
 
+      console.log('📝 投稿データ:', storyData);
       const storyId = await storyService.createStory(user.id, storyData);
+      console.log('✅ Firestore投稿成功 ID:', storyId);
       
       const newStory: FailureStory = {
         id: storyId,
@@ -108,13 +119,79 @@ const CreateStoryScreen: React.FC<CreateStoryScreenProps> = ({ navigation }) => 
         }
       };
       
+      // グローバルstateに追加
+      console.log('📊 グローバルstateに追加中...');
       addStory(newStory);
-      Alert.alert('投稿完了', '失敗談を投稿しました！', [
-        { text: 'OK', onPress: () => navigation.goBack() }
-      ]);
+      console.log('✅ グローバルstate追加完了');
+      
+      // フォームをリセット
+      setFormData({
+        title: '',
+        category: { main: '' as MainCategory, sub: '' as SubCategory } as CategoryHierarchy,
+        situation: '',
+        action: '',
+        result: '',
+        learning: '',
+        emotion: '' as EmotionType
+      });
+      setCurrentStep(1);
+      console.log('🔄 フォームリセット完了');
+      
+      // 直接画面遷移をテスト
+      console.log('📱 直接ナビゲーション実行中...');
+      // ネストしたナビゲーター構造に対応
+      navigation.navigate('MainTabs', { screen: 'Home' });
+      console.log('✅ 直接ナビゲーション実行完了');
+      
+      // 成功フィードバック（画面遷移後）
+      console.log('🎉 成功アラート表示中...');
+      setTimeout(() => {
+        Alert.alert(
+          '🎉 投稿完了！', 
+          'あなたの失敗談を投稿しました。\nホーム画面で確認できます。'
+        );
+      }, 500);
+      
+      // 元のAlert実装（コメントアウト）
+      /*
+      Alert.alert(
+        '🎉 投稿完了！', 
+        'あなたの失敗談を投稿しました。\nホーム画面で確認できます。', 
+        [
+          { 
+            text: 'ホームに戻る', 
+            onPress: () => {
+              console.log('🏠 ホーム画面へ遷移中...');
+              
+              // フォームをリセット
+              setFormData({
+                title: '',
+                category: { main: '' as MainCategory, sub: '' as SubCategory } as CategoryHierarchy,
+                situation: '',
+                action: '',
+                result: '',
+                learning: '',
+                emotion: '' as EmotionType
+              });
+              setCurrentStep(1);
+              
+              console.log('🔄 フォームリセット完了');
+              console.log('📱 navigation.navigate("Home") 実行中...');
+              
+              // 画面遷移
+              navigation.navigate('Home');
+              
+              console.log('✅ navigation.navigate("Home") 実行完了');
+            }
+          }
+        ]
+      );
+      */
     } catch (error) {
-      Alert.alert('エラー', '投稿に失敗しました');
+      console.error('❌ 投稿エラー:', error);
+      Alert.alert('❌ 投稿失敗', '投稿に失敗しました。\nもう一度お試しください。');
     } finally {
+      console.log('🔄 ローディング終了');
       setLoading(false);
     }
   };

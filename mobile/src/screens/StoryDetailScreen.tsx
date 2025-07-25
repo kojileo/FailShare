@@ -57,14 +57,32 @@ const StoryDetailScreen: React.FC<StoryDetailScreenProps> = ({ route, navigation
     }
   };
 
-  const getTimeAgo = (date: Date): string => {
-    const now = new Date();
-    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
-    
-    if (diffInHours < 1) return '今';
-    if (diffInHours < 24) return `${diffInHours}時間前`;
-    if (diffInHours < 168) return `${Math.floor(diffInHours / 24)}日前`;
-    return date.toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' });
+  const getTimeAgo = (date: Date | any): string => {
+    try {
+      // Firestore Timestampの場合の処理
+      let actualDate: Date;
+      if (date && typeof date.toDate === 'function') {
+        actualDate = date.toDate();
+      } else if (date instanceof Date) {
+        actualDate = date;
+      } else if (date && typeof date === 'object' && date.seconds) {
+        // Firestore Timestamp形式 {seconds: number, nanoseconds: number}
+        actualDate = new Date(date.seconds * 1000);
+      } else {
+        return '不明';
+      }
+
+      const now = new Date();
+      const diffInHours = Math.floor((now.getTime() - actualDate.getTime()) / (1000 * 60 * 60));
+      
+      if (diffInHours < 1) return '今';
+      if (diffInHours < 24) return `${diffInHours}時間前`;
+      if (diffInHours < 168) return `${Math.floor(diffInHours / 24)}日前`;
+      return actualDate.toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' });
+    } catch (error) {
+      console.error('時間計算エラー:', error);
+      return '不明';
+    }
   };
 
   const getEmotionColor = (emotion: string): string => {
@@ -167,7 +185,7 @@ const StoryDetailScreen: React.FC<StoryDetailScreenProps> = ({ route, navigation
               textStyle={[styles.categoryText, { color: getCategoryHierarchyColor(story.content.category) }]}
               compact
             >
-              {getCategoryHierarchyIcon(story.content.category)} {story.content.category.sub}
+              {`${getCategoryHierarchyIcon(story.content.category)} ${story.content.category.sub}`}
             </Chip>
             <Chip 
               style={[styles.emotionChip, { backgroundColor: getEmotionColor(story.content.emotion) + '15' }]}

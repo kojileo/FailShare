@@ -61,14 +61,32 @@ const MyStoriesScreen: React.FC<MyStoriesScreenProps> = ({ navigation }) => {
     }
   };
 
-  const getTimeAgo = (date: Date): string => {
-    const now = new Date();
-    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
-    
-    if (diffInHours < 1) return '今';
-    if (diffInHours < 24) return `${diffInHours}時間前`;
-    if (diffInHours < 168) return `${Math.floor(diffInHours / 24)}日前`;
-    return date.toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' });
+  const getTimeAgo = (date: Date | any): string => {
+    try {
+      // Firestore Timestampの場合の処理
+      let actualDate: Date;
+      if (date && typeof date.toDate === 'function') {
+        actualDate = date.toDate();
+      } else if (date instanceof Date) {
+        actualDate = date;
+      } else if (date && typeof date === 'object' && date.seconds) {
+        // Firestore Timestamp形式 {seconds: number, nanoseconds: number}
+        actualDate = new Date(date.seconds * 1000);
+      } else {
+        return '不明';
+      }
+
+      const now = new Date();
+      const diffInHours = Math.floor((now.getTime() - actualDate.getTime()) / (1000 * 60 * 60));
+      
+      if (diffInHours < 1) return '今';
+      if (diffInHours < 24) return `${diffInHours}時間前`;
+      if (diffInHours < 168) return `${Math.floor(diffInHours / 24)}日前`;
+      return actualDate.toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' });
+    } catch (error) {
+      console.error('時間計算エラー:', error);
+      return '不明';
+    }
   };
 
   const getEmotionColor = (emotion: string): string => {
@@ -123,7 +141,7 @@ const MyStoriesScreen: React.FC<MyStoriesScreenProps> = ({ navigation }) => {
               <View style={styles.userDetails}>
                 <View style={styles.userInfoRow}>
                   <Text style={styles.userName}>あなた</Text>
-                  <Text style={styles.timeAgo}>・{getTimeAgo(item.metadata.createdAt)}</Text>
+                  <Text style={styles.timeAgo}>{`・${getTimeAgo(item.metadata.createdAt)}`}</Text>
                 </View>
                 <View style={styles.categoryContainer}>
                   <Chip 
@@ -131,7 +149,7 @@ const MyStoriesScreen: React.FC<MyStoriesScreenProps> = ({ navigation }) => {
                     style={[styles.categoryChip, { backgroundColor: getCategoryHierarchyColor(item.content.category) + '15' }]}
                     textStyle={[styles.categoryText, { color: getCategoryHierarchyColor(item.content.category) }]}
                   >
-                    {getCategoryHierarchyIcon(item.content.category)} {item.content.category.sub}
+                    {`${getCategoryHierarchyIcon(item.content.category)} ${item.content.category.sub}`}
                   </Chip>
                   <Chip 
                     compact

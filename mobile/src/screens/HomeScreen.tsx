@@ -10,6 +10,7 @@ import {
   Surface
 } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useFocusEffect } from '@react-navigation/native';
 import { FailureStory, MainCategory, SubCategory } from '../types';
 import { storyService } from '../services/storyService';
 import { useAuthStore } from '../stores/authStore';
@@ -35,24 +36,25 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const [selectedMainCategory, setSelectedMainCategory] = useState<MainCategory | null>(null);
   const [selectedSubCategory, setSelectedSubCategory] = useState<SubCategory | null>(null);
   const [filteredStories, setFilteredStories] = useState<FailureStory[]>([]);
-  const [allStories, setAllStories] = useState<FailureStory[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
   const mainCategories = getMainCategories();
 
-  useEffect(() => {
-    loadStories();
-  }, []);
+  // 画面フォーカス時に自動リフレッシュ
+  useFocusEffect(
+    React.useCallback(() => {
+      loadStories();
+    }, [])
+  );
 
   useEffect(() => {
     filterStories();
-  }, [searchQuery, selectedMainCategory, selectedSubCategory, allStories]);
+  }, [searchQuery, selectedMainCategory, selectedSubCategory, stories]);
 
   const loadStories = async (showLoading = true) => {
     try {
       if (showLoading) setLoading(true);
       const { stories: fetchedStories } = await storyService.getStories();
-      setAllStories(fetchedStories);
       setStories(fetchedStories);
     } catch (error) {
       console.error('ストーリー取得エラー:', error);
@@ -62,7 +64,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   };
 
   const filterStories = () => {
-    let filtered = allStories;
+    let filtered = stories;
 
     // テキスト検索
     if (searchQuery.trim()) {
@@ -107,14 +109,32 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     setSelectedSubCategory(null);
   };
 
-  const getTimeAgo = (date: Date): string => {
-    const now = new Date();
-    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
-    
-    if (diffInHours < 1) return '今';
-    if (diffInHours < 24) return `${diffInHours}時間`;
-    if (diffInHours < 168) return `${Math.floor(diffInHours / 24)}日`;
-    return date.toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' });
+  const getTimeAgo = (date: Date | any): string => {
+    try {
+      // Firestore Timestampの場合の処理
+      let actualDate: Date;
+      if (date && typeof date.toDate === 'function') {
+        actualDate = date.toDate();
+      } else if (date instanceof Date) {
+        actualDate = date;
+      } else if (date && typeof date === 'object' && date.seconds) {
+        // Firestore Timestamp形式 {seconds: number, nanoseconds: number}
+        actualDate = new Date(date.seconds * 1000);
+      } else {
+        return '不明';
+      }
+
+      const now = new Date();
+      const diffInHours = Math.floor((now.getTime() - actualDate.getTime()) / (1000 * 60 * 60));
+      
+      if (diffInHours < 1) return '今';
+      if (diffInHours < 24) return `${diffInHours}時間前`;
+      if (diffInHours < 168) return `${Math.floor(diffInHours / 24)}日前`;
+      return actualDate.toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' });
+    } catch (error) {
+      console.error('時間計算エラー:', error);
+      return '不明';
+    }
   };
 
   const getEmotionColor = (emotion: string): string => {
@@ -130,81 +150,92 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     return emotionColors[emotion] || '#B0BEC5';
   };
 
-  const renderStoryItem = ({ item }: { item: FailureStory }) => (
-    <TouchableOpacity 
-      onPress={() => navigation?.navigate('StoryDetail', { storyId: item.id })}
-      activeOpacity={0.7}
-    >
-      <Surface style={styles.storyCard} elevation={1}>
-        <View style={styles.cardContent}>
-          {/* ヘッダー部分 */}
-          <View style={styles.cardHeader}>
-            <Avatar.Image 
-              size={44} 
-              source={{ uri: `https://robohash.org/user${item.authorId}?set=set4` }}
-              style={styles.avatar}
-            />
-            <View style={styles.userDetails}>
-              <View style={styles.userInfoRow}>
-                <Text style={styles.userName}>匿名ユーザー</Text>
-                <Text style={styles.timeAgo}>・{getTimeAgo(item.metadata.createdAt)}</Text>
+  const renderStoryItem = ({ item }: { item: FailureStory }) => {
+    try {
+      return (
+        <TouchableOpacity 
+          onPress={() => navigation?.navigate('StoryDetail', { storyId: item.id })}
+          activeOpacity={0.7}
+        >
+          <Surface style={styles.storyCard} elevation={1}>
+            <View style={styles.cardContent}>
+              {/* ヘッダー部分 */}
+              <View style={styles.cardHeader}>
+                <Avatar.Image 
+                  size={44} 
+                  source={{ uri: `https://robohash.org/user${item.authorId}?set=set4` }}
+                  style={styles.avatar}
+                />
+                <View style={styles.userDetails}>
+                  <View style={styles.userInfoRow}>
+                    <Text style={styles.userName}>匿名ユーザー</Text>
+                    <Text style={styles.timeAgo}>{`・${getTimeAgo(item.metadata.createdAt)}`}</Text>
+                  </View>
+                  <View style={styles.categoryContainer}>
+                    <Chip 
+                      compact
+                      style={[styles.categoryChip, { backgroundColor: getCategoryHierarchyColor(item.content.category) + '15' }]}
+                      textStyle={[styles.categoryText, { color: getCategoryHierarchyColor(item.content.category) }]}
+                    >
+                      {`${getCategoryHierarchyIcon(item.content.category)} ${item.content.category.sub}`}
+                    </Chip>
+                    <Chip 
+                      compact
+                      style={[styles.emotionChip, { backgroundColor: getEmotionColor(item.content.emotion) + '15' }]}
+                      textStyle={[styles.emotionText, { color: getEmotionColor(item.content.emotion) }]}
+                    >
+                      {item.content.emotion}
+                    </Chip>
+                  </View>
+                </View>
               </View>
-              <View style={styles.categoryContainer}>
-                <Chip 
-                  compact
-                  style={[styles.categoryChip, { backgroundColor: getCategoryHierarchyColor(item.content.category) + '15' }]}
-                  textStyle={[styles.categoryText, { color: getCategoryHierarchyColor(item.content.category) }]}
-                >
-                  {getCategoryHierarchyIcon(item.content.category)} {item.content.category.sub}
-                </Chip>
-                <Chip 
-                  compact
-                  style={[styles.emotionChip, { backgroundColor: getEmotionColor(item.content.emotion) + '15' }]}
-                  textStyle={[styles.emotionText, { color: getEmotionColor(item.content.emotion) }]}
-                >
-                  {item.content.emotion}
-                </Chip>
+
+              {/* メインコンテンツ */}
+              <View style={styles.mainContent}>
+                <Text style={styles.storyTitle} numberOfLines={2}>
+                  {item.content.title}
+                </Text>
+                <Text style={styles.storyPreview} numberOfLines={3}>
+                  {item.content.situation}
+                </Text>
+              </View>
+
+              {/* アクション */}
+              <View style={styles.cardActions}>
+                <TouchableOpacity style={styles.actionItem}>
+                  <IconButton icon="eye-outline" size={18} iconColor="#8E9AAF" style={styles.actionIcon} />
+                  <Text style={styles.actionText}>{item.metadata.viewCount}</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity style={styles.actionItem}>
+                  <IconButton icon="heart-outline" size={18} iconColor="#8E9AAF" style={styles.actionIcon} />
+                  <Text style={styles.actionText}>{item.metadata.helpfulCount}</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity style={styles.actionItem}>
+                  <IconButton icon="message-outline" size={18} iconColor="#8E9AAF" style={styles.actionIcon} />
+                  <Text style={styles.actionText}>{item.metadata.commentCount}</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity style={styles.actionItem}>
+                  <IconButton icon="share-outline" size={18} iconColor="#8E9AAF" style={styles.actionIcon} />
+                </TouchableOpacity>
               </View>
             </View>
-          </View>
-
-          {/* メインコンテンツ */}
-          <View style={styles.mainContent}>
-            <Text style={styles.storyTitle} numberOfLines={2}>
-              {item.content.title}
-            </Text>
-            <Text style={styles.storyPreview} numberOfLines={3}>
-              {item.content.situation}
-            </Text>
-          </View>
-
-          {/* アクション部分 */}
-          <View style={styles.cardActions}>
-            <TouchableOpacity style={styles.actionItem}>
-              <IconButton icon="eye-outline" size={18} iconColor="#8E9AAF" style={styles.actionIcon} />
-              <Text style={styles.actionText}>{item.metadata.viewCount}</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.actionItem}>
-              <IconButton icon="heart-outline" size={18} iconColor="#8E9AAF" style={styles.actionIcon} />
-              <Text style={styles.actionText}>{item.metadata.helpfulCount}</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.actionItem}>
-              <IconButton icon="message-outline" size={18} iconColor="#8E9AAF" style={styles.actionIcon} />
-              <Text style={styles.actionText}>{item.metadata.commentCount}</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.actionItem}>
-              <IconButton icon="share-outline" size={18} iconColor="#8E9AAF" style={styles.actionIcon} />
-            </TouchableOpacity>
-          </View>
+          </Surface>
+        </TouchableOpacity>
+      );
+    } catch (error) {
+      console.error('renderStoryItem エラー:', error);
+      return (
+        <View style={styles.storyCard}>
+          <Text>アイテム表示エラー</Text>
         </View>
-      </Surface>
-    </TouchableOpacity>
-  );
+      );
+    }
+  };
 
-  const displayStories = searchQuery || selectedMainCategory || selectedSubCategory ? filteredStories : allStories;
+  const displayStories = searchQuery || selectedMainCategory || selectedSubCategory ? filteredStories : stories;
 
   return (
     <View style={styles.container}>
