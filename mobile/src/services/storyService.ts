@@ -18,12 +18,12 @@ import {
   Timestamp
 } from 'firebase/firestore';
 import { db } from './firebase';
-import { FailureStory, StoryCategory, EmotionType } from '../types';
+import { FailureStory, StoryCategory, EmotionType, CategoryHierarchy } from '../types';
 import { getCategoryNames } from '../utils/categories';
 
 export interface CreateStoryData {
   title: string;
-  category: StoryCategory;
+  category: CategoryHierarchy; // 階層構造に変更
   situation: string;
   action: string;
   result: string;
@@ -105,7 +105,7 @@ class StoryService {
           authorId: 'sample_user_1',
           content: {
             title: '初デートで高級レストランを選んで失敗',
-            category: 'デート' as StoryCategory,
+            category: { main: '恋愛', sub: 'デート' },
             situation: 'マッチングアプリで知り合った人と初デートの約束をしました。相手に良い印象を与えたくて、特別な場所を選ぼうと考えました。',
             action: '相手の好みや予算を確認せず、一人で高級フレンチレストランを予約してしまいました。サプライズのつもりでした。',
             result: '相手はカジュアルな服装で来たため、場の雰囲気に困惑していました。緊張して会話も弾まず、気まずい時間を過ごしました。',
@@ -124,7 +124,7 @@ class StoryService {
           authorId: 'sample_user_2',
           content: {
             title: '友人の恋人に告白してしまった',
-            category: '告白' as StoryCategory,
+            category: { main: '恋愛', sub: '告白' },
             situation: '大学時代の友人グループで遊んでいたとき、友人の恋人に好意を抱いてしまいました。相手も私に優しく接してくれるので、勘違いしていました。',
             action: '友人関係を壊すかもしれないと思いつつも、気持ちを抑えきれずに告白してしまいました。',
             result: '当然断られ、友人にもバレて大きく関係が悪化しました。グループからも距離を置かれ、大切な友人たちを失いました。',
@@ -143,7 +143,7 @@ class StoryService {
           authorId: 'sample_user_3',
           content: {
             title: 'LINEの既読スルーに過剰反応した',
-            category: 'カップル' as StoryCategory,
+            category: { main: '恋愛', sub: 'カップル' },
             situation: '付き合って2ヶ月の恋人とLINEでやりとりしていました。いつも即レスしてくれるのに、その日は8時間既読スルーされました。',
             action: '不安になって「何かあった？」「怒ってる？」「返事して」と立て続けにメッセージを送ってしまいました。',
             result: '恋人は仕事で忙しかっただけでしたが、私の過剰な反応に疲れてしまい、「重い」と言われて距離を置かれました。',
@@ -162,7 +162,7 @@ class StoryService {
           authorId: 'sample_user_4',
           content: {
             title: '好きな人に全く振り向いてもらえなかった',
-            category: '片想い' as StoryCategory,
+            category: { main: '恋愛', sub: '片想い' },
             situation: '職場の先輩に恋をしました。毎日一緒に働いているうちに、どんどん好きになっていきました。',
             action: '遠回しなアプローチばかりで、直接的に気持ちを伝えることができませんでした。お疲れ様でしたメールを送ったり、差し入れをしたりしていました。',
             result: '先輩は私のことを後輩として見ているだけで、恋愛対象として全く意識してもらえませんでした。他の人と付き合い始めました。',
@@ -181,7 +181,7 @@ class StoryService {
           authorId: 'sample_user_5',
           content: {
             title: '復縁を迫って嫌われてしまった',
-            category: '別れ' as StoryCategory,
+            category: { main: '恋愛', sub: '別れ' },
             situation: '2年付き合った恋人から別れを告げられました。まだ好きだったので、どうしても諦めることができませんでした。',
             action: '毎日のようにLINEを送り、職場や家の近くで待ち伏せをしてしまいました。復縁してほしいと何度も頼みました。',
             result: '相手にストーカー扱いされ、最終的には友人経由で「もう連絡しないで」と言われました。完全に嫌われてしまいました。',
@@ -200,7 +200,7 @@ class StoryService {
           authorId: 'sample_user_6',
           content: {
             title: 'SNSの投稿で恋人を傷つけてしまった',
-            category: 'その他' as StoryCategory,
+            category: { main: 'その他', sub: 'その他' },
             situation: '恋人と一緒にいる時間をSNSに投稿するのが習慣になっていました。いつも楽しそうな写真をアップしていました。',
             action: '恋人が写真映りを気にしているのに、無断で写真をアップしてしまいました。また、プライベートな内容も投稿していました。',
             result: '恋人から「プライバシーを考えてほしい」と怒られました。SNSに依存している私に嫌気がさしたようでした。',
@@ -213,6 +213,63 @@ class StoryService {
             helpfulCount: 18,
             commentCount: 8,
             tags: ['SNS', 'プライバシー', '写真', 'バランス']
+          }
+        },
+        {
+          authorId: 'sample_user_1',
+          content: {
+            title: '上司への報告を忘れて大きなミスに',
+            category: { main: '仕事', sub: '職場人間関係' },
+            situation: '新しいプロジェクトで、週次進捗を上司に報告する決まりになっていました。初回は丁寧に説明してもらったのですが、慣れてきて気が緩んでいました。',
+            action: '忙しさを理由に、2週間連続で報告を忘れてしまいました。「今度でいいや」という軽い気持ちでした。',
+            result: 'プロジェクトで問題が発生していたのに上司が把握できず、クライアントからのクレームに発展してしまいました。信頼を大きく失いました。',
+            learning: '報告・連絡・相談の基本の重要性を痛感しました。小さなことでも継続して報告することで、大きな問題を防げることを学びました。',
+            emotion: '後悔' as EmotionType
+          },
+          metadata: {
+            createdAt: Timestamp.fromDate(new Date(2024, 0, 7)),
+            viewCount: 134,
+            helpfulCount: 22,
+            commentCount: 7,
+            tags: ['報告', '連絡', '上司', 'プロジェクト']
+          }
+        },
+        {
+          authorId: 'sample_user_2',
+          content: {
+            title: '転職活動で年収を盛って言ってしまった',
+            category: { main: '仕事', sub: '転職・キャリア' },
+            situation: '転職活動中、面接で現在の年収について聞かれました。少しでも有利になりたくて、嘘の情報を伝えようと考えてしまいました。',
+            action: '実際の年収より100万円高い金額を答えてしまいました。バレないだろうと思い込んでいました。',
+            result: '内定後の給与交渉で、源泉徴収票の提出を求められて嘘がバレました。信頼を失い、内定を取り消されてしまいました。',
+            learning: '正直さが最も重要だと学びました。短期的な利益のために嘘をつくと、長期的に大きな損失になることを実感しています。',
+            emotion: '恥ずかしい' as EmotionType
+          },
+          metadata: {
+            createdAt: Timestamp.fromDate(new Date(2024, 0, 8)),
+            viewCount: 189,
+            helpfulCount: 31,
+            commentCount: 12,
+            tags: ['転職', '年収', '嘘', '内定取り消し']
+          }
+        },
+        {
+          authorId: 'sample_user_3',
+          content: {
+            title: 'プレゼンで準備不足が露呈してしまった',
+            category: { main: '仕事', sub: 'プレゼン・会議' },
+            situation: '重要なクライアントへの提案プレゼンを任されました。経験が浅く不安でしたが、「なんとかなる」と楽観視していました。',
+            action: '資料作成に時間をかけすぎて、リハーサルをほとんどしませんでした。当日も「なんとかなる」と思っていました。',
+            result: '本番で質問に答えられず、データの根拠も曖昧で、クライアントからの信頼を失いました。プロジェクトを他社に取られました。',
+            learning: '準備の重要性と、リハーサルの価値を学びました。どんなに資料が良くても、伝える練習をしなければ意味がないことを実感しました。',
+            emotion: '不安' as EmotionType
+          },
+          metadata: {
+            createdAt: Timestamp.fromDate(new Date(2024, 0, 9)),
+            viewCount: 145,
+            helpfulCount: 28,
+            commentCount: 9,
+            tags: ['プレゼン', '準備不足', 'クライアント', 'リハーサル']
           }
         }
       ];
@@ -505,7 +562,7 @@ class StoryService {
     const tags: string[] = [];
     
     // カテゴリーとEmotionは必ずタグに含める
-    tags.push(data.category, data.emotion);
+    tags.push(data.category.main, data.category.sub, data.emotion);
     
     // タイトルから追加のタグを生成（シンプルなキーワード抽出）
     const keywords = ['転職', '面接', '失恋', '投資', '貯金', '人間関係', '上司', '部下', '仕事'];
@@ -538,7 +595,8 @@ class StoryService {
         content.action,
         content.result,
         content.learning,
-        content.category,
+        content.category.main,
+        content.category.sub,
         content.emotion,
         ...metadata.tags
       ];

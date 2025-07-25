@@ -15,7 +15,13 @@ import { StackScreenProps } from '@react-navigation/stack';
 import { RootStackParamList, FailureStory } from '../types';
 import { storyService } from '../services/storyService';
 import { useAuthStore } from '../stores/authStore';
-import { getCategoryColor } from '../utils/categories';
+import { 
+  getCategoryDisplayString, 
+  getCategoryHierarchyColor, 
+  getCategoryHierarchyIcon,
+  getMainCategoryString,
+  getSubCategoryString
+} from '../utils/categories';
 
 type StoryDetailScreenProps = StackScreenProps<RootStackParamList, 'StoryDetail'>;
 
@@ -68,7 +74,18 @@ const StoryDetailScreen = ({ navigation, route }: StoryDetailScreenProps) => {
     }
   };
 
-  // getCategoryColorはutilsから使用
+  const getEmotionColor = (emotion: string): string => {
+    const emotionColors: { [key: string]: string } = {
+      '後悔': '#FF6B6B',
+      '恥ずかしい': '#FFB347',
+      '悲しい': '#4ECDC4',
+      '不安': '#95E1D3',
+      '怒り': '#F38BA8',
+      '混乱': '#DDA0DD',
+      'その他': '#B0BEC5'
+    };
+    return emotionColors[emotion] || '#B0BEC5';
+  };
 
   const getEmotionEmoji = (emotion: string) => {
     const emojis: { [key: string]: string } = {
@@ -135,15 +152,17 @@ const StoryDetailScreen = ({ navigation, route }: StoryDetailScreenProps) => {
                 {story.content.title}
               </Text>
               
-              <View style={styles.tagsRow}>
+              <View style={styles.chipRow}>
                 <Chip 
-                  style={[styles.categoryChip, { backgroundColor: getCategoryColor(story.content.category) }]}
+                  icon="tag"
+                  style={[styles.categoryChip, { backgroundColor: getCategoryHierarchyColor(story.content.category) }]}
                   textStyle={styles.chipText}
                 >
-                  {story.content.category}
+                  {getCategoryDisplayString(story.content.category)}
                 </Chip>
                 <Chip 
-                  style={styles.emotionChip}
+                  icon="emoticon"
+                  style={[styles.emotionChip, { backgroundColor: getEmotionColor(story.content.emotion) }]}
                   textStyle={styles.chipText}
                 >
                   {getEmotionEmoji(story.content.emotion)} {story.content.emotion}
@@ -308,7 +327,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 12,
   },
-  tagsRow: {
+  chipRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,

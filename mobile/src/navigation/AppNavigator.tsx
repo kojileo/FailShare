@@ -5,7 +5,6 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { MaterialIcons } from '@expo/vector-icons';
 import { RootStackParamList } from '../types';
 import HomeScreen from '../screens/HomeScreen';
-import SearchScreen from '../screens/SearchScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import CreateStoryScreen from '../screens/CreateStoryScreen';
 import StoryDetailScreen from '../screens/StoryDetailScreen';
@@ -30,16 +29,6 @@ const TabNavigator: React.FC = () => {
           tabBarLabel: 'ホーム',
           tabBarIcon: ({ color, size }) => (
             <MaterialIcons name="home" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="Search"
-        component={SearchScreen}
-        options={{
-          tabBarLabel: '検索',
-          tabBarIcon: ({ color, size }) => (
-            <MaterialIcons name="search" size={size} color={color} />
           ),
         }}
       />

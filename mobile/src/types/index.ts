@@ -18,7 +18,7 @@ export interface FailureStory {
   authorId: string;
   content: {
     title: string;
-    category: StoryCategory;
+    category: CategoryHierarchy; // 階層構造に変更
     situation: string;
     action: string;
     result: string;
@@ -52,12 +52,39 @@ export interface SupportAction {
   timestamp: Date;
 }
 
+export type MainCategory = '恋愛' | '仕事' | 'その他';
+
+export type LoveSubCategory = 
+  | 'デート'
+  | '告白'
+  | 'カップル'
+  | '片想い'
+  | '別れ';
+
+export type WorkSubCategory = 
+  | '職場人間関係'
+  | '転職・キャリア'
+  | 'プレゼン・会議'
+  | 'プロジェクト管理'
+  | 'スキル習得';
+
+export type OtherSubCategory = 'その他';
+
+export type SubCategory = LoveSubCategory | WorkSubCategory | OtherSubCategory;
+
+export interface CategoryHierarchy {
+  main: MainCategory;
+  sub: SubCategory;
+}
+
+// 後方互換性のため、従来のStoryCategory型も残す
 export type StoryCategory = 
   | 'デート'
   | '告白'
   | 'カップル'
   | '片想い'
   | '別れ'
+  | '仕事'
   | 'その他';
 
 export type EmotionType = 
@@ -79,6 +106,5 @@ export type RootStackParamList = {
 
 export type TabParamList = {
   Home: undefined;
-  Search: undefined;
   Profile: undefined;
 }; 

@@ -7,6 +7,7 @@ import { RootStackParamList, FailureStory } from '../types';
 import { storyService } from '../services/storyService';
 import { useAuthStore } from '../stores/authStore';
 import { useStoryStore } from '../stores/storyStore';
+import { getCategoryDisplayString } from '../utils/categories';
 
 type MyStoriesScreenProps = StackScreenProps<RootStackParamList, 'MyStories'>;
 
@@ -80,28 +81,27 @@ const MyStoriesScreen = ({ navigation }: MyStoriesScreenProps) => {
 
   const renderStoryItem = ({ item }: { item: FailureStory }) => (
     <Card style={styles.storyCard}>
-      <Card.Title 
-        title={item.content.title} 
-        subtitle={item.content.category}
+      <Card.Title
+        title={item.content.title}
+        subtitle={getCategoryDisplayString(item.content.category)}
         right={(props) => (
-          <View style={styles.cardActions}>
+          <View style={styles.actionButtons}>
             <IconButton
+              {...props}
               icon="eye"
-              size={20}
               onPress={() => navigation.navigate('StoryDetail', { storyId: item.id })}
             />
             <IconButton
+              {...props}
               icon="delete"
-              size={20}
-              iconColor="#e53e3e"
-              disabled={deleting === item.id}
               onPress={() => handleDeleteStory(item.id)}
+              disabled={deleting === item.id}
             />
           </View>
         )}
       />
       <Card.Content>
-        <Text variant="bodyMedium" numberOfLines={3}>
+        <Text variant="bodyMedium" numberOfLines={2}>
           {item.content.situation}
         </Text>
         <View style={styles.metadata}>
@@ -109,9 +109,6 @@ const MyStoriesScreen = ({ navigation }: MyStoriesScreenProps) => {
             👀 {item.metadata.viewCount} • 
             👍 {item.metadata.helpfulCount} • 
             💬 {item.metadata.commentCount}
-          </Text>
-          <Text variant="bodySmall" style={styles.dateText}>
-            {item.metadata.createdAt.toLocaleDateString('ja-JP')}
           </Text>
         </View>
       </Card.Content>
@@ -211,7 +208,7 @@ const styles = StyleSheet.create({
   storyCard: {
     marginBottom: 16,
   },
-  cardActions: {
+  actionButtons: {
     flexDirection: 'row',
     alignItems: 'center',
   },
