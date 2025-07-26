@@ -4,21 +4,21 @@ import {
   Text, 
   Avatar, 
   Button, 
-  Chip,
   IconButton,
   Surface,
-  Divider,
   Switch
 } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FailureStory } from '../types';
-import { storyService } from '../services/storyService';
+
 import { useAuthStore } from '../stores/authStore';
 import { useStoryStore } from '../stores/storyStore';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../types';
 
 interface ProfileScreenProps {
-  navigation: any;
+  navigation: NativeStackNavigationProp<RootStackParamList, 'Profile'>;
 }
 
 const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
@@ -35,7 +35,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
     }
   }, [user, stories]);
 
-    const handleLogout = () => {
+  const _handleLogout = () => {
     Alert.alert(
       'ログアウト',
       'ログアウトしますか？',

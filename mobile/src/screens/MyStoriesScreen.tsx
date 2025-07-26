@@ -3,7 +3,6 @@ import { View, FlatList, StyleSheet, RefreshControl, Alert, TouchableOpacity, St
 import { 
   Text, 
   Avatar, 
-  FAB, 
   Chip,
   IconButton,
   Surface,
@@ -16,13 +15,14 @@ import { storyService } from '../services/storyService';
 import { useAuthStore } from '../stores/authStore';
 import { useStoryStore } from '../stores/storyStore';
 import { 
-  getCategoryDisplayString, 
   getCategoryHierarchyColor,
   getCategoryHierarchyIcon
 } from '../utils/categories';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../types';
 
 interface MyStoriesScreenProps {
-  navigation: any;
+  navigation: NativeStackNavigationProp<RootStackParamList, 'MyStories'>;
 }
 
 const MyStoriesScreen: React.FC<MyStoriesScreenProps> = ({ navigation }) => {

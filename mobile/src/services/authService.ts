@@ -1,6 +1,6 @@
 import { auth, db } from './firebase';
 import { signInAnonymously, signOut, User as FirebaseUser } from 'firebase/auth';
-import { doc, setDoc, getDoc, updateDoc, deleteDoc, collection, query, where, getDocs, writeBatch, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs, writeBatch, serverTimestamp, Timestamp } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ONBOARDING_KEY = '@FailShare:onboarding_completed';

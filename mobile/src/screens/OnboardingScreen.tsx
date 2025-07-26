@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Dimensions, StatusBar, TouchableOpacity } from 'react-native';
-import { Text, Button, Surface, IconButton } from 'react-native-paper';
+import { View, StyleSheet, StatusBar, TouchableOpacity } from 'react-native';
+import { Text, Surface, IconButton } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 

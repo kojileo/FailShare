@@ -9,6 +9,8 @@ import {
   Surface
 } from 'react-native-paper';
 import { useFocusEffect } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../types';
 import { FailureStory, MainCategory, SubCategory } from '../types';
 import { storyService } from '../services/storyService';
 import { useAuthStore } from '../stores/authStore';
@@ -20,7 +22,7 @@ import {
 } from '../utils/categories';
 
 interface HomeScreenProps {
-  navigation?: any;
+  navigation?: NativeStackNavigationProp<RootStackParamList, 'Home'>;
 }
 
 const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
@@ -32,7 +34,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const [selectedMainCategory, setSelectedMainCategory] = useState<MainCategory | null>(null);
   const [selectedSubCategory, setSelectedSubCategory] = useState<SubCategory | null>(null);
   const [filteredStories, setFilteredStories] = useState<FailureStory[]>([]);
-  const [refreshing, setRefreshing] = useState(false);
+
 
   const mainCategories = getMainCategories();
 
@@ -302,7 +304,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             </Text>
           </View>
         ) : (
-          displayStories.map((story, index) => (
+          displayStories.map((story, _index) => (
             <TouchableOpacity 
               key={story.id}
               onPress={() => navigation?.navigate('StoryDetail', { storyId: story.id })}

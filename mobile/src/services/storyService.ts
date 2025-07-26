@@ -6,13 +6,11 @@ import {
   updateDoc, 
   increment, 
   query, 
-  orderBy, 
   limit, 
   startAfter,
   where,
   getDoc,
   deleteDoc,
-  writeBatch,
   DocumentData,
   QueryDocumentSnapshot,
   Timestamp

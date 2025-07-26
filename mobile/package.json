@@ -41,6 +41,7 @@
     "@react-native-async-storage/async-storage": "^2.1.2",
     "@react-navigation/bottom-tabs": "^7.4.2",
     "@react-navigation/native": "^7.1.14",
+    "@react-navigation/native-stack": "^7.3.23",
     "@react-navigation/stack": "^7.4.2",
     "dotenv": "^17.2.0",
     "expo": "~53.0.17",
@@ -63,6 +64,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
+    "@eslint/js": "^9.32.0",
     "@expo/cli": "latest",
     "@testing-library/react-hooks": "^8.0.1",
     "@testing-library/react-native": "^12.7.2",
@@ -74,6 +76,7 @@
     "cross-env": "^7.0.3",
     "detox": "^20.28.3",
     "eslint": "^9.15.0",
+    "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-react": "^7.37.2",
     "eslint-plugin-react-hooks": "^5.0.0",
     "firebase-admin": "^12.0.0",
@@ -82,12 +85,15 @@
     "react-native-testing-library": "^2.2.0",
     "react-test-renderer": "19.0.0",
     "ts-jest": "^29.4.0",
-    "typescript": "~5.8.3"
+    "typescript": "~5.8.3",
+    "typescript-eslint": "^8.38.0"
   },
   "private": true,
   "jest": {
     "testEnvironment": "node",
-    "setupFilesAfterEnv": ["<rootDir>/__tests__/setup.ts"],
+    "setupFilesAfterEnv": [
+      "<rootDir>/__tests__/setup.ts"
+    ],
     "testMatch": [
       "**/__tests__/**/*.(js|jsx|ts|tsx)",
       "**/*.(test|spec).(js|jsx|ts|tsx)"
@@ -97,7 +103,12 @@
       "__tests__/__mocks__",
       "__tests__/setup.ts"
     ],
-    "moduleFileExtensions": ["ts", "tsx", "js", "jsx"],
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js",
+      "jsx"
+    ],
     "transform": {
       "^.+\\.(ts|tsx)$": "ts-jest"
     },
