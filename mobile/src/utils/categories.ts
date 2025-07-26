@@ -1,4 +1,4 @@
-import { StoryCategory, MainCategory, SubCategory, CategoryHierarchy, LoveSubCategory, WorkSubCategory } from '../types';
+import { StoryCategory, MainCategory, SubCategory, CategoryHierarchy } from '../types';
 
 export interface SubCategoryInfo {
   name: SubCategory;

@@ -12,14 +12,16 @@ import {
 } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { StoryCategory, EmotionType, FailureStory, MainCategory, SubCategory, CategoryHierarchy } from '../types';
+import { EmotionType, FailureStory, MainCategory, SubCategory, CategoryHierarchy } from '../types';
 import { storyService } from '../services/storyService';
 import { useAuthStore } from '../stores/authStore';
 import { useStoryStore } from '../stores/storyStore';
-import { getMainCategories, getSubCategories, getCategoryHierarchyColor } from '../utils/categories';
+import { getMainCategories, getSubCategories } from '../utils/categories';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../types';
 
 interface CreateStoryScreenProps {
-  navigation: any;
+  navigation: NativeStackNavigationProp<RootStackParamList, 'CreateStory'>;
 }
 
 const CreateStoryScreen: React.FC<CreateStoryScreenProps> = ({ navigation }) => {

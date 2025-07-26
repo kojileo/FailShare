@@ -3,8 +3,6 @@ name: CD
 on:
   push:
     branches: [main, staging, develop]
-  pull_request:
-    branches: [main, staging]
 
 env:
   PROJECT_ID: failshare-app
@@ -97,9 +95,9 @@ jobs:
           if [[ "${{ env.ENVIRONMENT }}" == "production" ]]; then
             echo "CLOUD_RUN_FLAGS=--allow-unauthenticated --port=8080 --memory=512Mi --cpu=1 --max-instances=10 --min-instances=0 --timeout=300 --concurrency=80" >> $GITHUB_ENV
           elif [[ "${{ env.ENVIRONMENT }}" == "staging" ]]; then
-            echo "CLOUD_RUN_FLAGS=--allow-unauthenticated --port=8080 --memory=256Mi --cpu=0.5 --max-instances=3 --min-instances=0 --timeout=180 --concurrency=50" >> $GITHUB_ENV
+            echo "CLOUD_RUN_FLAGS=--allow-unauthenticated --port=8080 --memory=512Mi --cpu=1 --max-instances=3 --min-instances=0 --timeout=180 --concurrency=30" >> $GITHUB_ENV
           else
-            echo "CLOUD_RUN_FLAGS=--allow-unauthenticated --port=8080 --memory=256Mi --cpu=0.5 --max-instances=2 --min-instances=0 --timeout=120 --concurrency=30" >> $GITHUB_ENV
+            echo "CLOUD_RUN_FLAGS=--allow-unauthenticated --port=8080 --memory=256Mi --cpu=1 --max-instances=2 --min-instances=0 --timeout=120 --concurrency=10" >> $GITHUB_ENV
           fi
 
       - name: Deploy to Cloud Run
