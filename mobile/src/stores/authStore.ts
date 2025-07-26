@@ -127,7 +127,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       try {
         const storedUser = await getStoredUser();
         if (storedUser) {
-          set({ user: storedUser, isSignedIn: true, isLoading: false });
+          // オンボーディング状態も同時に取得
+          const onboardingCompleted = await getOnboardingStatus();
+          set({ 
+            user: storedUser, 
+            isSignedIn: true, 
+            isOnboardingCompleted: onboardingCompleted,
+            isLoading: false 
+          });
         } else {
           set({ isLoading: false });
         }
@@ -145,13 +152,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         // Firebase認証ユーザーが存在する場合、プロフィールを取得
         const userProfile = await getUserProfile(firebaseUser.uid);
         if (userProfile) {
-          set({ user: userProfile, isSignedIn: true, isLoading: false });
+          // オンボーディング状態も同時に取得
+          const onboardingCompleted = await getOnboardingStatus();
+          set({ 
+            user: userProfile, 
+            isSignedIn: true, 
+            isOnboardingCompleted: onboardingCompleted,
+            isLoading: false 
+          });
         } else {
-          set({ user: null, isSignedIn: false, isLoading: false });
+          set({ user: null, isSignedIn: false, isOnboardingCompleted: false, isLoading: false });
         }
       } else {
         // Firebase認証ユーザーが存在しない場合
-        set({ user: null, isSignedIn: false, isLoading: false });
+        set({ user: null, isSignedIn: false, isOnboardingCompleted: false, isLoading: false });
       }
     });
     

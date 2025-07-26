@@ -103,20 +103,45 @@ const MyStoriesScreen: React.FC<MyStoriesScreenProps> = ({ navigation }) => {
   };
 
   const handleEditStory = (storyId: string) => {
-    Alert.alert('編集', 'この機能は開発中です');
+    // 編集画面への遷移（編集モードでCreateStoryScreenを開く）
+    const storyToEdit = userStories.find(story => story.id === storyId);
+    if (storyToEdit) {
+      navigation?.navigate('CreateStory', { 
+        editMode: true, 
+        storyData: storyToEdit 
+      });
+    }
   };
 
-  const handleDeleteStory = (storyId: string) => {
+  const handleDeleteStory = async (storyId: string) => {
+    if (!user) return;
+    
     Alert.alert(
       '削除確認',
-      'この失敗談を削除しますか？',
+      'この失敗談を削除しますか？この操作は取り消せません。',
       [
         { text: 'キャンセル', style: 'cancel' },
         { 
           text: '削除', 
           style: 'destructive',
-          onPress: () => {
-            Alert.alert('削除', 'この機能は開発中です');
+          onPress: async () => {
+            try {
+              setLoading(true);
+              await storyService.deleteStory(storyId, user.id);
+              
+              // ローカル状態を更新
+              const updatedUserStories = userStories.filter(story => story.id !== storyId);
+              const updatedAllStories = stories.filter(story => story.id !== storyId);
+              setUserStories(updatedUserStories);
+              setStories(updatedAllStories);
+              
+              Alert.alert('削除完了', '失敗談を削除しました。');
+            } catch (error) {
+              console.error('削除エラー:', error);
+              Alert.alert('削除失敗', '削除に失敗しました。もう一度お試しください。');
+            } finally {
+              setLoading(false);
+            }
           }
         }
       ]

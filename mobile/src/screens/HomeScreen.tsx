@@ -1,25 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { View, FlatList, StyleSheet, RefreshControl, ScrollView, TouchableOpacity, StatusBar } from 'react-native';
+import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { 
   Text, 
   Avatar, 
-  FAB, 
   Searchbar,
   Chip,
   IconButton,
   Surface
 } from 'react-native-paper';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from '@react-navigation/native';
 import { FailureStory, MainCategory, SubCategory } from '../types';
 import { storyService } from '../services/storyService';
 import { useAuthStore } from '../stores/authStore';
 import { useStoryStore } from '../stores/storyStore';
 import { 
-  getCategoryDisplayString, 
   getCategoryHierarchyColor,
   getMainCategories,
-  getSubCategories,
   getCategoryHierarchyIcon
 } from '../utils/categories';
 
@@ -95,15 +91,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     setFilteredStories(filtered);
   };
 
-  const onRefresh = async () => {
-    setRefreshing(true);
-    try {
-      await loadStories(false);
-    } finally {
-      setRefreshing(false);
-    }
-  };
-
   const handleMainCategorySelect = (category: MainCategory | null) => {
     setSelectedMainCategory(category);
     setSelectedSubCategory(null);
@@ -150,132 +137,83 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     return emotionColors[emotion] || '#B0BEC5';
   };
 
-  const renderStoryItem = ({ item }: { item: FailureStory }) => {
-    try {
-      return (
-        <TouchableOpacity 
-          onPress={() => navigation?.navigate('StoryDetail', { storyId: item.id })}
-          activeOpacity={0.7}
-        >
-          <Surface style={styles.storyCard} elevation={1}>
-            <View style={styles.cardContent}>
-              {/* ヘッダー部分 */}
-              <View style={styles.cardHeader}>
-                <Avatar.Image 
-                  size={44} 
-                  source={{ uri: `https://robohash.org/user${item.authorId}?set=set4` }}
-                  style={styles.avatar}
-                />
-                <View style={styles.userDetails}>
-                  <View style={styles.userInfoRow}>
-                    <Text style={styles.userName}>匿名ユーザー</Text>
-                    <Text style={styles.timeAgo}>{`・${getTimeAgo(item.metadata.createdAt)}`}</Text>
-                  </View>
-                  <View style={styles.categoryContainer}>
-                    <Chip 
-                      compact
-                      style={[styles.categoryChip, { backgroundColor: getCategoryHierarchyColor(item.content.category) + '15' }]}
-                      textStyle={[styles.categoryText, { color: getCategoryHierarchyColor(item.content.category) }]}
-                    >
-                      {`${getCategoryHierarchyIcon(item.content.category)} ${item.content.category.sub}`}
-                    </Chip>
-                    <Chip 
-                      compact
-                      style={[styles.emotionChip, { backgroundColor: getEmotionColor(item.content.emotion) + '15' }]}
-                      textStyle={[styles.emotionText, { color: getEmotionColor(item.content.emotion) }]}
-                    >
-                      {item.content.emotion}
-                    </Chip>
-                  </View>
-                </View>
-              </View>
-
-              {/* メインコンテンツ */}
-              <View style={styles.mainContent}>
-                <Text style={styles.storyTitle} numberOfLines={2}>
-                  {item.content.title}
-                </Text>
-                <Text style={styles.storyPreview} numberOfLines={3}>
-                  {item.content.situation}
-                </Text>
-              </View>
-
-              {/* アクション */}
-              <View style={styles.cardActions}>
-                <TouchableOpacity style={styles.actionItem}>
-                  <IconButton icon="eye-outline" size={18} iconColor="#8E9AAF" style={styles.actionIcon} />
-                  <Text style={styles.actionText}>{item.metadata.viewCount}</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity style={styles.actionItem}>
-                  <IconButton icon="heart-outline" size={18} iconColor="#8E9AAF" style={styles.actionIcon} />
-                  <Text style={styles.actionText}>{item.metadata.helpfulCount}</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity style={styles.actionItem}>
-                  <IconButton icon="message-outline" size={18} iconColor="#8E9AAF" style={styles.actionIcon} />
-                  <Text style={styles.actionText}>{item.metadata.commentCount}</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity style={styles.actionItem}>
-                  <IconButton icon="share-outline" size={18} iconColor="#8E9AAF" style={styles.actionIcon} />
-                </TouchableOpacity>
-              </View>
-            </View>
-          </Surface>
-        </TouchableOpacity>
-      );
-    } catch (error) {
-      console.error('renderStoryItem エラー:', error);
-      return (
-        <View style={styles.storyCard}>
-          <Text>アイテム表示エラー</Text>
-        </View>
-      );
-    }
-  };
-
   const displayStories = searchQuery || selectedMainCategory || selectedSubCategory ? filteredStories : stories;
 
+  // CSS Styles for HTML elements
+  const containerStyle: React.CSSProperties = {
+    width: '100%',
+    height: '100vh',
+    backgroundColor: '#F8FAFC',
+    overflow: 'auto',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+  };
+
+  const headerStyle: React.CSSProperties = {
+    background: 'linear-gradient(135deg, #1DA1F2, #1991DB)',
+    padding: '20px',
+    color: 'white',
+    borderBottomLeftRadius: '25px',
+    borderBottomRightRadius: '25px',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  };
+
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#1DA1F2" />
-      
-      {/* モダンヘッダー */}
-      <LinearGradient
-        colors={['#1DA1F2', '#1991DB']}
-        style={styles.modernHeader}
-      >
-        <View style={styles.headerContent}>
-          <View style={styles.headerLeft}>
-            <Text style={styles.modernHeaderTitle}>FailShare</Text>
-            <Text style={styles.headerSubtitle}>失敗から学ぶコミュニティ</Text>
-          </View>
-          {user && (
+    <div style={containerStyle}>
+      {/* ヘッダー */}
+      <div style={headerStyle}>
+        <div>
+          <h1 style={{fontSize: '28px', margin: '0 0 2px 0', fontWeight: 'bold', letterSpacing: '0.5px'}}>
+            FailShare
+          </h1>
+          <p style={{fontSize: '12px', margin: '0', opacity: 0.9}}>
+            失敗から学ぶコミュニティ
+          </p>
+        </div>
+        {user && (
+          <TouchableOpacity 
+            onPress={() => navigation?.navigate('Profile')}
+            style={styles.profileButton}
+          >
             <Avatar.Image 
               size={36} 
               source={{ uri: `https://robohash.org/${user.displayName}?set=set4` }}
               style={styles.headerAvatar}
             />
-          )}
-        </View>
-      </LinearGradient>
+            <IconButton 
+              icon="account-circle" 
+              size={20} 
+              iconColor="#FFFFFF" 
+              style={styles.profileIcon}
+            />
+          </TouchableOpacity>
+        )}
+      </div>
 
       {/* 検索セクション */}
       <View style={styles.searchSection}>
-        <Searchbar
-          placeholder="失敗談を検索..."
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          style={styles.modernSearchbar}
-          inputStyle={styles.searchInput}
-          iconColor="#8E9AAF"
-          placeholderTextColor="#8E9AAF"
-        />
-        
+        <View style={styles.searchRow}>
+          <Searchbar
+            placeholder="失敗談を検索..."
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            style={styles.modernSearchbar}
+            inputStyle={styles.searchInput}
+            iconColor="#8E9AAF"
+            placeholderTextColor="#8E9AAF"
+          />
+          <TouchableOpacity 
+            style={styles.searchCreateButton}
+            onPress={() => navigation?.navigate('CreateStory')}
+          >
+            <IconButton icon="plus" size={20} iconColor="#FFFFFF" style={styles.createIcon} />
+          </TouchableOpacity>
+        </View>
+
         {/* アクティブフィルター */}
         {(selectedMainCategory || selectedSubCategory || searchQuery) && (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.activeFilters}>
+          <View style={styles.activeFilters}>
             <View style={styles.filterRow}>
               {searchQuery && (
                 <Chip
@@ -306,14 +244,14 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                 </Chip>
               )}
             </View>
-          </ScrollView>
+          </View>
         )}
       </View>
 
       {/* カテゴリフィルター */}
       {!searchQuery && (
         <View style={styles.categorySection}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScrollContent}>
+          <View style={styles.categoryScrollContent}>
             <TouchableOpacity
               style={[styles.categoryFilterButton, selectedMainCategory === null && styles.categoryFilterButtonActive]}
               onPress={() => handleMainCategorySelect(null)}
@@ -333,101 +271,133 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                 </Text>
               </TouchableOpacity>
             ))}
-          </ScrollView>
+          </View>
         </View>
       )}
 
-      {/* ストーリータイムライン */}
-      <FlatList
-        data={displayStories}
-        renderItem={renderStoryItem}
-        keyExtractor={(item) => item.id}
-        style={styles.timeline}
-        contentContainerStyle={styles.timelineContent}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl 
-            refreshing={refreshing} 
-            onRefresh={onRefresh}
-            colors={['#1DA1F2']}
-            tintColor="#1DA1F2"
-          />
-        }
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
-        ListEmptyComponent={
-          !isLoading ? (
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyIcon}>
-                {searchQuery || selectedMainCategory || selectedSubCategory ? '🔍' : '📱'}
-              </Text>
-              <Text style={styles.emptyTitle}>
-                {searchQuery || selectedMainCategory || selectedSubCategory 
-                  ? '該当する失敗談が見つかりませんでした' 
-                  : '最初の失敗談を投稿してみましょう'
-                }
-              </Text>
-              <Text style={styles.emptyText}>
-                {searchQuery || selectedMainCategory || selectedSubCategory
-                  ? '検索条件を変更してお試しください'
-                  : 'あなたの経験が誰かの学びになります'
-                }
-              </Text>
-            </View>
-          ) : null
-        }
-      />
+      {/* ストーリーリスト */}
+      <div style={{paddingTop: '16px'}}>
+        {displayStories.length === 0 && !isLoading ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyIcon}>
+              {searchQuery || selectedMainCategory || selectedSubCategory ? '🔍' : '📱'}
+            </Text>
+            <Text style={styles.emptyTitle}>
+              {searchQuery || selectedMainCategory || selectedSubCategory 
+                ? '該当する失敗談が見つかりませんでした' 
+                : '最初の失敗談を投稿してみましょう'
+              }
+            </Text>
+            <Text style={styles.emptyText}>
+              {searchQuery || selectedMainCategory || selectedSubCategory
+                ? '検索条件を変更してお試しください'
+                : 'あなたの経験が誰かの学びになります'
+              }
+            </Text>
+          </View>
+        ) : (
+          displayStories.map((story, index) => (
+            <TouchableOpacity 
+              key={story.id}
+              onPress={() => navigation?.navigate('StoryDetail', { storyId: story.id })}
+              activeOpacity={0.7}
+              style={styles.storyCardContainer}
+            >
+              <Surface style={styles.storyCard} elevation={1}>
+                <View style={styles.cardContent}>
+                  {/* ヘッダー部分 */}
+                  <View style={styles.cardHeader}>
+                    <Avatar.Image 
+                      size={44} 
+                      source={{ uri: `https://robohash.org/user${story.authorId}?set=set4` }}
+                      style={styles.avatar}
+                    />
+                    <View style={styles.userDetails}>
+                      <View style={styles.userInfoRow}>
+                        <Text style={styles.userName}>匿名ユーザー</Text>
+                        <Text style={styles.timeAgo}>・{getTimeAgo(story.metadata.createdAt)}</Text>
+                      </View>
+                      <View style={styles.categoryContainer}>
+                        <Chip 
+                          compact
+                          style={[styles.categoryChip, { backgroundColor: getCategoryHierarchyColor(story.content.category) + '15' }]}
+                          textStyle={[styles.categoryText, { color: getCategoryHierarchyColor(story.content.category) }]}
+                        >
+                          {`${getCategoryHierarchyIcon(story.content.category)} ${story.content.category.sub}`}
+                        </Chip>
+                        <Chip 
+                          compact
+                          style={[styles.emotionChip, { backgroundColor: getEmotionColor(story.content.emotion) + '15' }]}
+                          textStyle={[styles.emotionText, { color: getEmotionColor(story.content.emotion) }]}
+                        >
+                          {story.content.emotion}
+                        </Chip>
+                      </View>
+                    </View>
+                  </View>
 
-      {/* モダンFAB */}
-      <LinearGradient
-        colors={['#1DA1F2', '#1991DB']}
-        style={styles.modernFab}
-      >
-        <TouchableOpacity 
-          style={styles.fabButton}
-          onPress={() => navigation?.navigate('CreateStory')}
-        >
-          <IconButton icon="plus" size={24} iconColor="#FFFFFF" />
-        </TouchableOpacity>
-      </LinearGradient>
-    </View>
+                  {/* メインコンテンツ */}
+                  <View style={styles.mainContent}>
+                    <Text style={styles.storyTitle} numberOfLines={2}>
+                      {story.content.title}
+                    </Text>
+                    <Text style={styles.storyPreview} numberOfLines={3}>
+                      {story.content.situation}
+                    </Text>
+                  </View>
+
+                  {/* アクション */}
+                  <View style={styles.cardActions}>
+                    <TouchableOpacity style={styles.actionItem}>
+                      <IconButton icon="eye-outline" size={18} iconColor="#8E9AAF" style={styles.actionIcon} />
+                      <Text style={styles.actionText}>{story.metadata.viewCount}</Text>
+                    </TouchableOpacity>
+                    
+                    <TouchableOpacity style={styles.actionItem}>
+                      <IconButton icon="heart-outline" size={18} iconColor="#8E9AAF" style={styles.actionIcon} />
+                      <Text style={styles.actionText}>{story.metadata.helpfulCount}</Text>
+                    </TouchableOpacity>
+                    
+                    <TouchableOpacity style={styles.actionItem}>
+                      <IconButton icon="message-outline" size={18} iconColor="#8E9AAF" style={styles.actionIcon} />
+                      <Text style={styles.actionText}>{story.metadata.commentCount}</Text>
+                    </TouchableOpacity>
+                    
+                    <TouchableOpacity style={styles.actionItem}>
+                      <IconButton icon="share-outline" size={18} iconColor="#8E9AAF" style={styles.actionIcon} />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </Surface>
+            </TouchableOpacity>
+          ))
+        )}
+      </div>
+
+      <div style={{height: '40px'}}></div>
+    </div>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F8FAFC',
-  },
-  modernHeader: {
-    paddingTop: 50,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
-    borderBottomLeftRadius: 25,
-    borderBottomRightRadius: 25,
-  },
-  headerContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  profileButton: {
+    position: 'relative',
     alignItems: 'center',
-  },
-  headerLeft: {
-    flex: 1,
-  },
-  modernHeaderTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    letterSpacing: 0.5,
-    marginBottom: 2,
-  },
-  headerSubtitle: {
-    fontSize: 12,
-    color: '#FFFFFF',
-    opacity: 0.9,
+    justifyContent: 'center',
   },
   headerAvatar: {
     borderWidth: 2,
     borderColor: '#FFFFFF',
+  },
+  profileIcon: {
+    position: 'absolute',
+    bottom: -8,
+    right: -8,
+    backgroundColor: '#1DA1F2',
+    borderRadius: 10,
+    margin: 0,
+    width: 20,
+    height: 20,
   },
   searchSection: {
     paddingHorizontal: 16,
@@ -436,18 +406,32 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginTop: -10,
     borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
     elevation: 4,
   },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
   modernSearchbar: {
+    flex: 1,
     elevation: 0,
     backgroundColor: '#F1F5F9',
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#E2E8F0',
+  },
+  searchCreateButton: {
+    backgroundColor: '#1DA1F2',
+    borderRadius: 12,
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 4,
+  },
+  createIcon: {
+    margin: 0,
   },
   searchInput: {
     fontSize: 14,
@@ -476,13 +460,10 @@ const styles = StyleSheet.create({
     marginTop: 12,
     borderRadius: 12,
     paddingVertical: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
     elevation: 2,
   },
   categoryScrollContent: {
+    flexDirection: 'row',
     paddingHorizontal: 16,
   },
   categoryFilterButton: {
@@ -504,13 +485,35 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '600',
   },
-  timeline: {
-    flex: 1,
-    paddingTop: 16,
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 60,
+    paddingBottom: 60,
+    paddingHorizontal: 32,
+    minHeight: 300,
+    marginHorizontal: 16,
   },
-  timelineContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 100,
+  emptyIcon: {
+    fontSize: 64,
+    marginBottom: 16,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: 8,
+    color: '#1E293B',
+  },
+  emptyText: {
+    fontSize: 16,
+    textAlign: 'center',
+    color: '#64748B',
+    lineHeight: 24,
+  },
+  storyCardContainer: {
+    marginHorizontal: 16,
+    marginBottom: 16,
   },
   storyCard: {
     borderRadius: 16,
@@ -608,50 +611,6 @@ const styles = StyleSheet.create({
     color: '#8E9AAF',
     fontWeight: '500',
     marginLeft: -6,
-  },
-  separator: {
-    height: 12,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 80,
-    paddingHorizontal: 32,
-  },
-  emptyIcon: {
-    fontSize: 64,
-    marginBottom: 16,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    textAlign: 'center',
-    marginBottom: 8,
-    color: '#1E293B',
-  },
-  emptyText: {
-    fontSize: 16,
-    textAlign: 'center',
-    color: '#64748B',
-    lineHeight: 24,
-  },
-  modernFab: {
-    position: 'absolute',
-    bottom: 24,
-    right: 24,
-    borderRadius: 28,
-    shadowColor: '#1DA1F2',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  fabButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 });
 

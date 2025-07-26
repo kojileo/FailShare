@@ -159,14 +159,22 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
         style={styles.modernHeader}
       >
         <View style={styles.headerContent}>
+          <TouchableOpacity onPress={() => navigation?.goBack()}>
+            <IconButton icon="arrow-left" size={24} iconColor="#FFFFFF" />
+          </TouchableOpacity>
           <Text style={styles.modernHeaderTitle}>プロフィール</Text>
-                     <TouchableOpacity onPress={() => signOut()}>
+          <TouchableOpacity onPress={() => signOut()}>
             <IconButton icon="logout" size={24} iconColor="#FFFFFF" />
           </TouchableOpacity>
         </View>
       </LinearGradient>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.content} 
+        showsVerticalScrollIndicator={false}
+        bounces={true}
+        scrollEnabled={true}
+      >
         {/* ユーザー情報カード */}
         <Surface style={styles.userCard} elevation={3}>
           <LinearGradient
@@ -331,9 +339,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#FFFFFF',
     letterSpacing: 0.5,
+    flex: 1,
+    textAlign: 'center',
   },
   content: {
-    flex: 1,
+    flexGrow: 1,
   },
   userCard: {
     margin: 16,

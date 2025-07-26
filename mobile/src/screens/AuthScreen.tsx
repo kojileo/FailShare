@@ -69,6 +69,27 @@ const AuthScreen: React.FC = () => {
               <Text style={styles.heroCardDesc}>
                 あなたの失敗談が、誰かの貴重な学びになります
               </Text>
+              
+              {/* メイン CTAボタン */}
+              <LinearGradient
+                colors={['#1DA1F2', '#1991DB']}
+                style={styles.heroSignInButton}
+              >
+                <TouchableOpacity 
+                  style={styles.heroSignInButtonInner} 
+                  onPress={handleSignIn}
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <Text style={styles.heroSignInButtonText}>接続中...</Text>
+                  ) : (
+                    <>
+                      <IconButton icon="account-plus" size={20} iconColor="#FFFFFF" style={styles.heroSignInIcon} />
+                      <Text style={styles.heroSignInButtonText}>匿名で始める</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              </LinearGradient>
             </Surface>
           </View>
         </LinearGradient>
@@ -146,41 +167,16 @@ const AuthScreen: React.FC = () => {
             </Surface>
           )}
 
-          {/* サインインボタン */}
-          <View style={styles.signInSection}>
-            <LinearGradient
-              colors={['#1DA1F2', '#1991DB']}
-              style={styles.signInButton}
-            >
-              <TouchableOpacity 
-                style={styles.signInButtonInner} 
-                onPress={handleSignIn}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <View style={styles.loadingContainer}>
-                    <Text style={styles.loadingText}>接続中...</Text>
-                  </View>
-                ) : (
-                  <>
-                    <IconButton icon="account-plus" size={24} iconColor="#FFFFFF" style={styles.signInIcon} />
-                    <Text style={styles.signInButtonText}>匿名で始める</Text>
-                  </>
-                )}
-              </TouchableOpacity>
-            </LinearGradient>
-
-            {/* プライバシー説明 */}
-            <Surface style={styles.privacyCard} elevation={1}>
-              <IconButton icon="shield-check" size={20} iconColor="#10B981" style={styles.privacyIcon} />
-              <View style={styles.privacyContent}>
-                <Text style={styles.privacyTitle}>プライバシー保護</Text>
-                <Text style={styles.privacyText}>
-                  個人情報は一切収集されません。いつでもアカウントを削除できます。
-                </Text>
-              </View>
-            </Surface>
-          </View>
+          {/* プライバシー説明 */}
+          <Surface style={styles.privacyCard} elevation={1}>
+            <IconButton icon="shield-check" size={20} iconColor="#10B981" style={styles.privacyIcon} />
+            <View style={styles.privacyContent}>
+              <Text style={styles.privacyTitle}>プライバシー保護</Text>
+              <Text style={styles.privacyText}>
+                個人情報は一切収集されません。いつでもアカウントを削除できます。
+              </Text>
+            </View>
+          </Surface>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -246,6 +242,32 @@ const styles = StyleSheet.create({
     color: '#64748B',
     textAlign: 'center',
     lineHeight: 20,
+    marginBottom: 20,
+  },
+  heroSignInButton: {
+    borderRadius: 12,
+    marginTop: 8,
+    shadowColor: '#1DA1F2',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  heroSignInButtonInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+  },
+  heroSignInIcon: {
+    margin: 0,
+  },
+  heroSignInButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginLeft: 4,
   },
   content: {
     padding: 20,

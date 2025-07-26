@@ -137,11 +137,10 @@ const CreateStoryScreen: React.FC<CreateStoryScreenProps> = ({ navigation }) => 
       setCurrentStep(1);
       console.log('🔄 フォームリセット完了');
       
-      // 直接画面遷移をテスト
-      console.log('📱 直接ナビゲーション実行中...');
-      // ネストしたナビゲーター構造に対応
-      navigation.navigate('MainTabs', { screen: 'Home' });
-      console.log('✅ 直接ナビゲーション実行完了');
+      // ホーム画面に遷移
+      console.log('📱 ホーム画面への遷移実行中...');
+      navigation.navigate('Home');
+      console.log('✅ ホーム画面への遷移実行完了');
       
       // 成功フィードバック（画面遷移後）
       console.log('🎉 成功アラート表示中...');

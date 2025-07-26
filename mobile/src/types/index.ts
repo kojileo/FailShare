@@ -98,13 +98,9 @@ export type EmotionType =
 
 // Navigation型定義
 export type RootStackParamList = {
-  MainTabs: undefined;
-  CreateStory: undefined;
-  StoryDetail: { storyId: string };
-  MyStories: undefined;
-};
-
-export type TabParamList = {
   Home: undefined;
   Profile: undefined;
+  CreateStory: { editMode?: boolean; storyData?: FailureStory } | undefined;
+  StoryDetail: { storyId: string };
+  MyStories: undefined;
 }; 
