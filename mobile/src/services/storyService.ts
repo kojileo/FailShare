@@ -40,350 +40,72 @@ export interface StoryFilters {
 }
 
 class StoryService {
-  private readonly COLLECTION_NAME = 'stories';
-  private readonly USERS_COLLECTION = 'anonymousUsers';
+  private db: any;
+  private COLLECTION_NAME = 'stories';
 
-  /**
-   * 初期サンプルデータを投稿する（開発・デモ用）
-   */
-  async seedSampleData(): Promise<void> {
-    try {
-      console.log('サンプルデータの投稿を開始...');
-
-      // サンプルユーザーを作成
-      const sampleUsers = [
-        {
-          id: 'sample_user_1',
-          displayName: 'さくらさん',
-          joinedAt: new Date(2024, 0, 1),
-          stats: { totalPosts: 1, totalComments: 0, helpfulVotes: 0, learningPoints: 0 }
-        },
-        {
-          id: 'sample_user_2', 
-          displayName: 'たろうさん',
-          joinedAt: new Date(2024, 0, 2),
-          stats: { totalPosts: 1, totalComments: 0, helpfulVotes: 0, learningPoints: 0 }
-        },
-        {
-          id: 'sample_user_3',
-          displayName: 'みどりさん',
-          joinedAt: new Date(2024, 0, 3),
-          stats: { totalPosts: 1, totalComments: 0, helpfulVotes: 0, learningPoints: 0 }
-        },
-        {
-          id: 'sample_user_4',
-          displayName: 'かずきさん',
-          joinedAt: new Date(2024, 0, 4),
-          stats: { totalPosts: 1, totalComments: 0, helpfulVotes: 0, learningPoints: 0 }
-        },
-        {
-          id: 'sample_user_5',
-          displayName: 'ゆみさん',
-          joinedAt: new Date(2024, 0, 5),
-          stats: { totalPosts: 1, totalComments: 0, helpfulVotes: 0, learningPoints: 0 }
-        },
-        {
-          id: 'sample_user_6',
-          displayName: 'ひろきさん',
-          joinedAt: new Date(2024, 0, 6),
-          stats: { totalPosts: 1, totalComments: 0, helpfulVotes: 0, learningPoints: 0 }
-        }
-      ];
-
-      // サンプルユーザーをFirestoreに追加
-      for (const user of sampleUsers) {
-        const userRef = doc(db, this.USERS_COLLECTION, user.id);
-        await updateDoc(userRef, user).catch(async () => {
-          // ユーザーが存在しない場合は作成
-          await addDoc(collection(db, this.USERS_COLLECTION), user);
-        });
-      }
-
-      // 恋愛特化のサンプル失敗談データ
-      const sampleStories = [
-        {
-          authorId: 'sample_user_1',
-          content: {
-            title: '初デートで高級レストランを選んで失敗',
-            category: { main: '恋愛', sub: 'デート' },
-            situation: 'マッチングアプリで知り合った人と初デートの約束をしました。相手に良い印象を与えたくて、特別な場所を選ぼうと考えました。',
-            action: '相手の好みや予算を確認せず、一人で高級フレンチレストランを予約してしまいました。サプライズのつもりでした。',
-            result: '相手はカジュアルな服装で来たため、場の雰囲気に困惑していました。緊張して会話も弾まず、気まずい時間を過ごしました。',
-            learning: '初デートは相手が気軽に過ごせる場所を選ぶべきでした。相手のことを考えず、自分の印象だけを気にしていたと反省しています。',
-            emotion: '後悔' as EmotionType
-          },
-          metadata: {
-            createdAt: Timestamp.fromDate(new Date(2024, 0, 1)),
-            viewCount: 178,
-            helpfulCount: 28,
-            commentCount: 6,
-            tags: ['初デート', 'レストラン', 'マッチングアプリ', '気遣い']
-          }
-        },
-        {
-          authorId: 'sample_user_2',
-          content: {
-            title: '友人の恋人に告白してしまった',
-            category: { main: '恋愛', sub: '告白' },
-            situation: '大学時代の友人グループで遊んでいたとき、友人の恋人に好意を抱いてしまいました。相手も私に優しく接してくれるので、勘違いしていました。',
-            action: '友人関係を壊すかもしれないと思いつつも、気持ちを抑えきれずに告白してしまいました。',
-            result: '当然断られ、友人にもバレて大きく関係が悪化しました。グループからも距離を置かれ、大切な友人たちを失いました。',
-            learning: '人として最低な行為だったと深く反省しています。友情と恋愛の境界を守ることの大切さと、衝動的な行動の危険性を学びました。',
-            emotion: '後悔' as EmotionType
-          },
-          metadata: {
-            createdAt: Timestamp.fromDate(new Date(2024, 0, 2)),
-            viewCount: 243,
-            helpfulCount: 19,
-            commentCount: 11,
-            tags: ['友人関係', '三角関係', '友情', '裏切り']
-          }
-        },
-        {
-          authorId: 'sample_user_3',
-          content: {
-            title: 'LINEの既読スルーに過剰反応した',
-            category: { main: '恋愛', sub: 'カップル' },
-            situation: '付き合って2ヶ月の恋人とLINEでやりとりしていました。いつも即レスしてくれるのに、その日は8時間既読スルーされました。',
-            action: '不安になって「何かあった？」「怒ってる？」「返事して」と立て続けにメッセージを送ってしまいました。',
-            result: '恋人は仕事で忙しかっただけでしたが、私の過剰な反応に疲れてしまい、「重い」と言われて距離を置かれました。',
-            learning: '相手にも都合があることを理解し、適度な距離感を保つことが大切だと学びました。不安でも冷静に対処する必要があります。',
-            emotion: '不安' as EmotionType
-          },
-          metadata: {
-            createdAt: Timestamp.fromDate(new Date(2024, 0, 3)),
-            viewCount: 167,
-            helpfulCount: 31,
-            commentCount: 9,
-            tags: ['LINE', '既読スルー', '束縛', '距離感']
-          }
-        },
-        {
-          authorId: 'sample_user_4',
-          content: {
-            title: '好きな人に全く振り向いてもらえなかった',
-            category: { main: '恋愛', sub: '片想い' },
-            situation: '職場の先輩に恋をしました。毎日一緒に働いているうちに、どんどん好きになっていきました。',
-            action: '遠回しなアプローチばかりで、直接的に気持ちを伝えることができませんでした。お疲れ様でしたメールを送ったり、差し入れをしたりしていました。',
-            result: '先輩は私のことを後輩として見ているだけで、恋愛対象として全く意識してもらえませんでした。他の人と付き合い始めました。',
-            learning: '曖昧な態度では何も伝わらないことを学びました。勇気を出して気持ちをはっきり伝えることの大切さを実感しています。',
-            emotion: '悲しい' as EmotionType
-          },
-          metadata: {
-            createdAt: Timestamp.fromDate(new Date(2024, 0, 4)),
-            viewCount: 134,
-            helpfulCount: 22,
-            commentCount: 7,
-            tags: ['職場恋愛', 'アプローチ', '片思い', '告白']
-          }
-        },
-        {
-          authorId: 'sample_user_5',
-          content: {
-            title: '復縁を迫って嫌われてしまった',
-            category: { main: '恋愛', sub: '別れ' },
-            situation: '2年付き合った恋人から別れを告げられました。まだ好きだったので、どうしても諦めることができませんでした。',
-            action: '毎日のようにLINEを送り、職場や家の近くで待ち伏せをしてしまいました。復縁してほしいと何度も頼みました。',
-            result: '相手にストーカー扱いされ、最終的には友人経由で「もう連絡しないで」と言われました。完全に嫌われてしまいました。',
-            learning: '別れた相手の気持ちを尊重することの大切さを学びました。しつこくすればするほど嫌われることを痛感しています。',
-            emotion: '混乱' as EmotionType
-          },
-          metadata: {
-            createdAt: Timestamp.fromDate(new Date(2024, 0, 5)),
-            viewCount: 198,
-            helpfulCount: 25,
-            commentCount: 13,
-            tags: ['復縁', 'しつこい', '別れ', 'ストーカー']
-          }
-        },
-        {
-          authorId: 'sample_user_6',
-          content: {
-            title: 'SNSの投稿で恋人を傷つけてしまった',
-            category: { main: 'その他', sub: 'その他' },
-            situation: '恋人と一緒にいる時間をSNSに投稿するのが習慣になっていました。いつも楽しそうな写真をアップしていました。',
-            action: '恋人が写真映りを気にしているのに、無断で写真をアップしてしまいました。また、プライベートな内容も投稿していました。',
-            result: '恋人から「プライバシーを考えてほしい」と怒られました。SNSに依存している私に嫌気がさしたようでした。',
-            learning: 'SNSと恋愛のバランスの大切さを学びました。相手のプライバシーを尊重し、2人だけの時間も大切にするべきでした。',
-            emotion: '恥ずかしい' as EmotionType
-          },
-          metadata: {
-            createdAt: Timestamp.fromDate(new Date(2024, 0, 6)),
-            viewCount: 156,
-            helpfulCount: 18,
-            commentCount: 8,
-            tags: ['SNS', 'プライバシー', '写真', 'バランス']
-          }
-        },
-        {
-          authorId: 'sample_user_1',
-          content: {
-            title: '上司への報告を忘れて大きなミスに',
-            category: { main: '仕事', sub: '職場人間関係' },
-            situation: '新しいプロジェクトで、週次進捗を上司に報告する決まりになっていました。初回は丁寧に説明してもらったのですが、慣れてきて気が緩んでいました。',
-            action: '忙しさを理由に、2週間連続で報告を忘れてしまいました。「今度でいいや」という軽い気持ちでした。',
-            result: 'プロジェクトで問題が発生していたのに上司が把握できず、クライアントからのクレームに発展してしまいました。信頼を大きく失いました。',
-            learning: '報告・連絡・相談の基本の重要性を痛感しました。小さなことでも継続して報告することで、大きな問題を防げることを学びました。',
-            emotion: '後悔' as EmotionType
-          },
-          metadata: {
-            createdAt: Timestamp.fromDate(new Date(2024, 0, 7)),
-            viewCount: 134,
-            helpfulCount: 22,
-            commentCount: 7,
-            tags: ['報告', '連絡', '上司', 'プロジェクト']
-          }
-        },
-        {
-          authorId: 'sample_user_2',
-          content: {
-            title: '転職活動で年収を盛って言ってしまった',
-            category: { main: '仕事', sub: '転職・キャリア' },
-            situation: '転職活動中、面接で現在の年収について聞かれました。少しでも有利になりたくて、嘘の情報を伝えようと考えてしまいました。',
-            action: '実際の年収より100万円高い金額を答えてしまいました。バレないだろうと思い込んでいました。',
-            result: '内定後の給与交渉で、源泉徴収票の提出を求められて嘘がバレました。信頼を失い、内定を取り消されてしまいました。',
-            learning: '正直さが最も重要だと学びました。短期的な利益のために嘘をつくと、長期的に大きな損失になることを実感しています。',
-            emotion: '恥ずかしい' as EmotionType
-          },
-          metadata: {
-            createdAt: Timestamp.fromDate(new Date(2024, 0, 8)),
-            viewCount: 189,
-            helpfulCount: 31,
-            commentCount: 12,
-            tags: ['転職', '年収', '嘘', '内定取り消し']
-          }
-        },
-        {
-          authorId: 'sample_user_3',
-          content: {
-            title: 'プレゼンで準備不足が露呈してしまった',
-            category: { main: '仕事', sub: 'プレゼン・会議' },
-            situation: '重要なクライアントへの提案プレゼンを任されました。経験が浅く不安でしたが、「なんとかなる」と楽観視していました。',
-            action: '資料作成に時間をかけすぎて、リハーサルをほとんどしませんでした。当日も「なんとかなる」と思っていました。',
-            result: '本番で質問に答えられず、データの根拠も曖昧で、クライアントからの信頼を失いました。プロジェクトを他社に取られました。',
-            learning: '準備の重要性と、リハーサルの価値を学びました。どんなに資料が良くても、伝える練習をしなければ意味がないことを実感しました。',
-            emotion: '不安' as EmotionType
-          },
-          metadata: {
-            createdAt: Timestamp.fromDate(new Date(2024, 0, 9)),
-            viewCount: 145,
-            helpfulCount: 28,
-            commentCount: 9,
-            tags: ['プレゼン', '準備不足', 'クライアント', 'リハーサル']
-          }
-        }
-      ];
-
-      // 既存のサンプルデータを削除してから新しいデータを投稿
-      await this.updateSampleData(sampleStories);
-    } catch (error) {
-      console.error('サンプルデータ投稿エラー:', error);
-      throw error;
-    }
+  constructor() {
+    this.db = db;
   }
 
   /**
-   * サンプルデータを強制更新する
-   */
-  private async updateSampleData(sampleStories: any[]): Promise<void> {
-    try {
-      // 1. 既存のサンプルデータを削除
-      const existingQuery = query(
-        collection(db, this.COLLECTION_NAME),
-        where('authorId', 'in', ['sample_user_1', 'sample_user_2', 'sample_user_3'])
-      );
-      const existingDocs = await getDocs(existingQuery);
-      
-      if (!existingDocs.empty) {
-        console.log(`既存のサンプルデータ ${existingDocs.size} 件を削除中...`);
-        const batch = writeBatch(db);
-        existingDocs.forEach(doc => {
-          batch.delete(doc.ref);
-        });
-        await batch.commit();
-        console.log('既存のサンプルデータを削除しました');
-      }
-
-      // 2. 新しいサンプル失敗談を投稿
-      for (const story of sampleStories) {
-        await addDoc(collection(db, this.COLLECTION_NAME), story);
-        console.log(`エンジニア向けサンプル失敗談「${story.content.title}」を投稿しました`);
-      }
-      console.log('エンジニア向けサンプルデータの投稿完了！');
-    } catch (error) {
-      console.error('サンプルデータ更新エラー:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * 失敗談を投稿する
+   * 投稿を作成
    */
   async createStory(authorId: string, storyData: CreateStoryData): Promise<string> {
     try {
-      console.log('🔍 投稿デバッグ情報:');
-      console.log('  authorId:', authorId);
-      console.log('  category:', storyData.category);
-      console.log('  emotion:', storyData.emotion);
+      console.log('🚀 Firestore投稿処理開始:', { authorId, storyData });
       
-      // 入力データの検証
-      this.validateStoryData(storyData);
-
-      // 投稿データの準備
-      const storyDoc = {
+      const docRef = await addDoc(collection(this.db, this.COLLECTION_NAME), {
         authorId,
-        content: {
-          title: storyData.title.trim(),
-          category: storyData.category,
-          situation: storyData.situation.trim(),
-          action: storyData.action.trim(),
-          result: storyData.result.trim(),
-          learning: storyData.learning.trim(),
-          emotion: storyData.emotion,
-        },
+        content: storyData,
         metadata: {
           createdAt: Timestamp.now(),
           viewCount: 0,
           helpfulCount: 0,
           commentCount: 0,
-          tags: this.generateTags(storyData),
-        },
-      };
-
-      console.log('📝 投稿データ構造:', JSON.stringify(storyDoc, null, 2));
-
-      // Firestoreに投稿を保存
-      console.log('💾 Firestoreに投稿を保存中...');
-      const docRef = await addDoc(collection(db, this.COLLECTION_NAME), storyDoc);
-      console.log('✅ 投稿保存成功:', docRef.id);
+          tags: [storyData.category.main, storyData.category.sub, storyData.emotion]
+        }
+      });
       
-      // ユーザーの投稿数を更新
-      console.log('📊 ユーザー統計を更新中...');
-      await this.updateUserStats(authorId, 'totalPosts', 1);
-      console.log('✅ ユーザー統計更新完了');
-
-      console.log('🎉 失敗談投稿成功:', docRef.id);
+      console.log('✅ Firestore投稿成功, ID:', docRef.id);
       return docRef.id;
     } catch (error) {
-      console.error('❌ 失敗談投稿エラー:', error);
-      if (error instanceof Error) {
-        console.error('エラー詳細:', error.message);
-        console.error('エラースタック:', error.stack);
-      }
-      throw new Error('投稿に失敗しました');
+      console.error('❌ Firestore投稿エラー:', error);
+      throw error;
     }
   }
 
   /**
-   * 失敗談一覧を取得する
+   * 投稿一覧を取得 (新API)
    */
-  async getStories(filters: StoryFilters = {}): Promise<{
-    stories: FailureStory[];
-    lastVisible: QueryDocumentSnapshot<DocumentData> | null;
-  }> {
+  async getStories(): Promise<{ stories: FailureStory[] }>;
+  async getStories(limitCount: number, lastDoc?: QueryDocumentSnapshot<DocumentData>): Promise<{ stories: FailureStory[], lastDocument?: QueryDocumentSnapshot<DocumentData> }>;
+  async getStories(filters: StoryFilters): Promise<{ stories: FailureStory[], lastVisible: QueryDocumentSnapshot<DocumentData> | null }>;
+  async getStories(
+    arg1?: number | StoryFilters, 
+    lastDoc?: QueryDocumentSnapshot<DocumentData>
+  ): Promise<{ stories: FailureStory[], lastDocument?: QueryDocumentSnapshot<DocumentData>, lastVisible?: QueryDocumentSnapshot<DocumentData> | null }> {
     try {
+      // 引数の型判定
+      let limitCount = 20;
+      let filters: StoryFilters = {};
+      
+      if (typeof arg1 === 'number') {
+        // 新API: getStories(limitCount, lastDoc)
+        limitCount = arg1;
+        console.log('📖 ストーリー取得開始 (新API):', { limitCount, hasLastDoc: !!lastDoc });
+      } else if (arg1) {
+        // 旧API: getStories(filters)
+        filters = arg1;
+        limitCount = filters.limit || 20;
+        lastDoc = filters.lastVisible;
+        console.log('📖 ストーリー取得開始 (旧API):', filters);
+      } else {
+        // 引数なし: getStories()
+        console.log('📖 ストーリー取得開始 (デフォルト)');
+      }
+      
       // インデックスエラーを回避するため、orderByを削除してクライアントサイドでソート
-      let q = query(collection(db, this.COLLECTION_NAME));
+      let q = query(collection(this.db, this.COLLECTION_NAME));
 
       // フィルタリング
       if (filters.category) {
@@ -394,14 +116,16 @@ class StoryService {
       }
 
       // テキスト検索がある場合は、より多くのデータを取得してクライアントサイドでフィルタリング
-      const pageLimit = filters.searchText ? (filters.limit || 10) * 3 : (filters.limit || 10);
+      const pageLimit = filters.searchText ? limitCount * 3 : limitCount;
       q = query(q, limit(pageLimit));
 
-      if (filters.lastVisible) {
-        q = query(q, startAfter(filters.lastVisible));
+      if (lastDoc) {
+        q = query(q, startAfter(lastDoc));
       }
-
+      
       const querySnapshot = await getDocs(q);
+      console.log('📊 取得件数:', querySnapshot.size);
+      
       let stories: FailureStory[] = [];
       
       querySnapshot.forEach((doc) => {
@@ -413,7 +137,7 @@ class StoryService {
           metadata: {
             ...data.metadata,
             createdAt: data.metadata.createdAt?.toDate() || new Date(),
-          },
+          }
         });
       });
 
@@ -424,16 +148,21 @@ class StoryService {
       if (filters.searchText) {
         stories = this.filterStoriesByText(stories, filters.searchText);
         // テキスト検索後は元のlimit数に調整
-        const originalLimit = filters.limit || 10;
-        stories = stories.slice(0, originalLimit);
+        stories = stories.slice(0, limitCount);
       }
 
-      const lastVisible = querySnapshot.docs[querySnapshot.docs.length - 1] || null;
-
-      return { stories, lastVisible };
+      const lastDocument = querySnapshot.docs[querySnapshot.docs.length - 1];
+      
+      console.log('✅ ストーリー取得完了');
+      
+      return {
+        stories,
+        lastDocument,
+        lastVisible: lastDocument || null
+      };
     } catch (error) {
-      console.error('失敗談取得エラー:', error);
-      throw new Error('データの取得に失敗しました');
+      console.error('❌ ストーリー取得エラー:', error);
+      throw error;
     }
   }
 
@@ -695,68 +424,9 @@ class StoryService {
       // 投稿を削除
       await deleteDoc(docRef);
 
-      // ユーザー統計を更新（投稿数を減らす）
-      await this.updateUserStats(userId, 'totalPosts', -1);
-
       console.log('投稿削除成功:', storyId);
     } catch (error) {
       console.error('投稿削除エラー:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * ユーザー統計の更新
-   */
-  private async updateUserStats(userId: string, field: string, increment_value: number): Promise<void> {
-    try {
-      const userDocRef = doc(db, this.USERS_COLLECTION, userId);
-      
-      // ドキュメントの存在を確認
-      const userDoc = await getDoc(userDocRef);
-      
-      if (userDoc.exists()) {
-        // ドキュメントが存在する場合は更新
-        await updateDoc(userDocRef, {
-          [`stats.${field}`]: increment(increment_value),
-          lastActive: Timestamp.now(),
-        });
-      } else {
-        // ドキュメントが存在しない場合は作成
-        console.log(`ユーザードキュメント ${userId} が存在しないため、統計更新をスキップしました`);
-      }
-    } catch (error) {
-      console.error('ユーザー統計更新エラー:', error);
-      // 統計更新の失敗は投稿成功を阻害しないよう、エラーを投げない
-    }
-  }
-
-  /**
-   * 手動でサンプルデータをリセットする（開発用）
-   */
-  async resetSampleData(): Promise<void> {
-    try {
-      console.log('サンプルデータをリセット中...');
-      
-      // 1. 全ての失敗談を削除
-      const allStoriesQuery = query(collection(db, this.COLLECTION_NAME));
-      const allDocs = await getDocs(allStoriesQuery);
-      
-      if (!allDocs.empty) {
-        const batch = writeBatch(db);
-        allDocs.forEach(doc => {
-          batch.delete(doc.ref);
-        });
-        await batch.commit();
-        console.log(`${allDocs.size} 件の既存データを削除しました`);
-      }
-
-      // 2. seedSampleData()を実行して新しいエンジニア向けデータを投稿
-      await this.seedSampleData();
-      
-      console.log('サンプルデータのリセット完了！');
-    } catch (error) {
-      console.error('サンプルデータリセットエラー:', error);
       throw error;
     }
   }

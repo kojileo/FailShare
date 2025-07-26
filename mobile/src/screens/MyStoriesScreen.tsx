@@ -36,7 +36,10 @@ const MyStoriesScreen: React.FC<MyStoriesScreenProps> = ({ navigation }) => {
   }, [user, stories]);
 
   const loadUserStories = async () => {
-    if (!user) return;
+    if (!user) {
+      console.log('⚠️ ユーザー未認証のため、マイストーリー取得をスキップ');
+      return;
+    }
     
     try {
       setLoading(true);

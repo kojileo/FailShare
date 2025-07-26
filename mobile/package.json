@@ -20,7 +20,12 @@
     "build:web:prod": "cross-env EXPO_PUBLIC_ENVIRONMENT=production expo export --platform web",
     "server:start": "node server.js",
     "server:dev": "npm run build:web:dev && npm run server:start",
-    "server:prod": "npm run build:web:prod && npm run server:start"
+    "server:prod": "npm run build:web:prod && npm run server:start",
+    "build": "expo build",
+    "seed-data": "node scripts/seed-data.js",
+    "seed-data:dev": "node scripts/seed-data.js --env=dev",
+    "seed-data:staging": "node scripts/seed-data.js --env=staging",
+    "seed-data:prod": "node scripts/seed-data.js --env=prod"
   },
   "dependencies": {
     "@expo/metro-runtime": "~5.0.4",
@@ -49,11 +54,11 @@
     "zustand": "^5.0.6"
   },
   "devDependencies": {
-    "@babel/core": "^7.25.2",
-    "@expo/cli": "latest",
-    "@types/react": "~19.0.10",
-    "cross-env": "^7.0.3",
-    "typescript": "~5.8.3"
+    "@babel/core": "^7.20.0",
+    "@types/react": "~18.2.45",
+    "@types/react-native": "~0.73.0",
+    "firebase-admin": "^12.0.0",
+    "typescript": "^5.1.3"
   },
   "private": true
 }

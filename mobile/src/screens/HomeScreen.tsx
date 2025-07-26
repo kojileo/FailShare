@@ -49,6 +49,12 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
   const loadStories = async (showLoading = true) => {
     try {
+      // 認証状態をチェック
+      if (!user) {
+        console.log('⚠️ ユーザー未認証のため、ストーリー取得をスキップ');
+        return;
+      }
+
       if (showLoading) setLoading(true);
       const { stories: fetchedStories } = await storyService.getStories();
       setStories(fetchedStories);

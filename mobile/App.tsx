@@ -22,20 +22,13 @@ export default function App() {
     };
   }, [initializeAuth]);
 
-  // サンプルデータの初期化（恋愛関連データに更新）
-  React.useEffect(() => {
-    if (isSignedIn) {
-      // Development環境のみでサンプルデータをリセット＆更新
-      // Production環境では権限エラーが発生するため無効化
-      if (process.env.NODE_ENV === 'development' || __DEV__) {
-        storyService.resetSampleData().catch(error => {
-          console.error('サンプルデータ初期化エラー:', error);
-        });
-      } else {
-        console.log('🚫 Production環境のため、サンプルデータ生成をスキップしました');
-      }
-    }
-  }, [isSignedIn]);
+  // サンプルデータ処理はスクリプトで実行するため無効化
+  // React.useEffect(() => {
+  //   if (isSignedIn) {
+  //     // サンプルデータは scripts/seed-data.js で管理
+  //     console.log('✅ 認証完了。サンプルデータは管理スクリプトで投入してください。');
+  //   }
+  // }, [isSignedIn]);
 
   // ローディング中の表示
   if (isLoading) {
