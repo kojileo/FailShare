@@ -14,6 +14,7 @@ const AppNavigator: React.FC = () => {
   return (
     <NavigationContainer>
       <Stack.Navigator
+        {...({ id: "RootStack" } as any)}
         initialRouteName="Home"
         screenOptions={{
           headerShown: false,
