@@ -3,8 +3,6 @@ name: CD
 on:
   push:
     branches: [main, staging, develop]
-  pull_request:
-    branches: [main, staging]
 
 env:
   PROJECT_ID: failshare-app
