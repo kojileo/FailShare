@@ -13,7 +13,6 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 const AppNavigator: React.FC = () => {
   return (
     <NavigationContainer>
-      {/* @ts-ignore - React Navigation v7 type issue */}
       <Stack.Navigator
         initialRouteName="Home"
         screenOptions={{
