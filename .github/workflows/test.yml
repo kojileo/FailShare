@@ -1,0 +1,113 @@
+name: Static Analysis & Testing Suite
+
+on:
+  push:
+    branches: [main, staging, develop]
+  pull_request:
+    branches: [main, staging, develop]
+
+jobs:
+  static-analysis:
+    name: Static Analysis
+    runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        working-directory: ./mobile
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Run TypeScript check
+        run: npm run type-check
+
+      - name: Check for security vulnerabilities
+        run: npm audit --audit-level=moderate
+
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        working-directory: ./mobile
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: npm run test:unit
+
+      - name: Generate unit test coverage
+        run: npm run test:coverage
+
+      - name: Upload unit test coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./mobile/coverage/lcov.info
+          directory: ./mobile/coverage/
+          flags: unit-tests
+          name: codecov-unit-tests
+          fail_ci_if_error: false
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        working-directory: ./mobile
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run integration tests
+        run: npm run test:integration
+
+      - name: Generate integration test coverage
+        run: npm run test:coverage -- --testPathPattern=__tests__/integration
+
+      - name: Upload integration test coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./mobile/coverage/lcov.info
+          directory: ./mobile/coverage/
+          flags: integration-tests
+          name: codecov-integration-tests
+          fail_ci_if_error: false 

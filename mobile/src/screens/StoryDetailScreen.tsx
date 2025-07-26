@@ -5,29 +5,29 @@ import {
   Avatar, 
   IconButton, 
   Chip,
-  Surface,
-  Button,
-  Divider
+  Surface
 } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RouteProp } from '@react-navigation/native';
+import type { RootStackParamList } from '../types';
 import { FailureStory } from '../types';
 import { storyService } from '../services/storyService';
 import { useAuthStore } from '../stores/authStore';
 import { 
-  getCategoryDisplayString, 
   getCategoryHierarchyColor,
   getCategoryHierarchyIcon
 } from '../utils/categories';
 
 interface StoryDetailScreenProps {
-  route: any;
-  navigation: any;
+  navigation: NativeStackNavigationProp<RootStackParamList, 'StoryDetail'>;
+  route: RouteProp<RootStackParamList, 'StoryDetail'>;
 }
 
 const StoryDetailScreen: React.FC<StoryDetailScreenProps> = ({ route, navigation }) => {
   const { storyId } = route.params;
-  const { user } = useAuthStore();
+  const { user: _user } = useAuthStore();
   const [story, setStory] = useState<FailureStory | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isLiked, setIsLiked] = useState(false);

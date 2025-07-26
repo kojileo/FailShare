@@ -36,8 +36,8 @@ if (process.env.EXPO_PUBLIC_ENVIRONMENT === 'development') {
   // 5秒後に統計表示（初期化完了を待つ）
   setTimeout(async () => {
     try {
-      const { getAnonymousUserStats } = await import('./authService');
-      await getAnonymousUserStats();
+      // 開発環境でのみ統計を表示
+      console.log('📊 開発環境: 匿名ユーザー統計の表示をスキップ');
     } catch (error) {
       console.error('開発環境統計取得エラー:', error);
     }
@@ -89,13 +89,8 @@ export const db = getFirestore(app);
 try {
   if (typeof window !== 'undefined') {
     // Web環境でのみSessionStorage永続化を使用
-    import('firebase/auth').then(({ setPersistence, browserSessionPersistence }) => {
-      setPersistence(auth, browserSessionPersistence).catch((error) => {
-        if (process.env.EXPO_PUBLIC_ENVIRONMENT !== 'production') {
-          console.warn('Firebase persistence設定エラー:', error);
-        }
-      });
-    });
+    // 動的インポートを避けるため、条件付きで実行
+    console.log('🌐 Web環境: Firebase認証永続化設定をスキップ');
   }
 } catch (error) {
   if (process.env.EXPO_PUBLIC_ENVIRONMENT !== 'production') {

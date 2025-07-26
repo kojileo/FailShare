@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, StatusBar, TouchableOpacity, ScrollView } from 'react-native';
-import { Text, Button, Surface, IconButton } from 'react-native-paper';
+import { Text, Surface, IconButton } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '../stores/authStore';
