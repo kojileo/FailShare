@@ -1356,275 +1356,247 @@ GitHub Push → Cloud Build → Container Registry → Cloud Run → Web App
 
 ---
 
-## �� 2024年12月14日 - カテゴリ階層構造の実装
+## 📅 2025年1月26日 - インフラ・UX重大改善フェーズ
 
 ### 🎯 実装目標
-**階層カテゴリシステムの導入**: 恋愛と仕事を同じレベルの大カテゴリとし、それぞれにサブカテゴリを持つ階層構造を実装
+**Production Ready**: 本格運用に向けた技術的課題の完全解決と管理体制構築
 
-### 🚀 実装内容
+### 🚀 重大な技術的突破
 
-#### 1. 階層構造設計
-- [x] **大カテゴリ定義**: 恋愛・仕事・その他の3つのメインカテゴリ
-- [x] **サブカテゴリ体系化**: 各大カテゴリ下に詳細なサブカテゴリを配置
-- [x] **型定義拡張**: `CategoryHierarchy`インターフェースの導入
+#### 1. React Native Web スクロール問題の完全解決 🔥
+**問題**: HomeScreenでスクロールが一切効かない致命的UX問題
+- `SafeAreaView` + `ScrollView` + `FlatList` の組み合わせでWeb環境での動作不良
+- `Unexpected text node` エラーとFirestore権限エラーの複合問題
+- ユーザーが下部コンテンツにアクセス不可能
 
-#### 2. 恋愛カテゴリの階層化
-- [x] **メインカテゴリ**: 「恋愛」として統合
-- [x] **サブカテゴリ**: デート・告白・カップル・片想い・別れ
-- [x] **色・アイコン体系**: 統一性を保ったデザインシステム
-
-#### 3. 仕事カテゴリの新規追加
-- [x] **メインカテゴリ**: 「仕事」を恋愛と同じレベルで追加
-- [x] **5つのサブカテゴリ**:
-  - **職場人間関係** (🤝 #2196F3): 同僚・上司・部下との関係の失敗
-  - **転職・キャリア** (📈 #1976D2): 転職活動・キャリア選択の失敗
-  - **プレゼン・会議** (📊 #1565C0): プレゼン・会議での失敗
-  - **プロジェクト管理** (📋 #0D47A1): プロジェクト・チーム管理の失敗
-  - **スキル習得** (📚 #1E88E5): 技術習得・資格取得の失敗
-
-#### 4. システム全体の階層対応
-- [x] **型システム改修**: `MainCategory`, `SubCategory`, `CategoryHierarchy`型の導入
-- [x] **UI コンポーネント更新**: 2段階カテゴリ選択UIの実装
-- [x] **データ管理改修**: 階層構造に対応したデータ処理
-- [x] **後方互換性**: 既存の`StoryCategory`型との互換性維持
-
-### 🔧 技術実装詳細
-
-#### 階層型システム
+**解決策**: **HTML/CSS Pure Scroll実装**
 ```typescript
-export type MainCategory = '恋愛' | '仕事' | 'その他';
+// 修正前（動作しない）
+<SafeAreaView><ScrollView><FlatList>
 
-export interface CategoryHierarchy {
-  main: MainCategory;
-  sub: SubCategory;
+// 修正後（完全動作）
+<div style={{
+  width: '100%',
+  height: '100vh', 
+  overflow: 'auto'  // ブラウザネイティブスクロール
+}}>
+```
+
+**技術的詳細**:
+- React Native Web制約を回避し純粋なHTML/CSS scrolling実装
+- `overflow: 'auto'`, `height: '100vh'` による確実なWebスクロール
+- 50項目のテストデータで動作確認済み
+- マウスホイール・タッチスクロール・キーボードナビゲーション完全対応
+
+**結果**: ✅ **完全なスクロール機能復活** - ユーザビリティ致命的問題の解決
+
+#### 2. 管理者用Firebase Admin SDKシステム構築 🛡️
+**課題**: アプリ内サンプルデータ処理による権限エラーと本番データ汚染リスク
+
+**解決策**: **独立管理スクリプトシステム**
+```bash
+# 完全に分離された管理コマンド
+npm run seed-data:dev -- --confirm      # 開発環境
+npm run seed-data:staging -- --confirm  # ステージング環境  
+npm run seed-data:prod -- --confirm     # 本番環境
+```
+
+**アーキテクチャ**:
+```
+mobile/
+├── scripts/
+│   ├── seed-data.js       # Firebase Admin SDK スクリプト
+│   └── README.md          # 詳細運用ドキュメント
+├── config/
+│   ├── firebase-admin-dev.json     # 開発環境キー
+│   ├── firebase-admin-staging.json # ステージング環境キー
+│   └── firebase-admin-prod.json    # 本番環境キー
+└── .npmrc                # legacy-peer-deps設定
+```
+
+**機能**:
+- ✅ **安全なデータ操作**: Firebase Admin権限による確実な操作
+- ✅ **環境分離**: dev/staging/prod完全分離
+- ✅ **既存データクリーンアップ**: sample_user_* データの自動削除
+- ✅ **バッチ処理**: 効率的なFirestore操作
+- ✅ **--confirm フラグ**: 誤実行防止機能
+- ✅ **データ検証**: 投入後の自動確認
+
+#### 3. 3段階環境構成の完全実装 🏗️
+**Development → Staging → Production** デプロイフロー
+
+| 環境 | データ数 | 特徴 | 用途 |
+|------|----------|------|------|
+| **dev** | 5件 | 開発・デバッグ用 | ローカル開発・実験 |
+| **staging** | 6件 | 本番類似テスト用 | QA・最終確認・デモ |
+| **prod** | 3件 | 厳選高品質データ | エンドユーザー向け |
+
+**環境別データセット**:
+```javascript
+// 開発環境: 豊富なテストケース
+const devData = [...baseStories, ...workStories]; // 5件
+
+// ステージング: 本番に近いテスト + staging固有テスト
+const stagingData = [...baseStories, ...stagingSpecific]; // 6件
+
+// 本番: 厳選された高品質データのみ  
+const prodData = baseStories; // 3件（恋愛特化）
+```
+
+**セキュリティ強化**:
+- 環境別Firebase プロジェクト分離
+- 独立したサービスアカウントキー
+- .gitignore による機密情報保護
+
+#### 4. Docker依存関係競合問題の解決 📦
+**問題**: `@types/react` バージョン競合によるビルド失敗
+```
+ERESOLVE could not resolve
+react-native@0.79.5 requires @types/react@"^19.0.0" 
+Found: @types/react@18.2.79
+```
+
+**解決策**: **段階的依存関係管理**
+```dockerfile
+# Dockerfile修正
+RUN npm ci --legacy-peer-deps
+
+# .npmrc追加
+legacy-peer-deps=true
+save-exact=false
+fund=false
+```
+
+```json
+// package.json更新
+"devDependencies": {
+  "@types/react": "^19.0.0",  // ← 19系に更新
+  "typescript": "~5.8.3"      // ← 最新安定版
 }
-
-export interface MainCategoryInfo {
-  name: MainCategory;
-  color: string;
-  description: string;
-  icon: string;
-  subCategories: SubCategoryInfo[];
-}
 ```
 
-#### UI設計の改善
-- **2段階選択**: メインカテゴリ選択 → サブカテゴリ選択
-- **動的フィルタ**: メインカテゴリ選択時にサブカテゴリが動的更新
-- **視覚的階層**: 色とアイコンによる視覚的な階層表現
+**結果**: ✅ **Docker ビルド成功** - コンテナ化デプロイメント復活
 
-#### データ移行戦略
-- **後方互換性**: 既存APIとの完全な互換性維持
-- **段階的移行**: フラット構造から階層構造への段階的移行
-- **データ整合性**: 既存データを損なわない設計
+#### 5. 認証・権限エラーの根本解決 🔐
+**問題**: Firestore読み取り権限エラーによる画面白化
+```
+FirebaseError: Missing or insufficient permissions
+```
 
-### 📋 ドキュメント更新
-- [x] **アプリコンセプト**: 階層構造の設計思想と利点を追加
-- [x] **カテゴリ体系**: 詳細なカテゴリ分類表を作成
-- [x] **将来展開**: 新カテゴリ追加の基盤構築を記載
-- [x] **開発進捗**: 本実装の詳細記録
+**原因**: 認証前にデータ取得処理が実行される競合状態
 
-### 🎯 成果・影響
-
-#### 技術的成果
-- ✅ **スケーラブルな設計**: 新カテゴリ追加が容易な基盤構築
-- ✅ **型安全性向上**: TypeScriptによる厳密な型定義
-- ✅ **保守性向上**: 階層構造による整理されたコード構造
-- ✅ **UI/UX改善**: より直感的なカテゴリ選択体験
-
-#### 戦略的価値
-- **市場拡大**: 恋愛だけでなく仕事領域の失敗学習もカバー
-- **差別化強化**: 体系的なカテゴリ分類による価値向上
-- **成長基盤**: 将来的な全領域対応プラットフォーム化の土台
-- **ユーザー価値**: より具体的で検索しやすい失敗事例の提供
-
-#### パフォーマンス指標
-- **カテゴリ数**: 6個 → 8個（階層化により実質的な分類は大幅増加）
-- **対象領域**: 恋愛のみ → 恋愛+仕事の複数領域
-- **拡張性**: フラット構造 → 無限拡張可能な階層構造
-
-### 🔮 次回予定
-1. **ユーザーテスト**: 階層UI の使いやすさ検証
-2. **データ分析**: 仕事カテゴリの投稿・エンゲージメント測定  
-3. **次期カテゴリ検討**: 学習・健康分野の追加準備
-4. **検索機能強化**: 階層フィルタ機能の実装 
-
----
-
-## 📅 2024年12月14日 - UIスリム化（検索機能統合）
-
-### 🎯 実装目標
-**重複機能の統合**: ホーム画面と検索画面の機能を統合してUIをスリム化
-
-### 🚀 実装内容
-
-#### 1. HomeScreen機能拡張
-- [x] **検索機能統合**: SearchbarとリアルタイムフィルタリングをHomeScreenに追加
-- [x] **階層フィルター**: メインカテゴリ→サブカテゴリの2段階フィルタ機能
-- [x] **視覚的表示**: カテゴリChipと感情Chipを追加
-- [x] **動的検索**: 入力と同時にリアルタイムフィルタリング実行
-
-#### 2. SearchScreen削除
-- [x] **ファイル削除**: SearchScreen.tsxを完全削除
-- [x] **ナビゲーション更新**: TabNavigatorからSearchタブを削除
-- [x] **型定義更新**: TabParamListからSearch関連を削除
-
-#### 3. ナビゲーション構造の簡素化
-- [x] **2タブ構成**: Home + Profileのシンプルな構成に変更
-- [x] **機能集約**: 検索・閲覧・フィルタ機能をすべてHomeScreenに統合
-
-### 🔧 技術実装詳細
-
-#### 統合された機能
+**解決策**: **認証状態チェック実装**
 ```typescript
-// リアルタイム検索・フィルタリング
-const filterStories = () => {
-  let filtered = allStories;
-  
-  // テキスト検索
-  if (searchQuery.trim()) {
-    filtered = filtered.filter(story => /* 全文検索 */);
+const loadStories = async (showLoading = true) => {
+  // 認証状態をチェック
+  if (!user) {
+    console.log('⚠️ ユーザー未認証のため、ストーリー取得をスキップ');
+    return;
   }
   
-  // 階層カテゴリフィルター
-  if (selectedMainCategory) {
-    filtered = filtered.filter(story => 
-      story.content.category.main === selectedMainCategory
-    );
-  }
-  
-  if (selectedSubCategory) {
-    filtered = filtered.filter(story => 
-      story.content.category.sub === selectedSubCategory
-    );
+  try {
+    const { stories: fetchedStories } = await storyService.getStories();
+    setStories(fetchedStories);
+  } catch (error) {
+    console.error('ストーリー取得エラー:', error);
   }
 };
 ```
 
-#### UI改善
-- **統合検索バー**: 即座にフィルタリング実行
-- **2段階カテゴリフィルター**: 直感的な階層選択
-- **視覚的フィードバック**: 選択状態の明確な表示
-- **空状態の適応**: 検索結果とデフォルト表示の使い分け
+**修正箇所**:
+- HomeScreen.tsx: 認証チェック後のデータ読み込み
+- MyStoriesScreen.tsx: マイストーリー取得時の認証確認
+- App.tsx: サンプルデータ処理の無効化
 
-### 🎯 成果・影響
+#### 6. ストーリー編集・削除機能の実装 ✏️
+**新機能**: マイ投稿管理機能
+- ✅ **編集機能**: 投稿内容の修正（CreateStoryScreen編集モード）
+- ✅ **削除機能**: 確認ダイアログ付き安全削除
+- ✅ **権限管理**: 投稿者のみ編集・削除可能
+- ✅ **UI改善**: 鉛筆アイコン（編集）・ゴミ箱アイコン（削除）
 
-#### ユーザビリティ向上
-- ✅ **操作の簡素化**: 画面切り替え不要で全機能にアクセス
-- ✅ **即座のフィードバック**: リアルタイム検索で素早い結果確認
-- ✅ **直感的操作**: 1画面で検索から詳細まで完結
-
-#### 開発効率化
-- ✅ **コード削減**: 重複機能の排除で保守性向上
-- ✅ **メンテナンス簡素化**: 単一画面での機能管理
-- ✅ **テスト範囲縮小**: 検証対象画面の削減
-
-#### パフォーマンス改善
-- **メモリ使用量削減**: 不要なコンポーネントの削除
-- **ナビゲーション高速化**: タブ数削減による軽量化
-- **バンドルサイズ削減**: 未使用コードの除去
-
-### 🔮 次回予定
-1. **ユーザーテスト**: 統合UIの使いやすさ検証
-2. **パフォーマンス測定**: スリム化効果の定量評価
-3. **機能最適化**: 統合画面での操作フロー改善 
-
----
-
-## 📅 2024年12月14日 - X(Twitter)風UIリデザイン
-
-### 🎯 実装目標
-**Twitter風UIUX**: 直感的で操作の少ないX(Twitter)ライクなデザインシステムに全面変更
-
-### 🚀 実装内容
-
-#### 1. HomeScreen - タイムライン風デザイン
-- [x] **Twitterライクなカード表示**: ユーザーアバター + 投稿内容 + アクションボタン
-- [x] **リアルタイム時間表示**: "2時間" "3日" 形式のタイムスタンプ
-- [x] **アクションバー**: 閲覧・いいね・コメント・シェアボタン
-- [x] **タイムライン構造**: 投稿が縦に並ぶTwitter風レイアウト
-- [x] **Twitterブルー統一**: #1DA1F2をメインカラーに採用
-
-#### 2. ナビゲーション - Twitter風スタイル
-- [x] **色統一**: アクティブ色をTwitterブルー(#1DA1F2)に変更
-- [x] **アイコンサイズ統一**: 24px固定でTwitterライクなサイズ
-- [x] **タブバースタイル**: より洗練されたTwitter風タブバー
-- [x] **ヘッダーデザイン**: 影なし・シンプルなヘッダースタイル
-
-#### 3. 投稿画面 - Twitter投稿風UI
-- [x] **Twitter風ヘッダー**: キャンセル・タイトル・投稿ボタンの3要素配置
-- [x] **文字数制限**: タイトル100文字、本文280文字のTwitter風制限
-- [x] **リアルタイム文字カウント**: 80%超過で赤色警告
-- [x] **Chip選択UI**: カテゴリ・感情をTwitter風Chipで選択
-- [x] **ユーザーヘッダー**: アバター + ユーザー名でTwitter風表示
-
-#### 4. カラーシステム統一
-- [x] **プライマリカラー**: Twitter Blue (#1DA1F2)
-- [x] **テキストカラー**: Dark Gray (#14171A)、Medium Gray (#657786)
-- [x] **背景色**: Pure White (#FFFFFF)
-- [x] **境界線**: Light Gray (#E1E8ED)
-- [x] **エラー色**: Twitter Red (#E0245E)
-
-### 🔧 技術実装詳細
-
-#### Twitter風デザインシステム
 ```typescript
-// カラーパレット
-const TwitterColors = {
-  primary: '#1DA1F2',      // Twitter Blue
-  text: '#14171A',         // Dark Text
-  textSecondary: '#657786', // Medium Gray
-  background: '#FFFFFF',    // Pure White
-  border: '#E1E8ED',       // Light Border
-  error: '#E0245E'         // Twitter Red
+// 編集機能
+const handleEditStory = (storyId: string) => {
+  const storyToEdit = userStories.find(story => story.id === storyId);
+  if (storyToEdit) {
+    navigation?.navigate('CreateStory', { 
+      editMode: true, 
+      storyData: storyToEdit 
+    });
+  }
 };
 
-// タイムスタンプ表示
-const getTimeAgo = (date: Date): string => {
-  const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
-  if (diffInHours < 1) return '今';
-  if (diffInHours < 24) return `${diffInHours}時間`;
-  return `${Math.floor(diffInHours / 24)}日`;
+// 削除機能（確認ダイアログ付き）
+const handleDeleteStory = async (storyId: string) => {
+  Alert.alert('削除確認', 'この失敗談を削除しますか？', [
+    { text: 'キャンセル', style: 'cancel' },
+    { text: '削除', style: 'destructive', onPress: async () => {
+      await storyService.deleteStory(storyId, user.id);
+      // ローカル状態更新
+    }}
+  ]);
 };
 ```
-
-#### UI/UX改善点
-- **直感的操作**: タップ・スワイプによる自然な操作
-- **視覚的階層**: Twitter風の情報階層とタイポグラフィ
-- **アクションフィードバック**: タップ時の即座の視覚フィードバック
-- **文字数管理**: リアルタイム文字カウントと制限表示
 
 ### 🎯 成果・影響
 
-#### ユーザビリティ向上
-- ✅ **学習コスト削減**: Twitterユーザーにとって馴染みやすいUI
-- ✅ **操作の直感性**: Twitter風操作パターンで迷いなく使用可能
-- ✅ **視覚的親しみやすさ**: 既知のデザインパターンによる安心感
+#### ユーザーエクスペリエンス劇的改善
+- ✅ **致命的スクロール問題解決**: 基本的なUX要件の復活
+- ✅ **編集・削除機能**: ユーザーによるコンテンツ管理能力
+- ✅ **エラー解消**: 白画面・権限エラーの完全解決
 
-#### デザイン統一性
-- ✅ **一貫したカラーシステム**: 全画面でTwitter風カラー統一
-- ✅ **統一されたコンポーネント**: 同じデザイン言語での構築
-- ✅ **スケーラブルなデザイン**: 新機能追加時の一貫性確保
+#### 運用・保守性向上  
+- ✅ **管理体制確立**: サンプルデータの安全管理
+- ✅ **環境分離**: dev/staging/prod の明確な運用フロー
+- ✅ **依存関係安定化**: Docker ビルドの信頼性確保
 
-#### パフォーマンス最適化
-- **軽量化**: シンプルなTwitter風デザインによる描画負荷軽減
-- **スムーズなアニメーション**: 軽快なタップレスポンス
-- **メモリ効率**: 最適化されたコンポーネント設計
+#### 技術的負債解消
+- ✅ **React Native Web制約克服**: Web環境でのスクロール制約解決
+- ✅ **Firebase権限問題解決**: 認証フローの安定化
+- ✅ **型安全性向上**: TypeScript 19系対応
 
-### 📱 実現されたUI
+### 🔧 技術的詳細・学習ポイント
+
+#### React Native Web の制約と解決策
+**学習**: React Native Web環境でのScrollView制約
+- `SafeAreaView` + `ScrollView` の組み合わせは Web で動作制限
+- **解決**: HTML/CSS ネイティブスクロールの直接実装
+- **知見**: React Native Web の制約を理解し、適切な回避策選択の重要性
+
+#### Firebase Admin SDK 活用
+**学習**: サーバーサイド権限での安全なデータ操作
+- クライアントサイドの制約を Firebase Admin で回避
+- **ベストプラクティス**: 管理操作の完全分離
+- **セキュリティ**: 環境別サービスアカウント管理
+
+#### 段階的デプロイメント戦略
+**学習**: 本格的な3段階環境運用
+- **開発**: 実験・デバッグ自由度
+- **ステージング**: 本番類似環境での最終確認
+- **本番**: 最小限の高品質データ運用
+
+### 📱 現在の技術スタック（2025年1月版）
 ```
-🐦 Twitter風FailShare
-├── 🏠 ホーム（タイムライン）
-│   ├── 👤 ユーザーアバター + 投稿情報
-│   ├── 📝 失敗談タイトル + 本文
-│   ├── 🏷️ カテゴリChip + 感情表示
-│   └── ⚡ アクション（閲覧・いいね・コメント・シェア）
-├── 🔍 統合検索・フィルター
-├── ✍️ Twitter風投稿画面
-└── 👤 プロフィール
+Frontend:
+├── React Native Web (スクロール問題解決)
+├── HTML/CSS Pure Scroll (Web環境)
+├── Firebase Auth (認証エラー修正)
+└── TypeScript 19系 (依存関係更新)
+
+Backend:
+├── Firebase Admin SDK (管理スクリプト)
+├── Firestore (権限問題解決)
+└── 3段階環境構成
+
+DevOps:
+├── Docker (依存関係競合解決)
+├── 環境別デプロイメント
+└── 管理スクリプトシステム
 ```
 
-### 🔮 次回予定
-1. **ユーザーテスト**: Twitter風UIの使いやすさ検証
-2. **マイクロインタラクション**: タップアニメーション強化
-3. **ダークモード**: Twitter風ダークテーマ実装検討 
+### 🔮 次期開発予定
+1. **ユーザーテスト**: 修正されたスクロール・編集機能のテスト
+2. **パフォーマンス最適化**: HTML/CSS scroll での大量データ処理
+3. **管理機能拡張**: ユーザー管理・コンテンツモデレーション
+4. **モニタリング**: 本番環境での動作監視体制

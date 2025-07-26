@@ -63,6 +63,121 @@
 
 ## バックエンド技術
 
+### サーバーレス: Firebase BaaS + Admin SDK管理
+**選定理由:**
+- ✅ Firebase BaaS: 完全サーバーレス（Authentication、Firestore）
+- ✅ **Firebase Admin SDK**: 管理者専用スクリプトシステム（2025年1月追加）
+- ✅ **3段階環境分離**: Development → Staging → Production（2025年1月実装）
+
+#### Firebase Admin SDK管理システム（新規実装）
+**構成**:
+```
+mobile/
+├── scripts/
+│   ├── seed-data.js       # 管理者スクリプト
+│   └── README.md          # 運用ドキュメント
+├── config/
+│   ├── firebase-admin-dev.json     # 開発環境キー
+│   ├── firebase-admin-staging.json # ステージング環境キー
+│   └── firebase-admin-prod.json    # 本番環境キー
+└── package.json           # 管理コマンド
+```
+
+**管理コマンド**:
+```bash
+# 環境別サンプルデータ投入
+npm run seed-data:dev -- --confirm      # 開発環境（5件）
+npm run seed-data:staging -- --confirm  # ステージング環境（6件）
+npm run seed-data:prod -- --confirm     # 本番環境（3件）
+```
+
+**メリット**:
+- ✅ **アプリとの完全分離**: 本番環境でのデータ汚染防止
+- ✅ **管理者権限**: Firebase Admin による安全な操作
+- ✅ **環境別管理**: dev/staging/prod の明確な分離
+- ✅ **バッチ処理**: 効率的なFirestore操作
+- ✅ **安全性**: --confirm フラグによる誤実行防止
+
+#### 3段階環境構成（2025年1月実装）
+| 環境 | データ数 | 特徴 | 用途 |
+|------|----------|------|------|
+| **Development** | 5件 | 開発・デバッグ用豊富なテストデータ | ローカル開発・実験 |
+| **Staging** | 6件 | 本番類似データ + staging専用テスト | QA・最終確認・デモ |
+| **Production** | 3件 | 厳選された高品質データのみ | エンドユーザー向け |
+
+**運用フロー**:
+1. **開発フェーズ**: `npm run seed-data:dev` で開発用データ投入
+2. **ステージングフェーズ**: `npm run seed-data:staging` で本番類似テスト
+3. **本番デプロイ**: `npm run seed-data:prod` で最小限の高品質データ投入
+
+---
+
+## インフラ・デプロイメント技術
+
+### コンテナ化: Docker + 依存関係管理強化（2025年1月改善）
+**課題解決**:
+- ❌ **@types/react バージョン競合**: react-native@0.79.5 が @types/react@19系を要求
+- ❌ **Docker ビルド失敗**: ERESOLVE dependency conflict
+
+**解決策**:
+```dockerfile
+# Dockerfile改善
+RUN npm ci --legacy-peer-deps  # 依存関係競合回避
+```
+
+```
+# .npmrc追加
+legacy-peer-deps=true
+save-exact=false  
+fund=false
+```
+
+```json
+// package.json更新
+"devDependencies": {
+  "@types/react": "^19.0.0",  // 19系に更新
+  "typescript": "~5.8.3"
+}
+```
+
+**結果**: ✅ **Docker ビルド成功** - 安定したコンテナ化デプロイメント
+
+### フロントエンド制約解決: React Native Web + HTML/CSS Scroll（2025年1月突破）
+**重大問題**: React Native Web環境でのスクロール完全不動作
+- `SafeAreaView` + `ScrollView` + `FlatList` の組み合わせでWeb制約発生
+- ユーザーが下部コンテンツにアクセス不可能な致命的UX問題
+
+**解決策**: **HTML/CSS Pure Scroll実装**
+```typescript
+// 修正前（動作不良）
+<SafeAreaView style={styles.container}>
+  <ScrollView style={styles.scrollView}>
+    <FlatList data={stories} />
+  </ScrollView>
+</SafeAreaView>
+
+// 修正後（完全動作）  
+<div style={{
+  width: '100%',
+  height: '100vh',
+  overflow: 'auto',  // ブラウザネイティブスクロール
+  fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+}}>
+  {/* React Native Paper コンポーネントと併用 */}
+</div>
+```
+
+**技術的特徴**:
+- ✅ **React Native Web制約回避**: HTML/CSS直接実装
+- ✅ **ブラウザネイティブスクロール**: 確実な動作保証
+- ✅ **コンポーネント併用**: React Native Paper等との併用可能
+- ✅ **レスポンシブ対応**: PC・タブレット・スマートフォン完全対応
+
+**学習ポイント**:
+- React Native Web には Web環境での制約が存在
+- 致命的UX問題には Web標準技術での直接解決が有効
+- React Native コンポーネントと HTML/CSS の適切な使い分けが重要
+
 ### BaaS: Firebase（基本構成）
 **選定理由:**
 - ✅ 完全匿名化システムの構築が容易

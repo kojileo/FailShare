@@ -8,7 +8,8 @@ WORKDIR /app
 COPY package*.json ./
 
 # 全ての依存関係をインストール（ビルド用）
-RUN npm ci
+# レガシーピア依存関係フラグを使用してバージョン競合を回避
+RUN npm ci --legacy-peer-deps
 
 # Build引数を定義
 ARG EXPO_PUBLIC_ENVIRONMENT=production

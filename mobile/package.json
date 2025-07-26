@@ -54,11 +54,12 @@
     "zustand": "^5.0.6"
   },
   "devDependencies": {
-    "@babel/core": "^7.20.0",
-    "@types/react": "~18.2.45",
-    "@types/react-native": "~0.73.0",
+    "@babel/core": "^7.25.2",
+    "@expo/cli": "latest",
+    "@types/react": "^19.0.0",
+    "cross-env": "^7.0.3",
     "firebase-admin": "^12.0.0",
-    "typescript": "^5.1.3"
+    "typescript": "~5.8.3"
   },
   "private": true
 }
