@@ -52,6 +52,9 @@ class StoryService {
     try {
       console.log('🚀 Firestore投稿処理開始:', { authorId, storyData });
       
+      // クライアントサイドでの事前検証
+      this.validateStoryData(storyData);
+      
       const docRef = await addDoc(collection(this.db, this.COLLECTION_NAME), {
         authorId,
         content: storyData,
@@ -264,21 +267,21 @@ class StoryService {
       throw new Error('感情は必須です');
     }
 
-    // 文字数制限
-    if (data.title.length > 50) {
-      throw new Error('タイトルは50文字以内で入力してください');
+    // 文字数制限（firestore.rulesと一致）
+    if (data.title.length > 100) {
+      throw new Error('タイトルは100文字以内で入力してください');
     }
-    if (data.situation.length > 500) {
-      throw new Error('状況は500文字以内で入力してください');
+    if (data.situation.length > 280) {
+      throw new Error('状況は280文字以内で入力してください');
     }
-    if (data.action.length > 500) {
-      throw new Error('行動は500文字以内で入力してください');
+    if (data.action.length > 280) {
+      throw new Error('行動は280文字以内で入力してください');
     }
-    if (data.result.length > 500) {
-      throw new Error('結果は500文字以内で入力してください');
+    if (data.result.length > 280) {
+      throw new Error('結果は280文字以内で入力してください');
     }
-    if (data.learning.length > 500) {
-      throw new Error('学びは500文字以内で入力してください');
+    if (data.learning.length > 280) {
+      throw new Error('学びは280文字以内で入力してください');
     }
   }
 

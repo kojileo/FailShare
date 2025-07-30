@@ -83,18 +83,18 @@ function validateStoryData(data) {
          data.metadata.keys().hasAll(['createdAt', 'viewCount', 'helpfulCount', 'commentCount', 'tags']) &&
          // タイトル検証
          data.content.title is string &&
-         data.content.title.size() >= 3 && data.content.title.size() <= 50 &&
+         data.content.title.size() >= 1 && data.content.title.size() <= 100 &&
          // 階層カテゴリ検証
          validateCategoryHierarchy(data.content.category) &&
          // 各フィールドの詳細検証
          data.content.situation is string &&
-         data.content.situation.size() >= 5 && data.content.situation.size() <= 500 &&
+         data.content.situation.size() >= 1 && data.content.situation.size() <= 280 &&
          data.content.action is string &&
-         data.content.action.size() >= 5 && data.content.action.size() <= 500 &&
+         data.content.action.size() >= 1 && data.content.action.size() <= 280 &&
          data.content.result is string &&
-         data.content.result.size() >= 5 && data.content.result.size() <= 500 &&
+         data.content.result.size() >= 1 && data.content.result.size() <= 280 &&
          data.content.learning is string &&
-         data.content.learning.size() >= 3 && data.content.learning.size() <= 500 &&
+         data.content.learning.size() >= 1 && data.content.learning.size() <= 280 &&
          validateEmotion(data.content.emotion) &&
          // メタデータ検証（新規投稿は0から開始）
          data.metadata.viewCount is int && data.metadata.viewCount >= 0 &&
@@ -106,26 +106,30 @@ function validateStoryData(data) {
 
 // 階層カテゴリの検証関数
 function validateCategoryHierarchy(category) {
-  return category.keys().hasAll(['main', 'sub']) &&
-         validateMainCategory(category.main) &&
-         validateSubCategory(category.main, category.sub);
+  // 空のオブジェクトやnullの場合は後方互換性のため許可
+  return category == null || 
+         category.keys().size() == 0 ||
+         (category.keys().hasAll(['main', 'sub']) &&
+          validateMainCategory(category.main) &&
+          validateSubCategory(category.main, category.sub));
 }
 
 // メインカテゴリの検証
 function validateMainCategory(mainCategory) {
-  return mainCategory in ['恋愛', '仕事', 'その他'];
+  return mainCategory == null || mainCategory == '' || mainCategory in ['恋愛', '仕事', 'その他'];
 }
 
 // サブカテゴリの検証（メインカテゴリに応じて）
 function validateSubCategory(mainCategory, subCategory) {
-  return (mainCategory == '恋愛' && subCategory in ['デート', '告白', 'カップル', '片想い', '別れ']) ||
+  return mainCategory == null || subCategory == null || subCategory == '' ||
+         (mainCategory == '恋愛' && subCategory in ['デート', '告白', 'カップル', '片想い', '別れ']) ||
          (mainCategory == '仕事' && subCategory in ['職場人間関係', '転職・キャリア', 'プレゼン・会議', 'プロジェクト管理', 'スキル習得']) ||
          (mainCategory == 'その他' && subCategory == 'その他');
 }
 
 // 感情の検証
 function validateEmotion(emotion) {
-  return emotion in ['後悔', '恥ずかしい', '悲しい', '不安', '怒り', '混乱', 'その他'];
+  return emotion == null || emotion == '' || emotion in ['後悔', '恥ずかしい', '悲しい', '不安', '怒り', '混乱', 'その他'];
 }
 
 // コメントデータの検証関数
