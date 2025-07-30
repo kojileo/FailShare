@@ -4,7 +4,7 @@
 
 ## 🌐 **Web版運用中！**
 
-**🚀 [https://failshare-web-xxx.a.run.app](https://failshare-web-xxx.a.run.app)**
+**🚀 [https://fail-share.com/](https://fail-share.com/)**
 
 - **即座にアクセス**: ブラウザからすぐに利用可能
 - **全デバイス対応**: PC・タブレット・スマートフォン完全対応
@@ -13,7 +13,7 @@
 ## プロジェクト概要
 
 ### 核となる価値提案
-**「失敗を成長の糧に変える、匿名で安全な学び合いコミュニティ」**
+**「失敗を成長の糧に変え、支えあうコミュニティ」**
 
 React Native + Expo で開発され、Web配信に最適化されたアプリケーションです。あらゆるデバイスのブラウザからアクセス可能で、アプリのような滑らかな操作感を提供します。
 
@@ -23,6 +23,8 @@ React Native + Expo で開発され、Web配信に最適化されたアプリケ
 - **共感・支援**: 建設的なコメント・アドバイス機能
 - **検索・発見**: カテゴリ・感情別の失敗事例検索
 - **レスポンシブ対応**: PC・タブレット・スマートフォン対応
+- **投稿管理**: 編集・削除機能による自分の投稿管理
+- **管理者システム**: Firebase Admin SDK による安全なデータ管理
 
 ## プロジェクト構造
 
@@ -32,8 +34,7 @@ FailShare/
 │   ├── 01_AppConcept.md          # アプリコンセプト・機能詳細
 │   ├── 02_TechChoice.md          # 技術選定の背景・理由
 │   ├── 03_DevelopmentProgress.md # 開発進捗・実装詳細
-│   ├── 06_DeploymentStrategy.md  # マルチプラットフォーム戦略
-│   ├── 08_WebDeploymentGuide.md  # Web/Cloud Run デプロイガイド
+│   ├── 04_TestingStrategy.md     # テスト戦略・品質保証
 │   └── README.md                 # ドキュメントインデックス
 ├── mobile/                       # 🌐 React Native Web アプリケーション
 │   ├── src/                      # ソースコード
@@ -45,146 +46,100 @@ FailShare/
 │   │   ├── types/                # TypeScript型定義
 │   │   └── utils/                # ユーティリティ関数
 │   ├── assets/                   # 画像・アイコン等
+│   ├── scripts/                  # 管理者スクリプト
+│   ├── config/                   # 環境別設定ファイル
 │   ├── Dockerfile                # 🐳 Webデプロイ用コンテナ設定
 │   ├── server.js                 # 🌐 Express Webサーバー
-│   ├── cloudbuild.yaml           # ☁️ Cloud Build CI/CD設定
 │   └── README.md                 # 開発者向けクイックスタート
 └── README.md                     # このファイル
 ```
 
-## 技術スタック
+## 🛠️ 技術スタック
 
-### Webアプリケーション
-- **フロントエンド**: React Native Web + Expo + TypeScript
-- **Web配信**: Docker + Express + Cloud Run
-- **状態管理**: Zustand + SWR
-- **UI**: React Native Paper (Material Design)
-- **PWA機能**: レスポンシブ・オフライン対応
+### フロントエンド
+- **React Native + Expo**: モバイルアプリ開発
+- **React Native Web**: Webブラウザ対応
+- **HTML/CSS Pure Scroll**: Web環境スクロール問題解決
+- **TypeScript**: 型安全性
+- **React Native Paper**: UIライブラリ
 
-### バックエンド・インフラ
-- **BaaS**: Firebase (Auth, Firestore)
-- **ホスティング**: Google Cloud Run
-- **CI/CD**: Cloud Build + GitHub
-- **監視**: Cloud Run Metrics + Logs
+### バックエンド
+- **Firebase Authentication**: 匿名認証
+- **Firestore**: NoSQLデータベース
+- **Firebase Admin SDK**: 管理者スクリプト
 
-## 🚀 開発・デプロイ状況
+### インフラ
+- **Docker**: コンテナ化デプロイメント
+- **3段階環境**: Development/Staging/Production
+- **npm管理スクリプト**: 自動化されたデータ管理
 
-### ✅ 本番運用中 (Phase 2 完了)
-- **Web アプリケーション**: Cloud Run本番運用中
-- **Docker化**: コンテナベースデプロイ
-- **CI/CD**: 自動ビルド・デプロイパイプライン
-- **Firebase統合**: 認証・データベース動作確認
-- **レスポンシブ対応**: PC・タブレット・スマートフォン完全対応
+## 🚀 セットアップ
 
-### 🔄 継続改善中
-- **PWA機能**: オフライン対応・インストール機能
-- **パフォーマンス最適化**: 読み込み速度向上
-- **UI/UX改善**: ユーザビリティ向上
-
-### 📱 将来の展開
-- **ネイティブモバイルアプリ**: 将来のロードマップで検討中
-
-## 📚 ドキュメント
-
-詳細な技術情報・開発プロセスは [/Docs](./Docs/) フォルダを参照してください：
-
-- **🎯 [プロジェクト概要](./Docs/01_AppConcept.md)** - アプリのコンセプト・機能詳細
-- **🔧 [技術選択](./Docs/02_TechChoice.md)** - 技術スタック選定理由
-- **📈 [開発進捗](./Docs/03_DevelopmentProgress.md)** - 実装詳細・成果
-- **🚀 [Webデプロイ](./Docs/08_WebDeploymentGuide.md)** - Cloud Run デプロイガイド
-
-## 🛠️ クイックスタート
-
-### Web版を試す
-1. [https://failshare-web-xxx.a.run.app](https://failshare-web-xxx.a.run.app) にアクセス
-2. 「匿名で始める」をクリック
-3. 失敗談を投稿・閲覧して体験
-
-### ローカル開発
+### 1. 基本セットアップ
 ```bash
 cd mobile
 npm install
-npm start
-# Web: http://localhost:19006
-# Mobile: Expo Go アプリでQRコード読み取り
+cp .env.example .env
+# .envファイルにFirebase設定を追加
 ```
 
----
+### 2. アプリ起動
+```bash
+npm start          # 開発サーバー起動
+npm run web        # Webブラウザで表示
+```
 
-**🌟 FailShare**: 失敗を学びに変え、みんなで成長していくコミュニティを目指しています。
-- **ストレージ**: Cloud Storage (将来的に)
+### 3. 管理者セットアップ（オプション）
+```bash
+# Firebase Admin キーを取得・配置
+# mobile/config/firebase-admin-dev.json
 
-## 開発環境セットアップ
+# サンプルデータ投入
+npm run seed-data:dev -- --confirm
+```
 
-### 前提条件
-- Node.js 18以上
-- npm または yarn
-- Git
-- Expo CLI
-- Expo Go アプリ（iOS/Android）
+## 📚 管理者システム
 
-### 初期セットアップ
+### サンプルデータ管理
+```bash
+# 開発環境（5件のテストデータ）
+npm run seed-data:dev -- --confirm
 
-1. **リポジトリのクローン**
-   ```bash
-   git clone [リポジトリURL]
-   cd FailShare
-   ```
+# ステージング環境（6件の本番類似データ）  
+npm run seed-data:staging -- --confirm
 
-2. **モバイルアプリのセットアップ**
-   ```bash
-   cd mobile
-   npm install
-   npm start
-   ```
+# 本番環境（3件の厳選データ）
+npm run seed-data:prod -- --confirm
+```
 
-3. **動作確認**
-   - スマートフォンにExpo Goアプリをインストール
-   - QRコードをスキャンしてアプリを起動
+### 管理機能
+- ✅ **環境分離**: dev/staging/prod の完全分離
+- ✅ **安全操作**: Firebase Admin 権限による確実な処理
+- ✅ **データクリーンアップ**: 既存サンプルデータの自動削除
+- ✅ **誤実行防止**: --confirm フラグによる確認機能
 
-## 現在の実装状況
+## 🎯 現在の状況
 
-### ✅ 完了
-- 基本的なプロジェクト構造
-- React Native + Expo セットアップ
-- 基本的なナビゲーション
-- サンプルデータでの失敗談一覧表示
-- Material Design UI コンポーネント
-- TypeScript型定義
-- Zustand状態管理基盤
+### ✅ 完了済み
+- MVP機能実装完了
+- Web対応・レスポンシブデザイン
+- Twitter風UI実装
+- スクロール問題完全解決
+- 管理者システム構築
+- 編集・削除機能実装
+- Docker化・依存関係安定化
+- 3段階環境構成（Development/Staging/Production）
 
-### 🔄 開発中
-- Firebase設定（認証・データベース）
-- 失敗談投稿機能
-- コメント機能
-- 検索機能
-- プロフィール機能
+### 🔄 次期予定
+- ユーザーテスト実施
+- パフォーマンス最適化
+- 本番環境デプロイ
+- モニタリング体制構築
 
-### 📋 今後の予定
-- 匿名化システムの実装
-- 高度な検索・フィルター機能
-- 学習記録機能
-- 通知システム
-- プレミアム機能
+## 📋 ドキュメント
 
-## 貢献ガイド
-
-### 開発ワークフロー
-1. 新しいブランチを作成
-2. 機能開発・バグ修正
-3. テスト実行
-4. プルリクエスト作成
-
-### コードスタイル
-- TypeScript strict mode
-- ESLint + Prettier
-- React/React Native best practices
-- コンポーネント単位での開発
-
-## ライセンス
-
-[ライセンス情報を記載]
-
-## 連絡先
-
-[連絡先情報を記載] 
+詳細なドキュメントは `/Docs/` フォルダを参照してください：
+- [開発進捗記録](Docs/03_DevelopmentProgress.md)
+- [技術選定](Docs/02_TechChoice.md)  
+- [アプリコンセプト](Docs/01_AppConcept.md)
+- [テスト戦略](Docs/05_TestingStrategy.md)
