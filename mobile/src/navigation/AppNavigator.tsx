@@ -31,53 +31,14 @@ const AppNavigator: React.FC = () => {
         <Stack.Screen
           name="CreateStory"
           component={CreateStoryScreen}
-          options={{
-            title: '失敗談を投稿',
-            headerShown: true,
-            headerStyle: {
-              backgroundColor: '#1DA1F2',
-            },
-            headerTintColor: '#fff',
-            headerTitleStyle: {
-              fontWeight: 'bold',
-              fontSize: 18,
-            },
-            headerTitleAlign: 'center',
-          }}
         />
         <Stack.Screen
           name="StoryDetail"
           component={StoryDetailScreen}
-          options={{
-            title: '失敗談',
-            headerShown: true,
-            headerStyle: {
-              backgroundColor: '#1DA1F2',
-            },
-            headerTintColor: '#fff',
-            headerTitleStyle: {
-              fontWeight: 'bold',
-              fontSize: 18,
-            },
-            headerTitleAlign: 'center',
-          }}
         />
         <Stack.Screen
           name="MyStories"
           component={MyStoriesScreen}
-          options={{
-            title: 'マイ投稿',
-            headerShown: true,
-            headerStyle: {
-              backgroundColor: '#1DA1F2',
-            },
-            headerTintColor: '#fff',
-            headerTitleStyle: {
-              fontWeight: 'bold',
-              fontSize: 18,
-            },
-            headerTitleAlign: 'center',
-          }}
         />
       </Stack.Navigator>
     </NavigationContainer>

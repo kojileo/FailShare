@@ -249,6 +249,9 @@ const MyStoriesScreen: React.FC<MyStoriesScreenProps> = ({ navigation }) => {
         style={styles.modernHeader}
       >
         <View style={styles.headerContent}>
+          <TouchableOpacity onPress={() => navigation?.goBack()}>
+            <IconButton icon="arrow-left" size={24} iconColor="#FFFFFF" />
+          </TouchableOpacity>
           <View style={styles.headerLeft}>
             <Text style={styles.modernHeaderTitle}>マイ失敗談</Text>
             <Text style={styles.headerSubtitle}>
