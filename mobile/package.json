@@ -52,7 +52,6 @@
     "express": "^4.21.2",
     "firebase": "^11.10.0",
     "react": "19.0.0",
-    "react-adsense": "^0.1.0",
     "react-dom": "19.0.0",
     "react-native": "0.79.5",
     "react-native-paper": "^5.14.5",
