@@ -10,6 +10,27 @@ service cloud.firestore {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
     
+    // ユーザープロフィール（通常のユーザー）
+    match /users/{userId} {
+      // 認証済みユーザーのみ、自分のプロフィールにアクセス可能
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // いいね機能
+    match /likes/{likeId} {
+      // 読み取り：認証済みユーザーのみ
+      allow read: if request.auth != null;
+      
+      // 作成：認証済みユーザーのみ、自分のいいねのみ
+      allow create: if request.auth != null 
+                    && request.auth.uid == request.resource.data.userId
+                    && validateLikeData(request.resource.data);
+      
+      // 削除：自分のいいねのみ
+      allow delete: if request.auth != null 
+                    && request.auth.uid == resource.data.userId;
+    }
+    
     // 投稿された失敗談
     match /stories/{storyId} {
       // 読み取りは認証済みユーザーのみ
@@ -171,4 +192,14 @@ function onlyMetadataChanged(newData, oldData) {
          (newData.metadata.viewCount >= oldData.metadata.viewCount ||
           newData.metadata.helpfulCount >= oldData.metadata.helpfulCount ||
           newData.metadata.commentCount >= oldData.metadata.commentCount);
+} 
+
+// いいねデータの検証関数
+function validateLikeData(data) {
+  return data.keys().hasAll(['storyId', 'userId', 'createdAt']) &&
+         data.storyId is string &&
+         data.storyId.size() > 0 &&
+         data.userId is string &&
+         data.userId == request.auth.uid &&
+         data.createdAt is timestamp;
 } 

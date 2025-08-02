@@ -44,28 +44,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         return;
       }
       
-      // 🔍 Firebase認証状態もチェック  
-      if (auth.currentUser && auth.currentUser.isAnonymous) {
-        console.log('🔄 Firebase認証済み、プロフィール取得のみ実行');
-        const user = await getUserProfile(auth.currentUser.uid);
-        if (user) {
-          const onboardingCompleted = await getOnboardingStatus();
-          set({ 
-            user, 
-            isSignedIn: true, 
-            isOnboardingCompleted: onboardingCompleted,
-            isLoading: false 
-          });
-          return;
-        }
-      }
-      
       // 🆕 新規サインインまたは復元
+      console.log('🔐 匿名認証を開始...');
       const user = await signInAnonymous();
       
       // オンボーディング状態を確認
       const onboardingCompleted = await getOnboardingStatus();
       
+      console.log('✅ 認証成功:', user.id);
       set({ 
         user, 
         isSignedIn: true, 
@@ -78,6 +64,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         error: 'サインインに失敗しました。もう一度お試しください。',
         isLoading: false 
       });
+      throw error; // エラーを再スローして呼び出し元でキャッチできるようにする
     }
   },
   

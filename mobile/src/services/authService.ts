@@ -160,7 +160,9 @@ const generateAnonymousProfile = async (userId: string): Promise<User> => {
       totalPosts: 0,
       totalComments: 0,
       helpfulVotes: 0,
-      learningPoints: 0
+      learningPoints: 0,
+      totalLikes: 0,
+      receivedLikes: 0
     }
   };
 

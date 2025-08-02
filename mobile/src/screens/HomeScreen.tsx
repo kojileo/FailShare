@@ -20,13 +20,15 @@ import {
   getMainCategories,
   getCategoryHierarchyIcon
 } from '../utils/categories';
+import { LikeButton } from '../components/LikeButton';
+
 
 interface HomeScreenProps {
   navigation?: NativeStackNavigationProp<RootStackParamList, 'Home'>;
 }
 
 const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
-  const { user } = useAuthStore();
+  const { user, signIn } = useAuthStore();
   const { stories, setStories, setLoading, isLoading } = useStoryStore();
   
   // 検索・フィルター状態
@@ -51,15 +53,23 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
   const loadStories = async (showLoading = true) => {
     try {
-      // 認証状態をチェック
+      // 認証状態をチェックし、必要に応じて匿名認証を実行
       if (!user) {
-        console.log('⚠️ ユーザー未認証のため、ストーリー取得をスキップ');
-        return;
+        console.log('🔐 ユーザー未認証のため、匿名認証を実行中...');
+        await signIn();
+        // 認証後に再度ユーザー情報を取得
+        const { user: newUser } = useAuthStore.getState();
+        if (!newUser) {
+          console.log('⚠️ 認証に失敗したため、ストーリー取得をスキップ');
+          return;
+        }
       }
 
       if (showLoading) setLoading(true);
       const { stories: fetchedStories } = await storyService.getStories();
       setStories(fetchedStories);
+      
+
     } catch (error) {
       console.error('ストーリー取得エラー:', error);
     } finally {
@@ -361,10 +371,35 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                       <Text style={styles.actionText}>{story.metadata.viewCount}</Text>
                     </TouchableOpacity>
                     
-                    <TouchableOpacity style={styles.actionItem}>
-                      <IconButton icon="heart-outline" size={18} iconColor="#8E9AAF" style={styles.actionIcon} />
-                      <Text style={styles.actionText}>{story.metadata.helpfulCount}</Text>
-                    </TouchableOpacity>
+                    <View style={styles.actionItem}>
+                      <LikeButton
+                        storyId={story.id}
+                        initialHelpfulCount={story.metadata.helpfulCount || 0}
+                        size="small"
+                        showCount={true}
+                                                 onLikeChange={(isLiked, newCount) => {
+                           console.log(`🏠 HomeScreen: いいね更新 [${story.id}]:`, { isLiked, newCount });
+                           
+                           // ストーリーのいいね数を更新（グローバルストアも更新）
+                           const updatedStories = stories.map(s => 
+                             s.id === story.id 
+                               ? { ...s, metadata: { ...s.metadata, helpfulCount: newCount } }
+                               : s
+                           );
+                           setStories(updatedStories);
+                           
+                           // フィルター済みストーリーも更新
+                           if (searchQuery || selectedMainCategory || selectedSubCategory) {
+                             const updatedFilteredStories = filteredStories.map(s => 
+                               s.id === story.id 
+                                 ? { ...s, metadata: { ...s.metadata, helpfulCount: newCount } }
+                                 : s
+                             );
+                             setFilteredStories(updatedFilteredStories);
+                           }
+                         }}
+                      />
+                    </View>
                     
                     <TouchableOpacity style={styles.actionItem}>
                       <IconButton icon="message-outline" size={18} iconColor="#8E9AAF" style={styles.actionIcon} />
