@@ -90,7 +90,7 @@
   },
   "private": true,
   "jest": {
-    "testEnvironment": "node",
+    "testEnvironment": "jsdom",
     "setupFilesAfterEnv": [
       "<rootDir>/__tests__/setup.ts"
     ],
@@ -119,8 +119,13 @@
       "!src/**/*.stories.{js,jsx,ts,tsx}"
     ],
     "moduleNameMapper": {
-      "^@/(.*)$": "<rootDir>/src/$1"
-    }
+      "^@/(.*)$": "<rootDir>/src/$1",
+      "^react-native$": "react-native-web",
+      "^react-native/(.*)$": "react-native-web/$1"
+    },
+    "transformIgnorePatterns": [
+      "node_modules/(?!(react-native|@react-native|@react-navigation|@expo|expo|react-native-vector-icons|react-native-safe-area-context|react-native-paper|expo-linear-gradient)/)"
+    ]
   },
   "detox": {
     "testRunner": {
