@@ -90,13 +90,6 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
 
   const menuItems = [
     {
-      title: 'マイ投稿',
-      subtitle: `${userStories.length}件の投稿`,
-      icon: 'file-document-outline',
-      onPress: () => navigation?.navigate('MyStories'),
-      showBadge: userStories.length > 0,
-    },
-    {
       title: 'プロフィール編集',
       subtitle: 'アバターと表示名を変更',
       icon: 'account-edit-outline',
@@ -237,7 +230,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
                 style={styles.viewButton}
                 labelStyle={styles.viewButtonText}
               >
-                投稿を見る
+                マイ失敗談を確認する
               </Button>
             </View>
           </LinearGradient>
@@ -260,11 +253,6 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
                   <View style={styles.menuTextContainer}>
                     <View style={styles.menuTitleRow}>
                       <Text style={styles.menuTitle}>{item.title}</Text>
-                      {item.showBadge && (
-                        <View style={styles.badge}>
-                          <Text style={styles.badgeText}>{userStories.length}</Text>
-                        </View>
-                      )}
                     </View>
                     <Text style={styles.menuSubtitle}>{item.subtitle}</Text>
                   </View>
