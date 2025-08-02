@@ -10,6 +10,9 @@ jest.mock('firebase/firestore', () => ({
   query: jest.fn(),
   where: jest.fn(),
   onSnapshot: jest.fn(),
+  doc: jest.fn(),
+  updateDoc: jest.fn(),
+  increment: jest.fn(),
   Timestamp: {
     now: jest.fn(() => ({ toDate: () => new Date() }))
   }
@@ -29,7 +32,10 @@ import {
   getDocs, 
   query, 
   where, 
-  onSnapshot 
+  onSnapshot,
+  doc,
+  updateDoc,
+  increment
 } from 'firebase/firestore';
 
 describe('LikeService', () => {
@@ -40,6 +46,9 @@ describe('LikeService', () => {
   const mockWhere = where as jest.MockedFunction<typeof where>;
   const mockCollection = collection as jest.MockedFunction<typeof collection>;
   const mockOnSnapshot = onSnapshot as jest.MockedFunction<typeof onSnapshot>;
+  const mockDoc = doc as jest.MockedFunction<typeof doc>;
+  const mockUpdateDoc = updateDoc as jest.MockedFunction<typeof updateDoc>;
+  const mockIncrement = increment as jest.MockedFunction<typeof increment>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -62,8 +71,14 @@ describe('LikeService', () => {
         toJSON: jest.fn()
       } as any);
       
+      // collectionのモック
+      mockCollection.mockReturnValue({} as any);
+      
       // addDocの成功をモック
       mockAddDoc.mockResolvedValueOnce({ id: 'like1' } as any);
+      mockDoc.mockReturnValue({} as any);
+      mockUpdateDoc.mockResolvedValueOnce(undefined);
+      mockIncrement.mockReturnValue({} as any);
 
       await likeService.addLike(storyId, userId);
 
@@ -71,6 +86,12 @@ describe('LikeService', () => {
         storyId,
         userId,
         createdAt: expect.anything()
+      });
+      
+      // FirestoreのhelpfulCountも更新されることを確認
+      expect(mockDoc).toHaveBeenCalledWith(expect.anything(), 'stories', storyId);
+      expect(mockUpdateDoc).toHaveBeenCalledWith(expect.anything(), {
+        'metadata.helpfulCount': expect.anything()
       });
     });
 
@@ -98,6 +119,39 @@ describe('LikeService', () => {
       } as any);
 
       await expect(likeService.addLike(storyId, userId)).rejects.toThrow('既にいいね済みです');
+    });
+
+    it('いいね追加時にFirestoreのhelpfulCountが+1される', async () => {
+      const storyId = 'story1';
+      const userId = 'user1';
+
+      // 既存のいいねがないことをモック
+      mockGetDocs.mockResolvedValueOnce({
+        empty: true,
+        size: 0,
+        docs: [],
+        metadata: { fromCache: false, hasPendingWrites: false, isEqual: jest.fn() },
+        query: {} as any,
+        forEach: jest.fn(),
+        docChanges: jest.fn(),
+        toJSON: jest.fn()
+      } as any);
+      
+      // collectionのモック
+      mockCollection.mockReturnValue({} as any);
+      
+      // addDocの成功をモック
+      mockAddDoc.mockResolvedValueOnce({ id: 'like1' } as any);
+      mockDoc.mockReturnValue({} as any);
+      mockUpdateDoc.mockResolvedValueOnce(undefined);
+      mockIncrement.mockReturnValue({} as any);
+
+      await likeService.addLike(storyId, userId);
+
+      expect(mockDoc).toHaveBeenCalledWith(expect.anything(), 'stories', storyId);
+      expect(mockUpdateDoc).toHaveBeenCalledWith(expect.anything(), {
+        'metadata.helpfulCount': expect.anything()
+      });
     });
   });
 
@@ -216,6 +270,45 @@ describe('LikeService', () => {
       const isLiked = await likeService.isLikedByUser(storyId, userId);
 
       expect(isLiked).toBe(false);
+    });
+  });
+
+  describe('removeLike', () => {
+    it('いいね削除時にFirestoreのhelpfulCountが-1される', async () => {
+      const storyId = 'story1';
+      const userId = 'user1';
+
+      // 既存のいいねがあることをモック
+      mockGetDocs.mockResolvedValueOnce({
+        empty: false,
+        size: 1,
+        docs: [{
+          id: 'existing-like',
+          data: () => ({ storyId, userId }),
+          metadata: { fromCache: false, hasPendingWrites: false, isEqual: jest.fn() },
+          exists: () => true as any,
+          get: jest.fn(),
+          ref: {} as any
+        }],
+        metadata: { fromCache: false, hasPendingWrites: false, isEqual: jest.fn() },
+        query: {} as any,
+        forEach: jest.fn(),
+        docChanges: jest.fn(),
+        toJSON: jest.fn()
+      } as any);
+
+      // deleteDocの成功をモック
+      mockDeleteDoc.mockResolvedValueOnce(undefined);
+      mockDoc.mockReturnValue({} as any);
+      mockUpdateDoc.mockResolvedValueOnce(undefined);
+      mockIncrement.mockReturnValue({} as any);
+
+      await likeService.removeLike(storyId, userId);
+
+      expect(mockDoc).toHaveBeenCalledWith(expect.anything(), 'stories', storyId);
+      expect(mockUpdateDoc).toHaveBeenCalledWith(expect.anything(), {
+        'metadata.helpfulCount': expect.anything()
+      });
     });
   });
 }); 

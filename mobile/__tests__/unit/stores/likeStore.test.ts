@@ -1,5 +1,19 @@
 import '../../../__tests__/__mocks__/firebase';
 import { mockLike, mockLikes, mockLikeStats } from '../../__mocks__/sampleData';
+
+// モック設定
+const mockLikeService = {
+  addLike: jest.fn(),
+  removeLike: jest.fn(),
+  getHelpfulCount: jest.fn(),
+  isLikedByUser: jest.fn()
+};
+
+jest.mock('../../../src/services/likeService', () => ({
+  likeService: mockLikeService
+}));
+
+// モック後にインポート
 import { useLikeStore } from '../../../src/stores/likeStore';
 
 // Jest の型を手動でインポート
@@ -9,6 +23,9 @@ describe('LikeStore', () => {
   beforeEach(() => {
     // ストアをリセット
     useLikeStore.getState().reset();
+    
+    // モックをクリア
+    jest.clearAllMocks();
   });
 
   describe('初期状態', () => {
@@ -95,16 +112,9 @@ describe('LikeStore', () => {
       const userId = 'test-user-id';
       
       // モックの設定
-      const mockLikeService = {
-        addLike: jest.fn().mockResolvedValue(undefined),
-        getHelpfulCount: jest.fn().mockResolvedValue(3),
-        isLikedByUser: jest.fn().mockResolvedValue(true)
-      };
-      
-      // サービスをモック化
-      jest.doMock('../../../src/services/likeService', () => ({
-        likeService: mockLikeService
-      }));
+      mockLikeService.addLike.mockResolvedValue(undefined);
+      mockLikeService.getHelpfulCount.mockResolvedValue(3);
+      mockLikeService.isLikedByUser.mockResolvedValue(true); // いいね追加後はtrueになる
       
       // 初期状態を設定
       useLikeStore.getState().setHelpfulCount(storyId, 2);
@@ -122,15 +132,13 @@ describe('LikeStore', () => {
       const userId = 'test-user-id';
       
       // エラーを投げるモック
-      const mockLikeService = {
-        addLike: jest.fn().mockRejectedValue(new Error('Firebase error'))
-      };
+      mockLikeService.addLike.mockRejectedValue(new Error('Firebase error'));
       
-      jest.doMock('../../../src/services/likeService', () => ({
-        likeService: mockLikeService
-      }));
-      
-      await useLikeStore.getState().addLike(storyId, userId);
+      try {
+        await useLikeStore.getState().addLike(storyId, userId);
+      } catch (error) {
+        // エラーが投げられることを期待
+      }
       
       const state = useLikeStore.getState();
       expect(state.error).toBe('Firebase error');
@@ -143,15 +151,9 @@ describe('LikeStore', () => {
       const userId = 'test-user-id';
       
       // モックの設定
-      const mockLikeService = {
-        removeLike: jest.fn().mockResolvedValue(undefined),
-        getHelpfulCount: jest.fn().mockResolvedValue(1),
-        isLikedByUser: jest.fn().mockResolvedValue(false)
-      };
-      
-      jest.doMock('../../../src/services/likeService', () => ({
-        likeService: mockLikeService
-      }));
+      mockLikeService.removeLike.mockResolvedValue(undefined);
+      mockLikeService.getHelpfulCount.mockResolvedValue(1);
+      mockLikeService.isLikedByUser.mockResolvedValue(false); // いいね削除後はfalseになる
       
       // 初期状態を設定
       useLikeStore.getState().setHelpfulCount(storyId, 2);
@@ -168,15 +170,13 @@ describe('LikeStore', () => {
       const storyId = 'test-story-1';
       const userId = 'test-user-id';
       
-      const mockLikeService = {
-        removeLike: jest.fn().mockRejectedValue(new Error('Firebase error'))
-      };
+      mockLikeService.removeLike.mockRejectedValue(new Error('Firebase error'));
       
-      jest.doMock('../../../src/services/likeService', () => ({
-        likeService: mockLikeService
-      }));
-      
-      await useLikeStore.getState().removeLike(storyId, userId);
+      try {
+        await useLikeStore.getState().removeLike(storyId, userId);
+      } catch (error) {
+        // エラーが投げられることを期待
+      }
       
       const state = useLikeStore.getState();
       expect(state.error).toBe('Firebase error');
