@@ -26,7 +26,7 @@ export const LikeButton: React.FC<LikeButtonProps> = ({
   const [isLiked, setIsLiked] = useState(initialIsLiked);
   const { user, signIn } = useAuthStore();
 
-  // 初期値を設定（常に実行）
+  // 初期値を設定
   useEffect(() => {
     console.log(`🔧 LikeButton初期化 [${storyId}]:`, { initialHelpfulCount, initialIsLiked });
     setHelpfulCount(initialHelpfulCount);
@@ -48,7 +48,6 @@ export const LikeButton: React.FC<LikeButtonProps> = ({
       setIsLiked(currentIsLiked);
     } catch (error) {
       console.error('いいね状態の取得に失敗:', error);
-      // エラー時は初期値を使用
       setIsLiked(initialIsLiked);
     }
   };
@@ -58,6 +57,10 @@ export const LikeButton: React.FC<LikeButtonProps> = ({
 
     console.log(`🔄 いいね切り替え開始 [${storyId}]:`, { currentIsLiked: isLiked, currentCount: helpfulCount });
     setIsLoading(true);
+    
+    // 現在の状態を保存（エラー時に戻すため）
+    const previousIsLiked = isLiked;
+    const previousCount = helpfulCount;
     
     try {
       let currentUser = user;
@@ -74,32 +77,40 @@ export const LikeButton: React.FC<LikeButtonProps> = ({
         }
       }
       
-      // いいねの切り替え
-      if (isLiked) {
-        console.log(`🗑️ いいね削除 [${storyId}]`);
-        await likeService.removeLike(storyId, currentUser.id);
-        // helpfulCountを-1
-        const newCount = helpfulCount - 1;
-        setHelpfulCount(newCount);
-        setIsLiked(false);
-        console.log(`✅ いいね削除完了 [${storyId}]:`, { newCount });
-        onLikeChange?.(false, newCount);
-      } else {
-        console.log(`❤️ いいね追加 [${storyId}]`);
+      // 即座にUI状態を更新（楽観的更新）
+      const newIsLiked = !isLiked;
+      const newCount = newIsLiked ? helpfulCount + 1 : helpfulCount - 1;
+      
+      console.log(`🔄 UI状態更新 [${storyId}]:`, { 
+        from: { isLiked, helpfulCount }, 
+        to: { isLiked: newIsLiked, helpfulCount: newCount } 
+      });
+      
+      setIsLiked(newIsLiked);
+      setHelpfulCount(newCount);
+      onLikeChange?.(newIsLiked, newCount);
+      
+      // Firestore操作
+      if (newIsLiked) {
+        console.log(`❤️ いいね追加Firestore処理 [${storyId}]`);
         await likeService.addLike(storyId, currentUser.id);
-        // helpfulCountを+1
-        const newCount = helpfulCount + 1;
-        setHelpfulCount(newCount);
-        setIsLiked(true);
-        console.log(`✅ いいね追加完了 [${storyId}]:`, { newCount });
-        onLikeChange?.(true, newCount);
+        console.log(`✅ いいね追加完了 [${storyId}]`);
+      } else {
+        console.log(`🗑️ いいね削除Firestore処理 [${storyId}]`);
+        await likeService.removeLike(storyId, currentUser.id);
+        console.log(`✅ いいね削除完了 [${storyId}]`);
       }
       
     } catch (error) {
       console.error('いいねの切り替えに失敗しました:', error);
       // エラー時は元の状態に戻す
-      setHelpfulCount(initialHelpfulCount);
-      setIsLiked(initialIsLiked);
+      console.log(`🔄 エラー復旧 [${storyId}]:`, { 
+        from: { isLiked, helpfulCount }, 
+        to: { isLiked: previousIsLiked, helpfulCount: previousCount } 
+      });
+      setHelpfulCount(previousCount);
+      setIsLiked(previousIsLiked);
+      onLikeChange?.(previousIsLiked, previousCount);
     } finally {
       setIsLoading(false);
     }
