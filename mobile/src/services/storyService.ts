@@ -18,6 +18,7 @@ import {
 import { db } from './firebase';
 import { FailureStory, StoryCategory, EmotionType, CategoryHierarchy } from '../types';
 import { getCategoryNames } from '../utils/categories';
+import { likeService } from './likeService';
 
 export interface CreateStoryData {
   title: string;
@@ -131,13 +132,23 @@ class StoryService {
       
       querySnapshot.forEach((doc) => {
         const data = doc.data();
+        const storyId = doc.id;
+        
+        // Firestoreに保存されているhelpfulCountを使用（seed-data.jsの値）
+        const helpfulCount = data.metadata?.helpfulCount || 0;
+        
+        console.log(`📊 ストーリー [${storyId}]:`, { 
+          helpfulCount 
+        });
+        
         stories.push({
-          id: doc.id,
+          id: storyId,
           authorId: data.authorId,
           content: data.content,
           metadata: {
             ...data.metadata,
             createdAt: data.metadata.createdAt?.toDate() || new Date(),
+            helpfulCount: helpfulCount, // FirestoreのhelpfulCountを使用
           }
         });
       });
@@ -186,6 +197,9 @@ class StoryService {
         'metadata.viewCount': increment(1)
       });
 
+      // いいね数を取得
+      const helpfulCount = await likeService.getHelpfulCount(docSnap.id);
+      
       return {
         id: docSnap.id,
         authorId: data.authorId,
@@ -194,6 +208,7 @@ class StoryService {
           ...data.metadata,
           createdAt: data.metadata.createdAt?.toDate() || new Date(),
           viewCount: data.metadata.viewCount + 1, // 増加後の値を反映
+          helpfulCount: helpfulCount, // いいね数を反映
         },
       };
     } catch (error) {

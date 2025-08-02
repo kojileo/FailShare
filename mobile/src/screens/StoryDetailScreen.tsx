@@ -19,6 +19,7 @@ import {
   getCategoryHierarchyColor,
   getCategoryHierarchyIcon
 } from '../utils/categories';
+import { LikeButton } from '../components/LikeButton';
 
 interface StoryDetailScreenProps {
   navigation: NativeStackNavigationProp<RootStackParamList, 'StoryDetail'>;
@@ -30,8 +31,6 @@ const StoryDetailScreen: React.FC<StoryDetailScreenProps> = ({ route, navigation
   const { user: _user } = useAuthStore();
   const [story, setStory] = useState<FailureStory | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isLiked, setIsLiked] = useState(false);
-  const [likesCount, setLikesCount] = useState(0);
 
   useEffect(() => {
     loadStory();
@@ -44,7 +43,6 @@ const StoryDetailScreen: React.FC<StoryDetailScreenProps> = ({ route, navigation
       const foundStory = stories.find(s => s.id === storyId);
       if (foundStory) {
         setStory(foundStory);
-        setLikesCount(foundStory.metadata.helpfulCount);
       } else {
         Alert.alert('エラー', 'ストーリーが見つかりません');
         navigation.goBack();
@@ -98,10 +96,7 @@ const StoryDetailScreen: React.FC<StoryDetailScreenProps> = ({ route, navigation
     return emotionColors[emotion] || '#B0BEC5';
   };
 
-  const handleLike = () => {
-    setIsLiked(!isLiked);
-    setLikesCount(prev => isLiked ? prev - 1 : prev + 1);
-  };
+
 
   const handleShare = () => {
     Alert.alert('シェア', 'この機能は開発中です');
@@ -254,15 +249,6 @@ const StoryDetailScreen: React.FC<StoryDetailScreenProps> = ({ route, navigation
 
       {/* アクションバー */}
       <Surface style={styles.actionBar} elevation={5}>
-        <TouchableOpacity style={styles.actionButton} onPress={handleLike}>
-          <IconButton 
-            icon={isLiked ? "heart" : "heart-outline"} 
-            size={24} 
-            iconColor={isLiked ? "#E0245E" : "#8E9AAF"} 
-          />
-          <Text style={[styles.actionText, isLiked && styles.likedText]}>{likesCount}</Text>
-        </TouchableOpacity>
-
         <TouchableOpacity style={styles.actionButton} onPress={handleComment}>
           <IconButton icon="message-outline" size={24} iconColor="#8E9AAF" />
           <Text style={styles.actionText}>{story.metadata.commentCount}</Text>
@@ -275,15 +261,22 @@ const StoryDetailScreen: React.FC<StoryDetailScreenProps> = ({ route, navigation
 
         <View style={styles.actionSpacer} />
 
-        <LinearGradient
-          colors={['#1DA1F2', '#1991DB']}
-          style={styles.supportButton}
-        >
-          <TouchableOpacity style={styles.supportButtonInner} onPress={handleLike}>
-            <IconButton icon="thumb-up" size={20} iconColor="#FFFFFF" style={styles.supportIcon} />
-            <Text style={styles.supportText}>参考になった</Text>
-          </TouchableOpacity>
-        </LinearGradient>
+        <View style={styles.supportButton}>
+          <LikeButton
+            storyId={story.id}
+            initialHelpfulCount={story.metadata.helpfulCount || 0}
+            size="large"
+            showCount={true}
+            onLikeChange={(isLiked, newCount) => {
+              console.log(`📱 StoryDetailScreen: 参考になったボタン [${story.id}]:`, { isLiked, newCount });
+              // ストーリーのいいね数を更新
+              setStory(prev => prev ? {
+                ...prev,
+                metadata: { ...prev.metadata, helpfulCount: newCount }
+              } : null);
+            }}
+          />
+        </View>
       </Surface>
     </SafeAreaView>
   );
@@ -480,15 +473,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
+    justifyContent: 'center',
   },
   actionText: {
     fontSize: 13,
     color: '#8E9AAF',
     fontWeight: '500',
     marginLeft: -6,
-  },
-  likedText: {
-    color: '#E0245E',
   },
   actionSpacer: {
     flex: 1,
@@ -500,22 +491,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 4,
-  },
-  supportButtonInner: {
-    flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    justifyContent: 'center',
   },
-  supportIcon: {
-    margin: 0,
-  },
-  supportText: {
-    fontSize: 14,
-    color: '#FFFFFF',
-    fontWeight: '600',
-    marginLeft: -4,
-  },
+
   bottomSpace: {
     height: 40,
   },

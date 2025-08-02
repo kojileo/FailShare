@@ -1,4 +1,4 @@
-import { FailureStory, CategoryHierarchy, EmotionType } from '../../src/types';
+import { FailureStory, CategoryHierarchy, EmotionType, Like, LikeStats } from '../../src/types';
 
 export const mockCategory: CategoryHierarchy = {
   main: '恋愛',
@@ -63,4 +63,43 @@ export const mockUserData = {
   providerId: 'anonymous',
   refreshToken: 'mock-refresh-token',
   tenantId: null,
-}; 
+};
+
+// いいね機能のモックデータ
+export const mockLike: Like = {
+  id: 'like-1',
+  storyId: 'test-story-1',
+  userId: 'test-user-id',
+  createdAt: new Date()
+};
+
+export const mockLikes: Like[] = [
+  mockLike,
+  {
+    id: 'like-2',
+    storyId: 'test-story-1',
+    userId: 'test-user-id-2',
+    createdAt: new Date(Date.now() - 3600000)
+  },
+  {
+    id: 'like-3',
+    storyId: 'test-story-2',
+    userId: 'test-user-id',
+    createdAt: new Date(Date.now() - 7200000)
+  }
+];
+
+export const mockLikeStats: LikeStats = {
+  storyId: 'test-story-1',
+  helpfulCount: 2,
+  isLikedByCurrentUser: true
+};
+
+export const mockLikeStatsArray: LikeStats[] = [
+  mockLikeStats,
+  {
+    storyId: 'test-story-2',
+    helpfulCount: 1,
+    isLikedByCurrentUser: false
+  }
+]; 

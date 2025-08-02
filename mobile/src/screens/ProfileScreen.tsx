@@ -5,8 +5,7 @@ import {
   Avatar, 
   Button, 
   IconButton,
-  Surface,
-  Switch
+  Surface
 } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -25,8 +24,6 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   const { user, signOut } = useAuthStore();
   const { stories } = useStoryStore();
   const [userStories, setUserStories] = useState<FailureStory[]>([]);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [privateMode, setPrivateMode] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -90,41 +87,10 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
 
   const menuItems = [
     {
-      title: 'マイ投稿',
-      subtitle: `${userStories.length}件の投稿`,
-      icon: 'file-document-outline',
-      onPress: () => navigation?.navigate('MyStories'),
-      showBadge: userStories.length > 0,
-    },
-    {
       title: 'プロフィール編集',
       subtitle: 'アバターと表示名を変更',
       icon: 'account-edit-outline',
       onPress: handleEditProfile,
-    },
-    {
-      title: '通知設定',
-      subtitle: 'プッシュ通知とメール設定',
-      icon: 'bell-outline',
-      rightElement: (
-        <Switch
-          value={notificationsEnabled}
-          onValueChange={setNotificationsEnabled}
-          color="#1DA1F2"
-        />
-      ),
-    },
-    {
-      title: 'プライベートモード',
-      subtitle: '投稿を非公開にする',
-      icon: 'eye-off-outline',
-      rightElement: (
-        <Switch
-          value={privateMode}
-          onValueChange={setPrivateMode}
-          color="#1DA1F2"
-        />
-      ),
     },
   ];
 
@@ -237,7 +203,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
                 style={styles.viewButton}
                 labelStyle={styles.viewButtonText}
               >
-                投稿を見る
+                マイ失敗談を確認する
               </Button>
             </View>
           </LinearGradient>
@@ -260,19 +226,11 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
                   <View style={styles.menuTextContainer}>
                     <View style={styles.menuTitleRow}>
                       <Text style={styles.menuTitle}>{item.title}</Text>
-                      {item.showBadge && (
-                        <View style={styles.badge}>
-                          <Text style={styles.badgeText}>{userStories.length}</Text>
-                        </View>
-                      )}
                     </View>
                     <Text style={styles.menuSubtitle}>{item.subtitle}</Text>
                   </View>
                 </View>
                 <View style={styles.menuItemRight}>
-                  {item.rightElement || (
-                    <IconButton icon="chevron-right" size={20} iconColor="#8E9AAF" />
-                  )}
                 </View>
               </TouchableOpacity>
             </Surface>
