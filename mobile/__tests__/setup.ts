@@ -96,7 +96,7 @@ jest.mock('expo-linear-gradient', () => ({
 }));
 
 // グローバルなモック設定
-global.console = {
+(globalThis as any).console = {
   ...console,
   // テスト中のログを抑制
   log: jest.fn(),

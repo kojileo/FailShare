@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { User } from '../types';
 import { signInAnonymous, signOutUser, onAuthStateChanged, getUserProfile, getStoredUser, getOnboardingStatus, setOnboardingCompleted, cleanupDuplicateUsers, getAnonymousUserStats } from '../services/authService';
-import { auth } from '../services/firebase';
 
 interface AuthState {
   user: User | null;

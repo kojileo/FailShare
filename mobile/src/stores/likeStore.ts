@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Like, LikeStore as ILikeStore } from '../types';
+import { Like } from '../types';
 import { likeService } from '../services/likeService';
 
 interface LikeState {
