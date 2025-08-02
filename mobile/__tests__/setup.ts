@@ -90,6 +90,11 @@ jest.mock('@expo/vector-icons', () => ({
   Ionicons: 'Ionicons',
 }));
 
+// Expo Linear Gradient のモック
+jest.mock('expo-linear-gradient', () => ({
+  LinearGradient: 'LinearGradient',
+}));
+
 // グローバルなモック設定
 global.console = {
   ...console,

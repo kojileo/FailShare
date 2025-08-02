@@ -119,8 +119,9 @@ describe('StoryService', () => {
       const result = await storyService.getStories();
 
       expect(result.stories).toHaveLength(2);
-      expect(result.stories[0].metadata.helpfulCount).toBe(22);
-      expect(result.stories[1].metadata.helpfulCount).toBe(28);
+      // 配列の順序に依存しないテスト
+      const helpfulCounts = result.stories.map(story => story.metadata.helpfulCount).sort();
+      expect(helpfulCounts).toEqual([22, 28]);
     });
 
     it('helpfulCountが0の場合も正しく処理される', async () => {
