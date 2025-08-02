@@ -5,8 +5,7 @@ import {
   Avatar, 
   Button, 
   IconButton,
-  Surface,
-  Switch
+  Surface
 } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -25,8 +24,6 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   const { user, signOut } = useAuthStore();
   const { stories } = useStoryStore();
   const [userStories, setUserStories] = useState<FailureStory[]>([]);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [privateMode, setPrivateMode] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -94,30 +91,6 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
       subtitle: 'アバターと表示名を変更',
       icon: 'account-edit-outline',
       onPress: handleEditProfile,
-    },
-    {
-      title: '通知設定',
-      subtitle: 'プッシュ通知とメール設定',
-      icon: 'bell-outline',
-      rightElement: (
-        <Switch
-          value={notificationsEnabled}
-          onValueChange={setNotificationsEnabled}
-          color="#1DA1F2"
-        />
-      ),
-    },
-    {
-      title: 'プライベートモード',
-      subtitle: '投稿を非公開にする',
-      icon: 'eye-off-outline',
-      rightElement: (
-        <Switch
-          value={privateMode}
-          onValueChange={setPrivateMode}
-          color="#1DA1F2"
-        />
-      ),
     },
   ];
 
@@ -258,9 +231,6 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
                   </View>
                 </View>
                 <View style={styles.menuItemRight}>
-                  {item.rightElement || (
-                    <IconButton icon="chevron-right" size={20} iconColor="#8E9AAF" />
-                  )}
                 </View>
               </TouchableOpacity>
             </Surface>
