@@ -43,11 +43,15 @@
       ]
     },
     {
-      "collectionGroup": "anonymousUsers",
+      "collectionGroup": "comments",
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "joinedAt",
+          "fieldPath": "storyId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
           "order": "DESCENDING"
         }
       ]

@@ -74,3 +74,5 @@ docker-compose.yml
 expo-env.d.ts
 
 # @end expo-cli
+
+.firebaserc
