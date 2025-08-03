@@ -78,6 +78,11 @@ export const CommentInput: React.FC<CommentInputProps> = ({ storyId, onCommentAd
   return (
     <View style={styles.container}>
       <View style={styles.inputContainer}>
+        <View style={styles.inputHeader}>
+          <Ionicons name="chatbubble-outline" size={16} color="#666" />
+          <Text style={styles.inputLabel}>コメントを投稿</Text>
+        </View>
+        
         <TextInput
           style={[
             styles.input,
@@ -85,7 +90,7 @@ export const CommentInput: React.FC<CommentInputProps> = ({ storyId, onCommentAd
           ]}
           value={content}
           onChangeText={setContent}
-          placeholder="コメントを入力...（500文字以内）"
+          placeholder="失敗談についての感想やアドバイスを共有してください..."
           multiline
           maxLength={maxLength}
           textAlignVertical="top"
@@ -94,12 +99,15 @@ export const CommentInput: React.FC<CommentInputProps> = ({ storyId, onCommentAd
         />
         
         <View style={styles.inputFooter}>
-          <Text style={[
-            styles.charCount,
-            isOverLimit && styles.charCountError
-          ]}>
-            {remainingChars}
-          </Text>
+          <View style={styles.charCountContainer}>
+            <Text style={[
+              styles.charCount,
+              isOverLimit && styles.charCountError
+            ]}>
+              {remainingChars}
+            </Text>
+            <Text style={styles.charCountLabel}>文字</Text>
+          </View>
           
           <TouchableOpacity
             style={[
@@ -147,6 +155,17 @@ const styles = StyleSheet.create({
     borderColor: '#e9ecef',
     padding: 12,
   },
+  inputHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+    marginLeft: 6,
+  },
   input: {
     fontSize: 14,
     color: '#333',
@@ -166,9 +185,19 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#e9ecef',
   },
+  charCountContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   charCount: {
     fontSize: 12,
     color: '#666',
+    fontWeight: '500',
+  },
+  charCountLabel: {
+    fontSize: 11,
+    color: '#999',
+    marginLeft: 2,
   },
   charCountError: {
     color: '#e74c3c',

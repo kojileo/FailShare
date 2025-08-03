@@ -130,9 +130,17 @@ export const CommentList: React.FC<CommentListProps> = ({ storyId, onCommentCoun
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Ionicons name="chatbubbles" size={20} color="#333" />
-        <Text style={styles.title}>コメント</Text>
-        <Text style={styles.count}>({storyComments.length})</Text>
+        <View style={styles.headerLeft}>
+          <Ionicons name="chatbubbles" size={20} color="#007AFF" />
+          <Text style={styles.title}>コメント</Text>
+          <View style={styles.countBadge}>
+            <Text style={styles.count}>{storyComments.length}</Text>
+          </View>
+        </View>
+        <View style={styles.headerRight}>
+          <Ionicons name="time-outline" size={16} color="#666" />
+          <Text style={styles.sortText}>最新順</Text>
+        </View>
       </View>
       
       <FlatList
@@ -158,10 +166,15 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     padding: 16,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#e9ecef',
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   title: {
     fontSize: 16,
@@ -169,14 +182,32 @@ const styles = StyleSheet.create({
     color: '#333',
     marginLeft: 8,
   },
+  countBadge: {
+    backgroundColor: '#007AFF',
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    marginLeft: 8,
+    minWidth: 20,
+    alignItems: 'center',
+  },
   count: {
-    fontSize: 14,
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  sortText: {
+    fontSize: 12,
     color: '#666',
     marginLeft: 4,
   },
   listContainer: {
-    padding: 16,
-    paddingBottom: 20, // 適切な余白
+    padding: 12,
+    paddingBottom: 16, // より多くのコメントを表示するため余白を調整
   },
   emptyContainer: {
     alignItems: 'center',

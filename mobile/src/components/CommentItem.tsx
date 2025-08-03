@@ -126,28 +126,39 @@ export const CommentItem: React.FC<CommentItemProps> = ({ comment, storyId }) =>
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.authorName}>
-          {isAnonymous ? '匿名ユーザー' : 'あなた'}
-        </Text>
-        <Text style={styles.timestamp}>{formatDate(comment.createdAt)}</Text>
+        <View style={styles.authorSection}>
+          <View style={[styles.avatar, isAuthor && styles.ownAvatar]}>
+            <Text style={styles.avatarText}>
+              {isAuthor ? 'あなた' : '匿名'}
+            </Text>
+          </View>
+          <View style={styles.authorInfo}>
+            <Text style={[styles.authorName, isAuthor && styles.ownAuthorName]}>
+              {isAnonymous ? '匿名ユーザー' : 'あなた'}
+            </Text>
+            <Text style={styles.timestamp}>{formatDate(comment.createdAt)}</Text>
+          </View>
+        </View>
         
         {isAuthor && (
           <View style={styles.actions}>
             <TouchableOpacity style={styles.actionButton} onPress={handleEdit}>
-              <Ionicons name="pencil" size={14} color="#666" />
+              <Ionicons name="pencil" size={16} color="#007AFF" />
             </TouchableOpacity>
             <TouchableOpacity style={styles.actionButton} onPress={handleDelete}>
-              <Ionicons name="trash" size={14} color="#e74c3c" />
+              <Ionicons name="trash" size={16} color="#e74c3c" />
             </TouchableOpacity>
           </View>
         )}
       </View>
       
-      <Text style={styles.content}>{comment.content}</Text>
+      <View style={styles.contentContainer}>
+        <Text style={styles.content}>{comment.content}</Text>
+      </View>
       
       {comment.isHelpful && (
         <View style={styles.helpfulBadge}>
-          <Ionicons name="checkmark-circle" size={12} color="#4CAF50" />
+          <Ionicons name="checkmark-circle" size={14} color="#4CAF50" />
           <Text style={styles.helpfulText}>役に立った</Text>
         </View>
       )}
@@ -159,34 +170,71 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: '#fff',
     borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+    padding: 14,
+    marginBottom: 10,
     borderWidth: 1,
     borderColor: '#e9ecef',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
   },
   header: {
     flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  authorSection: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    flex: 1,
+  },
+  avatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#f0f0f0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  ownAvatar: {
+    backgroundColor: '#007AFF',
+  },
+  avatarText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#666',
+  },
+  authorInfo: {
+    flex: 1,
   },
   authorName: {
     fontSize: 14,
     fontWeight: '600',
     color: '#333',
-    marginRight: 8,
+    marginBottom: 2,
+  },
+  ownAuthorName: {
+    color: '#007AFF',
   },
   timestamp: {
     fontSize: 12,
     color: '#666',
-    flex: 1,
   },
   actions: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   actionButton: {
-    padding: 4,
+    padding: 6,
     marginLeft: 8,
+    borderRadius: 6,
+  },
+  contentContainer: {
+    marginBottom: 8,
   },
   content: {
     fontSize: 14,

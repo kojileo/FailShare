@@ -532,7 +532,7 @@ const styles = StyleSheet.create({
     height: 40,
   },
   commentSection: {
-    height: 350,
+    height: 500,
     backgroundColor: '#f8f9fa',
     borderTopWidth: 1,
     borderTopColor: '#e2e8f0',
