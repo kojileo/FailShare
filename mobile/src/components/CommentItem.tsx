@@ -18,6 +18,15 @@ export const CommentItem: React.FC<CommentItemProps> = ({ comment, storyId }) =>
 
   const isAuthor = user?.id === comment.authorId;
   const isAnonymous = comment.authorId.startsWith('anonymous');
+  
+  // デバッグ用ログ
+  console.log('🔍 CommentItem デバッグ:', {
+    commentId: comment.id,
+    commentAuthorId: comment.authorId,
+    userId: user?.id,
+    isAuthor,
+    isAnonymous
+  });
 
   const formatDate = (date: Date) => {
     const now = new Date();
@@ -40,24 +49,37 @@ export const CommentItem: React.FC<CommentItemProps> = ({ comment, storyId }) =>
   };
 
   const handleDelete = () => {
-    Alert.alert(
-      'コメントを削除',
-      'このコメントを削除しますか？',
-      [
-        { text: 'キャンセル', style: 'cancel' },
-        {
-          text: '削除',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteComment(comment.id, user!.id, storyId);
-            } catch (error) {
-              Alert.alert('エラー', 'コメントの削除に失敗しました');
-            }
-          }
-        }
-      ]
-    );
+    console.log('🗑️ 削除ボタンがタップされました:', { commentId: comment.id, authorId: comment.authorId, userId: user?.id });
+    
+    // ユーザーが認証されているかチェック
+    if (!user?.id) {
+      console.log('❌ ユーザーが認証されていません');
+      alert('エラー: ユーザーが認証されていません');
+      return;
+    }
+    
+    // 権限チェック
+    if (!isAuthor) {
+      console.log('❌ 削除権限がありません');
+      alert('エラー: このコメントを削除する権限がありません');
+      return;
+    }
+    
+    // React Native Web環境ではconfirmを使用
+    const confirmed = window.confirm('このコメントを削除しますか？');
+    if (confirmed) {
+      console.log('🗑️ 削除処理を開始:', { commentId: comment.id, userId: user.id, storyId });
+      deleteComment(comment.id, user.id, storyId)
+        .then(() => {
+          console.log('✅ コメント削除成功');
+        })
+        .catch((error) => {
+          console.error('❌ コメント削除エラー:', error);
+          alert('エラー: コメントの削除に失敗しました');
+        });
+    } else {
+      console.log('🗑️ 削除がキャンセルされました');
+    }
   };
 
   const handleEdit = () => {
@@ -67,12 +89,12 @@ export const CommentItem: React.FC<CommentItemProps> = ({ comment, storyId }) =>
 
   const handleSave = async () => {
     if (!editContent.trim()) {
-      Alert.alert('エラー', 'コメント内容を入力してください');
+      alert('エラー: コメント内容を入力してください');
       return;
     }
     
     if (editContent.length > 500) {
-      Alert.alert('エラー', 'コメントは500文字以内で入力してください');
+      alert('エラー: コメントは500文字以内で入力してください');
       return;
     }
 
@@ -80,7 +102,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({ comment, storyId }) =>
       await updateComment(comment.id, user!.id, editContent, storyId);
       setIsEditing(false);
     } catch (error) {
-      Alert.alert('エラー', 'コメントの更新に失敗しました');
+      alert('エラー: コメントの更新に失敗しました');
     }
   };
 
@@ -142,10 +164,18 @@ export const CommentItem: React.FC<CommentItemProps> = ({ comment, storyId }) =>
         
         {isAuthor && (
           <View style={styles.actions}>
-            <TouchableOpacity style={styles.actionButton} onPress={handleEdit}>
+            <TouchableOpacity 
+              style={styles.actionButton} 
+              onPress={handleEdit}
+              activeOpacity={0.6}
+            >
               <Ionicons name="pencil" size={16} color="#007AFF" />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.actionButton} onPress={handleDelete}>
+            <TouchableOpacity 
+              style={styles.actionButton} 
+              onPress={handleDelete}
+              activeOpacity={0.6}
+            >
               <Ionicons name="trash" size={16} color="#e74c3c" />
             </TouchableOpacity>
           </View>
@@ -229,9 +259,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   actionButton: {
-    padding: 6,
+    padding: 8,
     marginLeft: 8,
-    borderRadius: 6,
+    borderRadius: 8,
+    backgroundColor: '#f8f9fa',
+    minWidth: 32,
+    minHeight: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  disabledActionButton: {
+    backgroundColor: '#f0f0f0',
   },
   contentContainer: {
     marginBottom: 8,
