@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, TextInput } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Comment } from '../types';
 import { useAuthStore } from '../stores/authStore';
@@ -101,7 +101,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({ comment, storyId }) =>
     try {
       await updateComment(comment.id, user!.id, editContent, storyId);
       setIsEditing(false);
-    } catch (error) {
+    } catch {
       alert('エラー: コメントの更新に失敗しました');
     }
   };
