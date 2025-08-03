@@ -20,6 +20,8 @@ import {
   getCategoryHierarchyIcon
 } from '../utils/categories';
 import { LikeButton } from '../components/LikeButton';
+import { CommentList } from '../components/CommentList';
+import { CommentInput } from '../components/CommentInput';
 
 interface StoryDetailScreenProps {
   navigation: NativeStackNavigationProp<RootStackParamList, 'StoryDetail'>;
@@ -31,6 +33,8 @@ const StoryDetailScreen: React.FC<StoryDetailScreenProps> = ({ route, navigation
   const { user: _user } = useAuthStore();
   const [story, setStory] = useState<FailureStory | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showComments, setShowComments] = useState(false);
+  const [commentCount, setCommentCount] = useState(0);
 
   useEffect(() => {
     loadStory();
@@ -103,7 +107,7 @@ const StoryDetailScreen: React.FC<StoryDetailScreenProps> = ({ route, navigation
   };
 
   const handleComment = () => {
-    Alert.alert('コメント', 'この機能は開発中です');
+    setShowComments(!showComments);
   };
 
   if (isLoading || !story) {
@@ -149,7 +153,11 @@ const StoryDetailScreen: React.FC<StoryDetailScreenProps> = ({ route, navigation
         </View>
       </LinearGradient>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.content} 
+        showsVerticalScrollIndicator={false}
+        scrollEnabled={!showComments}
+      >
         {/* ユーザー情報ヘッダー */}
         <Surface style={styles.userSection} elevation={2}>
           <View style={styles.userHeader}>
@@ -247,11 +255,36 @@ const StoryDetailScreen: React.FC<StoryDetailScreenProps> = ({ route, navigation
         <View style={styles.bottomSpace} />
       </ScrollView>
 
+      {/* コメントセクション */}
+      {showComments && (
+        <View style={styles.commentSection}>
+          <View style={styles.commentListContainer}>
+            <CommentList 
+              storyId={storyId} 
+              onCommentCountChange={setCommentCount}
+            />
+          </View>
+          <CommentInput 
+            storyId={storyId}
+            onCommentAdded={() => {
+              // コメント投稿後にコメント数を更新
+              setCommentCount(prev => prev + 1);
+            }}
+          />
+        </View>
+      )}
+
       {/* アクションバー */}
       <Surface style={styles.actionBar} elevation={5}>
         <TouchableOpacity style={styles.actionButton} onPress={handleComment}>
-          <IconButton icon="message-outline" size={24} iconColor="#8E9AAF" />
-          <Text style={styles.actionText}>{story.metadata.commentCount}</Text>
+          <IconButton 
+            icon={showComments ? "message" : "message-outline"} 
+            size={24} 
+            iconColor={showComments ? "#007AFF" : "#8E9AAF"} 
+          />
+          <Text style={[styles.actionText, showComments && styles.activeActionText]}>
+            {commentCount > 0 ? commentCount : story.metadata.commentCount}
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
@@ -497,6 +530,20 @@ const styles = StyleSheet.create({
 
   bottomSpace: {
     height: 40,
+  },
+  commentSection: {
+    height: 500,
+    backgroundColor: '#f8f9fa',
+    borderTopWidth: 1,
+    borderTopColor: '#e2e8f0',
+    position: 'relative',
+  },
+  commentListContainer: {
+    flex: 1,
+    position: 'relative',
+  },
+  activeActionText: {
+    color: '#007AFF',
   },
 });
 
