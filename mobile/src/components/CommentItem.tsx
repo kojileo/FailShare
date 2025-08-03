@@ -168,6 +168,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({ comment, storyId }) =>
               style={styles.actionButton} 
               onPress={handleEdit}
               activeOpacity={0.6}
+              testID="edit-button"
             >
               <Ionicons name="pencil" size={16} color="#007AFF" />
             </TouchableOpacity>
@@ -175,6 +176,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({ comment, storyId }) =>
               style={styles.actionButton} 
               onPress={handleDelete}
               activeOpacity={0.6}
+              testID="delete-button"
             >
               <Ionicons name="trash" size={16} color="#e74c3c" />
             </TouchableOpacity>

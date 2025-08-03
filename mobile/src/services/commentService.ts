@@ -35,12 +35,20 @@ class CommentServiceImpl implements CommentService {
 
   async addComment(storyId: string, authorId: string, content: string): Promise<string> {
     try {
+      // パラメータの検証
+      if (!storyId || storyId.trim() === '') {
+        throw new Error('ストーリーIDが必要です');
+      }
+      if (!authorId || authorId.trim() === '') {
+        throw new Error('ユーザーIDが必要です');
+      }
+      if (!content || content.trim() === '') {
+        throw new Error('コメント内容を入力してください');
+      }
+      
       console.log('💬 コメント投稿処理開始:', { storyId, authorId, contentLength: content.length });
       
       // コメント内容の検証
-      if (!content.trim()) {
-        throw new Error('コメント内容を入力してください');
-      }
       if (content.length > 500) {
         throw new Error('コメントは500文字以内で入力してください');
       }
@@ -188,12 +196,20 @@ class CommentServiceImpl implements CommentService {
 
   async updateComment(commentId: string, authorId: string, content: string): Promise<void> {
     try {
+      // パラメータの検証
+      if (!commentId || commentId.trim() === '') {
+        throw new Error('コメントIDが必要です');
+      }
+      if (!authorId || authorId.trim() === '') {
+        throw new Error('ユーザーIDが必要です');
+      }
+      if (!content || content.trim() === '') {
+        throw new Error('コメント内容を入力してください');
+      }
+      
       console.log('✏️ コメント更新処理開始:', { commentId, authorId, contentLength: content.length });
       
       // コメント内容の検証
-      if (!content.trim()) {
-        throw new Error('コメント内容を入力してください');
-      }
       if (content.length > 500) {
         throw new Error('コメントは500文字以内で入力してください');
       }

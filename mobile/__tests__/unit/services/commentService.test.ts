@@ -1,11 +1,27 @@
 import { commentService } from '../../../src/services/commentService';
-import { db } from '../../../src/services/firebase';
 
-// Firebaseのモック
-jest.mock('../../../src/services/firebase', () => ({
-  db: {
-    collection: jest.fn(),
+// Firebase Firestoreのモック
+jest.mock('firebase/firestore', () => ({
+  collection: jest.fn(),
+  addDoc: jest.fn(),
+  getDocs: jest.fn(),
+  deleteDoc: jest.fn(),
+  updateDoc: jest.fn(),
+  onSnapshot: jest.fn(),
+  query: jest.fn(),
+  where: jest.fn(),
+  orderBy: jest.fn(),
+  limit: jest.fn(),
+  startAfter: jest.fn(),
+  doc: jest.fn(),
+  increment: jest.fn(),
+  Timestamp: {
+    now: jest.fn(() => ({ toDate: () => new Date() })),
   },
+}));
+
+jest.mock('../../../src/services/firebase', () => ({
+  db: {},
 }));
 
 describe('CommentService', () => {
@@ -21,30 +37,27 @@ describe('CommentService', () => {
   const mockLimit = jest.fn();
   const mockStartAfter = jest.fn();
   const mockDoc = jest.fn();
-  const mockTimestamp = {
-    now: jest.fn(() => ({ toDate: () => new Date() })),
-  };
+  const mockIncrement = jest.fn();
 
   beforeEach(() => {
     jest.clearAllMocks();
     
-    // Firebase Firestoreのモック設定
-    const mockFirestore = {
-      collection,
-      addDoc,
-      getDocs,
-      deleteDoc,
-      updateDoc,
-      onSnapshot,
-      query,
-      where,
-      orderBy,
-      limit,
-      startAfter,
-      doc,
-      Timestamp: mockTimestamp,
-    };
-
+    // モック関数を設定
+    const firebaseFirestore = require('firebase/firestore');
+    firebaseFirestore.collection = mockCollection;
+    firebaseFirestore.addDoc = mockAddDoc;
+    firebaseFirestore.getDocs = mockGetDocs;
+    firebaseFirestore.deleteDoc = mockDeleteDoc;
+    firebaseFirestore.updateDoc = mockUpdateDoc;
+    firebaseFirestore.onSnapshot = mockOnSnapshot;
+    firebaseFirestore.query = mockQuery;
+    firebaseFirestore.where = mockWhere;
+    firebaseFirestore.orderBy = mockOrderBy;
+    firebaseFirestore.limit = mockLimit;
+    firebaseFirestore.startAfter = mockStartAfter;
+    firebaseFirestore.doc = mockDoc;
+    firebaseFirestore.increment = mockIncrement;
+    
     // 各メソッドのモック実装
     mockCollection.mockReturnValue('comments-collection');
     mockAddDoc.mockResolvedValue({ id: 'test-comment-id' });
@@ -74,11 +87,7 @@ describe('CommentService', () => {
     mockLimit.mockReturnValue('limit-result');
     mockStartAfter.mockReturnValue('startafter-result');
     mockDoc.mockReturnValue('doc-reference');
-
-    // グローバルなFirebase関数をモック
-    global.firebase = {
-      firestore: mockFirestore,
-    } as any;
+    mockIncrement.mockReturnValue('increment-value');
   });
 
   describe('addComment', () => {
@@ -89,7 +98,7 @@ describe('CommentService', () => {
 
       await commentService.addComment(storyId, authorId, content);
 
-      expect(mockCollection).toHaveBeenCalledWith(db, 'comments');
+      expect(mockCollection).toHaveBeenCalledWith({}, 'comments');
       expect(mockAddDoc).toHaveBeenCalledWith('comments-collection', {
         storyId,
         authorId,
@@ -100,46 +109,32 @@ describe('CommentService', () => {
     });
 
     it('空のコメントは投稿できない', async () => {
-      const storyId = 'test-story-id';
-      const authorId = 'test-user-id';
-      const content = '';
-
-      await expect(commentService.addComment(storyId, authorId, content))
+      await expect(commentService.addComment('test-story-id', 'test-user-id', ''))
         .rejects.toThrow('コメント内容を入力してください');
     });
 
     it('500文字を超えるコメントは投稿できない', async () => {
-      const storyId = 'test-story-id';
-      const authorId = 'test-user-id';
-      const content = 'a'.repeat(501);
-
-      await expect(commentService.addComment(storyId, authorId, content))
+      const longContent = 'a'.repeat(501);
+      await expect(commentService.addComment('test-story-id', 'test-user-id', longContent))
         .rejects.toThrow('コメントは500文字以内で入力してください');
     });
   });
 
   describe('getComments', () => {
     it('コメントを正常に取得できる', async () => {
-      const storyId = 'test-story-id';
-      const pageSize = 20;
+      const comments = await commentService.getComments('test-story-id');
 
-      const comments = await commentService.getComments(storyId, pageSize);
-
+      expect(mockCollection).toHaveBeenCalledWith({}, 'comments');
+      expect(mockQuery).toHaveBeenCalled();
+      expect(mockWhere).toHaveBeenCalledWith('storyId', '==', 'test-story-id');
+      expect(mockOrderBy).toHaveBeenCalledWith('createdAt', 'desc');
+      expect(mockLimit).toHaveBeenCalledWith(20);
       expect(comments).toHaveLength(1);
-      expect(comments[0]).toEqual({
-        id: 'test-comment-id',
-        storyId: 'test-story-id',
-        authorId: 'test-user-id',
-        content: 'テストコメント',
-        createdAt: expect.any(Date),
-        isHelpful: false,
-      });
+      expect(comments[0].content).toBe('テストコメント');
     });
 
     it('デフォルトのページサイズでコメントを取得できる', async () => {
-      const storyId = 'test-story-id';
-
-      await commentService.getComments(storyId);
+      await commentService.getComments('test-story-id');
 
       expect(mockLimit).toHaveBeenCalledWith(20);
     });
@@ -147,91 +142,266 @@ describe('CommentService', () => {
 
   describe('deleteComment', () => {
     it('コメントを正常に削除できる', async () => {
-      const commentId = 'test-comment-id';
-      const authorId = 'test-user-id';
+      mockGetDocs.mockResolvedValue({
+        empty: false,
+        docs: [{
+          id: 'test-comment-id',
+          data: () => ({ 
+            authorId: 'test-user-id',
+            storyId: 'test-story-id'
+          }),
+          ref: { id: 'test-comment-id' },
+        }],
+      });
 
-      await commentService.deleteComment(commentId, authorId);
+      await commentService.deleteComment('test-comment-id', 'test-user-id');
 
-      expect(mockDeleteDoc).toHaveBeenCalled();
+      expect(mockCollection).toHaveBeenCalledWith({}, 'comments');
+      expect(mockQuery).toHaveBeenCalled();
+      expect(mockWhere).toHaveBeenCalledWith('__name__', '==', 'test-comment-id');
+      expect(mockWhere).toHaveBeenCalledWith('authorId', '==', 'test-user-id');
+      expect(mockDeleteDoc).toHaveBeenCalledWith({ id: 'test-comment-id' });
     });
 
     it('存在しないコメントは削除できない', async () => {
-      mockGetDocs.mockResolvedValueOnce({ empty: true });
+      mockGetDocs.mockResolvedValue({
+        empty: true,
+        docs: [],
+      });
 
-      const commentId = 'test-comment-id';
-      const authorId = 'test-user-id';
-
-      await expect(commentService.deleteComment(commentId, authorId))
+      await expect(commentService.deleteComment('non-existent-id', 'test-user-id'))
         .rejects.toThrow('コメントが見つからないか、削除権限がありません');
     });
   });
 
   describe('updateComment', () => {
     it('コメントを正常に更新できる', async () => {
-      const commentId = 'test-comment-id';
-      const authorId = 'test-user-id';
-      const content = '更新されたコメント';
+      mockGetDocs.mockResolvedValue({
+        empty: false,
+        docs: [{
+          id: 'test-comment-id',
+          data: () => ({ authorId: 'test-user-id' }),
+          ref: { id: 'test-comment-id' },
+        }],
+      });
 
-      await commentService.updateComment(commentId, authorId, content);
+      await commentService.updateComment('test-comment-id', 'test-user-id', '更新されたコメント');
 
-      expect(mockUpdateDoc).toHaveBeenCalledWith('doc-reference', {
-        content: content.trim(),
+      expect(mockCollection).toHaveBeenCalledWith({}, 'comments');
+      expect(mockQuery).toHaveBeenCalled();
+      expect(mockWhere).toHaveBeenCalledWith('__name__', '==', 'test-comment-id');
+      expect(mockWhere).toHaveBeenCalledWith('authorId', '==', 'test-user-id');
+      expect(mockUpdateDoc).toHaveBeenCalledWith({ id: 'test-comment-id' }, {
+        content: '更新されたコメント',
         updatedAt: expect.any(Object),
       });
     });
 
     it('空のコメントは更新できない', async () => {
-      const commentId = 'test-comment-id';
-      const authorId = 'test-user-id';
-      const content = '';
-
-      await expect(commentService.updateComment(commentId, authorId, content))
+      await expect(commentService.updateComment('test-comment-id', 'test-user-id', ''))
         .rejects.toThrow('コメント内容を入力してください');
     });
 
     it('500文字を超えるコメントは更新できない', async () => {
-      const commentId = 'test-comment-id';
-      const authorId = 'test-user-id';
-      const content = 'a'.repeat(501);
-
-      await expect(commentService.updateComment(commentId, authorId, content))
+      const longContent = 'a'.repeat(501);
+      await expect(commentService.updateComment('test-comment-id', 'test-user-id', longContent))
         .rejects.toThrow('コメントは500文字以内で入力してください');
     });
   });
 
   describe('getCommentCount', () => {
     it('コメント数を正常に取得できる', async () => {
-      const storyId = 'test-story-id';
+      mockGetDocs.mockResolvedValue({
+        empty: false,
+        size: 5,
+        docs: [],
+      });
 
-      const count = await commentService.getCommentCount(storyId);
+      const count = await commentService.getCommentCount('test-story-id');
 
-      expect(count).toBe(1);
+      expect(mockCollection).toHaveBeenCalledWith({}, 'comments');
+      expect(mockQuery).toHaveBeenCalled();
+      expect(mockWhere).toHaveBeenCalledWith('storyId', '==', 'test-story-id');
+      expect(count).toBe(5);
     });
   });
 
   describe('subscribeToComments', () => {
     it('コメントのリアルタイム監視を開始できる', () => {
-      const storyId = 'test-story-id';
       const callback = jest.fn();
+      const unsubscribe = commentService.subscribeToComments('test-story-id', callback);
 
-      const unsubscribe = commentService.subscribeToComments(storyId, callback);
-
-      expect(mockOnSnapshot).toHaveBeenCalled();
+      expect(mockCollection).toHaveBeenCalledWith({}, 'comments');
+      expect(mockQuery).toHaveBeenCalled();
+      expect(mockWhere).toHaveBeenCalledWith('storyId', '==', 'test-story-id');
+      expect(mockOrderBy).toHaveBeenCalledWith('createdAt', 'desc');
+      expect(mockOnSnapshot).toHaveBeenCalledWith('query-result', expect.any(Function), expect.any(Function));
       expect(typeof unsubscribe).toBe('function');
     });
-  });
-});
 
-// Firebase Firestore関数のモック
-const collection = jest.fn();
-const addDoc = jest.fn();
-const getDocs = jest.fn();
-const deleteDoc = jest.fn();
-const updateDoc = jest.fn();
-const onSnapshot = jest.fn();
-const query = jest.fn();
-const where = jest.fn();
-const orderBy = jest.fn();
-const limit = jest.fn();
-const startAfter = jest.fn();
-const doc = jest.fn(); 
+    it('コールバックが正しく呼ばれる', () => {
+      const callback = jest.fn();
+      let snapshotCallback: any;
+
+      mockOnSnapshot.mockImplementation((query, cb) => {
+        snapshotCallback = cb;
+        return () => {};
+      });
+
+      commentService.subscribeToComments('test-story-id', callback);
+
+      // モックデータでコールバックを呼び出し
+      snapshotCallback({
+        docs: [{
+          id: 'test-comment-id',
+          data: () => ({
+            storyId: 'test-story-id',
+            authorId: 'test-user-id',
+            content: 'テストコメント',
+            createdAt: { toDate: () => new Date() },
+            isHelpful: false,
+          }),
+        }],
+      });
+
+      expect(callback).toHaveBeenCalledWith([{
+        id: 'test-comment-id',
+        storyId: 'test-story-id',
+        authorId: 'test-user-id',
+        content: 'テストコメント',
+        createdAt: expect.any(Date),
+        isHelpful: false,
+      }]);
+    });
+  });
+
+  describe('getCommentsWithPagination', () => {
+    it('ページネーション付きでコメントを取得できる', async () => {
+      const lastComment = {
+        id: 'last-comment-id',
+        storyId: 'test-story-id',
+        authorId: 'test-user-id',
+        content: '最後のコメント',
+        createdAt: new Date(),
+        isHelpful: false,
+      };
+
+      // getCommentDocumentのモックを設定
+      mockGetDocs.mockResolvedValue({
+        empty: false,
+        docs: [{
+          id: 'last-comment-id',
+          data: () => ({
+            storyId: 'test-story-id',
+            authorId: 'test-user-id',
+            content: '最後のコメント',
+            createdAt: { toDate: () => new Date() },
+            isHelpful: false,
+          }),
+        }],
+      });
+
+      await commentService.getCommentsWithPagination('test-story-id', lastComment, 10);
+
+      expect(mockCollection).toHaveBeenCalledWith({}, 'comments');
+      expect(mockQuery).toHaveBeenCalled();
+      expect(mockWhere).toHaveBeenCalledWith('storyId', '==', 'test-story-id');
+      expect(mockOrderBy).toHaveBeenCalledWith('createdAt', 'desc');
+      expect(mockStartAfter).toHaveBeenCalledWith(expect.any(Object));
+      expect(mockLimit).toHaveBeenCalledWith(10);
+    });
+
+    it('最後のコメントがない場合でも正常に動作する', async () => {
+      await commentService.getCommentsWithPagination('test-story-id', undefined, 10);
+
+      expect(mockCollection).toHaveBeenCalledWith({}, 'comments');
+      expect(mockQuery).toHaveBeenCalled();
+      expect(mockWhere).toHaveBeenCalledWith('storyId', '==', 'test-story-id');
+      expect(mockOrderBy).toHaveBeenCalledWith('createdAt', 'desc');
+      expect(mockLimit).toHaveBeenCalledWith(10);
+    });
+  });
+
+  describe('エラーハンドリング', () => {
+    it('Firebaseエラーが適切に処理される', async () => {
+      mockAddDoc.mockRejectedValue(new Error('Firebase error'));
+
+      await expect(commentService.addComment('test-story-id', 'test-user-id', 'test'))
+        .rejects.toThrow('Firebase error');
+    });
+
+    it('ネットワークエラーが適切に処理される', async () => {
+      mockGetDocs.mockRejectedValue(new Error('Network error'));
+
+      await expect(commentService.getComments('test-story-id'))
+        .rejects.toThrow('Network error');
+    });
+  });
+
+  describe('バリデーション', () => {
+    it('storyIdが空の場合、エラーが発生する', async () => {
+      await expect(commentService.addComment('', 'test-user-id', 'test'))
+        .rejects.toThrow('ストーリーIDが必要です');
+    });
+
+    it('authorIdが空の場合、エラーが発生する', async () => {
+      await expect(commentService.addComment('test-story-id', '', 'test'))
+        .rejects.toThrow('ユーザーIDが必要です');
+    });
+
+    it('contentがnullの場合、エラーが発生する', async () => {
+      await expect(commentService.addComment('test-story-id', 'test-user-id', null as any))
+        .rejects.toThrow('コメント内容を入力してください');
+    });
+
+    it('contentがundefinedの場合、エラーが発生する', async () => {
+      await expect(commentService.addComment('test-story-id', 'test-user-id', undefined as any))
+        .rejects.toThrow('コメント内容を入力してください');
+    });
+  });
+
+  describe('データ変換', () => {
+    it('FirestoreのTimestampが正しくDateに変換される', async () => {
+      const mockDate = new Date('2024-01-01T10:00:00Z');
+      mockGetDocs.mockResolvedValue({
+        empty: false,
+        size: 1,
+        docs: [{
+          id: 'test-comment-id',
+          data: () => ({
+            storyId: 'test-story-id',
+            authorId: 'test-user-id',
+            content: 'テストコメント',
+            createdAt: { toDate: () => mockDate },
+            isHelpful: false,
+          }),
+        }],
+      });
+
+      const comments = await commentService.getComments('test-story-id');
+
+      expect(comments[0].createdAt).toEqual(mockDate);
+    });
+
+    it('isHelpfulフィールドが正しく処理される', async () => {
+      mockGetDocs.mockResolvedValue({
+        empty: false,
+        size: 1,
+        docs: [{
+          id: 'test-comment-id',
+          data: () => ({
+            storyId: 'test-story-id',
+            authorId: 'test-user-id',
+            content: 'テストコメント',
+            createdAt: { toDate: () => new Date() },
+            isHelpful: true,
+          }),
+        }],
+      });
+
+      const comments = await commentService.getComments('test-story-id');
+
+      expect(comments[0].isHelpful).toBe(true);
+    });
+  });
+}); 
