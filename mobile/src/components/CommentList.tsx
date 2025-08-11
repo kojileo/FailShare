@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { IconButton } from 'react-native-paper';
 import { Comment } from '../types';
 import { useCommentStore } from '../stores/commentStore';
 import { CommentItem } from './CommentItem';
@@ -81,7 +81,7 @@ export const CommentList: React.FC<CommentListProps> = ({ storyId, onCommentCoun
 
     return (
       <TouchableOpacity style={styles.loadMoreButton} onPress={handleLoadMore}>
-        <Ionicons name="chevron-down" size={16} color="#007AFF" />
+        <IconButton icon="chevron-down" size={16} iconColor="#007AFF" style={styles.loadMoreIcon} />
         <Text style={styles.loadMoreText}>さらに読み込む</Text>
       </TouchableOpacity>
     );
@@ -98,29 +98,29 @@ export const CommentList: React.FC<CommentListProps> = ({ storyId, onCommentCoun
     }
 
          if (storyError) {
-       return (
-         <View style={styles.emptyContainer}>
-           <Ionicons name="alert-circle" size={48} color="#e74c3c" />
-           <Text style={styles.errorText}>
-             {storyError.includes('index') 
-               ? 'コメントの読み込みに時間がかかっています。しばらくお待ちください。'
-               : storyError
-             }
-           </Text>
-           <TouchableOpacity 
-             style={styles.retryButton} 
-             onPress={() => loadComments(storyId)}
-           >
-             <Ionicons name="refresh" size={16} color="#007AFF" />
-             <Text style={styles.retryText}>再試行</Text>
-           </TouchableOpacity>
-         </View>
-       );
+           return (
+      <View style={styles.emptyContainer}>
+        <IconButton icon="alert-circle" size={48} iconColor="#e74c3c" style={styles.emptyIcon} />
+        <Text style={styles.errorText}>
+          {storyError.includes('index') 
+            ? 'コメントの読み込みに時間がかかっています。しばらくお待ちください。'
+            : storyError
+          }
+        </Text>
+        <TouchableOpacity 
+          style={styles.retryButton} 
+          onPress={() => loadComments(storyId)}
+        >
+          <IconButton icon="refresh" size={16} iconColor="#007AFF" style={styles.retryIcon} />
+          <Text style={styles.retryText}>再試行</Text>
+        </TouchableOpacity>
+      </View>
+    );
      }
 
     return (
       <View style={styles.emptyContainer}>
-        <Ionicons name="chatbubble-outline" size={48} color="#ccc" />
+        <IconButton icon="chat-outline" size={48} iconColor="#ccc" style={styles.emptyIcon} />
         <Text style={styles.emptyText}>まだコメントがありません</Text>
         <Text style={styles.emptySubText}>最初のコメントを投稿してみましょう！</Text>
       </View>
@@ -131,14 +131,14 @@ export const CommentList: React.FC<CommentListProps> = ({ storyId, onCommentCoun
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Ionicons name="chatbubbles" size={20} color="#007AFF" />
+          <IconButton icon="chat" size={20} iconColor="#007AFF" style={styles.headerIcon} />
           <Text style={styles.title}>コメント</Text>
           <View style={styles.countBadge}>
             <Text style={styles.count}>{storyComments.length}</Text>
           </View>
         </View>
         <View style={styles.headerRight}>
-          <Ionicons name="time-outline" size={16} color="#666" />
+          <IconButton icon="clock-outline" size={16} iconColor="#666" style={styles.headerIcon} />
           <Text style={styles.sortText}>最新順</Text>
         </View>
       </View>
@@ -273,5 +273,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#007AFF',
     fontWeight: '500',
+  },
+  headerIcon: {
+    margin: 0,
+  },
+  emptyIcon: {
+    margin: 0,
+  },
+  retryIcon: {
+    margin: 0,
+  },
+  loadMoreIcon: {
+    margin: 0,
   },
 }); 

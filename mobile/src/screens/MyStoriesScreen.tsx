@@ -31,10 +31,6 @@ const MyStoriesScreen: React.FC<MyStoriesScreenProps> = ({ navigation }) => {
   const [userStories, setUserStories] = useState<FailureStory[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    loadUserStories();
-  }, [user, stories]);
-
   const loadUserStories = async () => {
     if (!user) {
       console.log('⚠️ ユーザー未認証のため、マイストーリー取得をスキップ');
@@ -54,6 +50,10 @@ const MyStoriesScreen: React.FC<MyStoriesScreenProps> = ({ navigation }) => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadUserStories();
+  }, [user, stories, loadUserStories]);
 
   const onRefresh = async () => {
     setRefreshing(true);

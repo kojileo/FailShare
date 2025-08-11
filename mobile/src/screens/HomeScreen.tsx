@@ -40,18 +40,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
   const mainCategories = getMainCategories();
 
-  // 画面フォーカス時に自動リフレッシュ
-  useFocusEffect(
-    React.useCallback(() => {
-      loadStories();
-    }, [])
-  );
-
-  useEffect(() => {
-    filterStories();
-  }, [searchQuery, selectedMainCategory, selectedSubCategory, stories]);
-
-  const loadStories = async (showLoading = true) => {
+  const loadStories = React.useCallback(async (showLoading = true) => {
     try {
       // 認証状態をチェックし、必要に応じて匿名認証を実行
       if (!user) {
@@ -75,9 +64,9 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     } finally {
       if (showLoading) setLoading(false);
     }
-  };
+  }, [user, signIn, setLoading, setStories]);
 
-  const filterStories = () => {
+  const filterStories = React.useCallback(() => {
     let filtered = stories;
 
     // テキスト検索
@@ -107,7 +96,18 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     }
 
     setFilteredStories(filtered);
-  };
+  }, [stories, searchQuery, selectedMainCategory, selectedSubCategory]);
+
+  // 画面フォーカス時に自動リフレッシュ
+  useFocusEffect(
+    React.useCallback(() => {
+      loadStories();
+    }, [])
+  );
+
+  useEffect(() => {
+    filterStories();
+  }, [filterStories]);
 
   const handleMainCategorySelect = (category: MainCategory | null) => {
     setSelectedMainCategory(category);
@@ -157,38 +157,18 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
   const displayStories = searchQuery || selectedMainCategory || selectedSubCategory ? filteredStories : stories;
 
-  // CSS Styles for HTML elements
-  const containerStyle: React.CSSProperties = {
-    width: '100%',
-    height: '100vh',
-    backgroundColor: '#F8FAFC',
-    overflow: 'auto',
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-  };
-
-  const headerStyle: React.CSSProperties = {
-    background: 'linear-gradient(135deg, #1DA1F2, #1991DB)',
-    padding: '20px',
-    color: 'white',
-    borderBottomLeftRadius: '25px',
-    borderBottomRightRadius: '25px',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  };
-
   return (
-    <div style={containerStyle}>
+    <View style={styles.container}>
       {/* ヘッダー */}
-      <div style={headerStyle}>
-        <div>
-          <h1 style={{fontSize: '28px', margin: '0 0 2px 0', fontWeight: 'bold', letterSpacing: '0.5px'}}>
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.headerTitle}>
             FailShare
-          </h1>
-          <p style={{fontSize: '12px', margin: '0', opacity: 0.9}}>
+          </Text>
+          <Text style={styles.headerSubtitle}>
             失敗から学ぶコミュニティ
-          </p>
-        </div>
+          </Text>
+        </View>
         {user && (
           <TouchableOpacity 
             onPress={() => navigation?.navigate('Profile')}
@@ -207,7 +187,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             />
           </TouchableOpacity>
         )}
-      </div>
+      </View>
 
       {/* 検索セクション */}
       <View style={styles.searchSection}>
@@ -294,7 +274,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       )}
 
       {/* ストーリーリスト */}
-      <div style={{paddingTop: '16px'}}>
+      <View style={styles.storyListContainer}>
         {displayStories.length === 0 && !isLoading ? (
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyIcon}>
@@ -377,27 +357,27 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                         initialHelpfulCount={story.metadata.helpfulCount || 0}
                         size="small"
                         showCount={true}
-                                                 onLikeChange={(isLiked, newCount) => {
-                           console.log(`🏠 HomeScreen: いいね更新 [${story.id}]:`, { isLiked, newCount });
-                           
-                           // ストーリーのいいね数を更新（グローバルストアも更新）
-                           const updatedStories = stories.map(s => 
-                             s.id === story.id 
-                               ? { ...s, metadata: { ...s.metadata, helpfulCount: newCount } }
-                               : s
-                           );
-                           setStories(updatedStories);
-                           
-                           // フィルター済みストーリーも更新
-                           if (searchQuery || selectedMainCategory || selectedSubCategory) {
-                             const updatedFilteredStories = filteredStories.map(s => 
-                               s.id === story.id 
-                                 ? { ...s, metadata: { ...s.metadata, helpfulCount: newCount } }
-                                 : s
-                             );
-                             setFilteredStories(updatedFilteredStories);
-                           }
-                         }}
+                        onLikeChange={(isLiked, newCount) => {
+                          console.log(`🏠 HomeScreen: いいね更新 [${story.id}]:`, { isLiked, newCount });
+                          
+                          // ストーリーのいいね数を更新（グローバルストアも更新）
+                          const updatedStories = stories.map(s => 
+                            s.id === story.id 
+                              ? { ...s, metadata: { ...s.metadata, helpfulCount: newCount } }
+                              : s
+                          );
+                          setStories(updatedStories);
+                          
+                          // フィルター済みストーリーも更新
+                          if (searchQuery || selectedMainCategory || selectedSubCategory) {
+                            const updatedFilteredStories = filteredStories.map(s => 
+                              s.id === story.id 
+                                ? { ...s, metadata: { ...s.metadata, helpfulCount: newCount } }
+                                : s
+                            );
+                            setFilteredStories(updatedFilteredStories);
+                          }
+                        }}
                       />
                     </View>
                     
@@ -415,14 +395,39 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             </TouchableOpacity>
           ))
         )}
-      </div>
+      </View>
 
-      <div style={{height: '40px'}}></div>
-    </div>
+      <View style={styles.bottomSpace} />
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+  },
+  header: {
+    backgroundColor: '#1DA1F2',
+    padding: 20,
+    borderBottomLeftRadius: 25,
+    borderBottomRightRadius: 25,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 2,
+    letterSpacing: 0.5,
+  },
+  headerSubtitle: {
+    fontSize: 12,
+    color: '#FFFFFF',
+    opacity: 0.9,
+  },
   profileButton: {
     position: 'relative',
     alignItems: 'center',
@@ -654,6 +659,12 @@ const styles = StyleSheet.create({
     color: '#8E9AAF',
     fontWeight: '500',
     marginLeft: -6,
+  },
+  storyListContainer: {
+    paddingTop: 16,
+  },
+  bottomSpace: {
+    height: 40,
   },
 });
 

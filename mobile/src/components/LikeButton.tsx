@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { TouchableOpacity, Text, StyleSheet, ActivityIndicator } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { IconButton } from 'react-native-paper';
 import { useAuthStore } from '../stores/authStore';
 import { likeService } from '../services/likeService';
 
@@ -33,13 +33,6 @@ export const LikeButton: React.FC<LikeButtonProps> = ({
     setIsLiked(initialIsLiked);
   }, [storyId, initialHelpfulCount, initialIsLiked]);
 
-  // ユーザーが認証されている場合、現在のいいね状態を取得
-  useEffect(() => {
-    if (user?.id) {
-      loadCurrentLikeState();
-    }
-  }, [user?.id, storyId]);
-
   const loadCurrentLikeState = async () => {
     try {
       console.log(`🔄 いいね状態を取得中 [${storyId}]:`, { userId: user!.id });
@@ -51,6 +44,13 @@ export const LikeButton: React.FC<LikeButtonProps> = ({
       setIsLiked(initialIsLiked);
     }
   };
+
+  // ユーザーが認証されている場合、現在のいいね状態を取得
+  useEffect(() => {
+    if (user?.id) {
+      loadCurrentLikeState();
+    }
+  }, [user?.id, storyId, loadCurrentLikeState]);
 
   const handleToggleLike = async () => {
     if (isLoading) return;
@@ -143,10 +143,11 @@ export const LikeButton: React.FC<LikeButtonProps> = ({
       {isLoading ? (
         <ActivityIndicator size={iconSize} color={isLiked ? '#e74c3c' : '#666'} />
       ) : (
-        <Ionicons
-          name={isLiked ? 'heart' : 'heart-outline'}
+        <IconButton
+          icon={isLiked ? 'heart' : 'heart-outline'}
           size={iconSize}
-          color={isLiked ? '#e74c3c' : '#666'}
+          iconColor={isLiked ? '#e74c3c' : '#666'}
+          style={styles.iconButton}
         />
       )}
       
@@ -175,6 +176,9 @@ const styles = StyleSheet.create({
   liked: {
     backgroundColor: '#fff5f5',
     borderColor: '#e74c3c',
+  },
+  iconButton: {
+    margin: 0,
   },
   count: {
     marginLeft: 4,
