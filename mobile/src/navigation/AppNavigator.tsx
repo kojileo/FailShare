@@ -7,6 +7,9 @@ import ProfileScreen from '../screens/ProfileScreen';
 import CreateStoryScreen from '../screens/CreateStoryScreen';
 import StoryDetailScreen from '../screens/StoryDetailScreen';
 import MyStoriesScreen from '../screens/MyStoriesScreen';
+import FriendsScreen from '../screens/FriendsScreen';
+import FriendRequestsScreen from '../screens/FriendRequestsScreen';
+import FriendSearchScreen from '../screens/FriendSearchScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -39,6 +42,18 @@ const AppNavigator: React.FC = () => {
         <Stack.Screen
           name="MyStories"
           component={MyStoriesScreen}
+        />
+        <Stack.Screen
+          name="Friends"
+          component={FriendsScreen}
+        />
+        <Stack.Screen
+          name="FriendRequests"
+          component={FriendRequestsScreen}
+        />
+        <Stack.Screen
+          name="FriendSearch"
+          component={FriendSearchScreen}
         />
       </Stack.Navigator>
     </NavigationContainer>

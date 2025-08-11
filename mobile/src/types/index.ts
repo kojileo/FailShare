@@ -12,6 +12,8 @@ export interface User {
     learningPoints: number;
     totalLikes: number; // いいね数を追加
     receivedLikes: number; // 受けたいいね数を追加
+    friendsCount: number; // フレンド数を追加
+    communitiesCount: number; // 参加コミュニティ数を追加
   };
 }
 
@@ -147,11 +149,193 @@ export type EmotionType =
   | '混乱' 
   | 'その他';
 
-// Navigation型定義
+// フレンド機能の型定義
+export interface Friendship {
+  id: string;
+  userId: string;
+  friendId: string;
+  status: 'pending' | 'accepted' | 'blocked';
+  createdAt: Date;
+  acceptedAt?: Date;
+}
+
+export interface FriendRequest {
+  id: string;
+  fromUserId: string;
+  toUserId: string;
+  message?: string;
+  createdAt: Date;
+  status: 'pending' | 'accepted' | 'rejected';
+}
+
+export interface FriendRecommendation {
+  userId: string;
+  displayName: string;
+  avatar: string;
+  commonInterests: string[];
+  mutualFriends: number;
+  score: number;
+}
+
+// コミュニティ機能の型定義
+export interface Community {
+  id: string;
+  name: string;
+  description: string;
+  category: CategoryHierarchy;
+  creatorId: string;
+  createdAt: Date;
+  memberCount: number;
+  postCount: number;
+  isPrivate: boolean;
+  rules: string[];
+  tags: string[];
+}
+
+export interface CommunityMembership {
+  id: string;
+  communityId: string;
+  userId: string;
+  role: 'member' | 'moderator' | 'admin';
+  joinedAt: Date;
+  lastActive: Date;
+}
+
+export interface CommunityPost {
+  id: string;
+  communityId: string;
+  authorId: string;
+  content: string;
+  createdAt: Date;
+  updatedAt?: Date;
+  isPinned: boolean;
+  likeCount: number;
+  commentCount: number;
+}
+
+// フレンドサービスインターフェース
+export interface FriendService {
+  // フレンド関係管理
+  sendFriendRequest(fromUserId: string, toUserId: string, message?: string): Promise<void>;
+  acceptFriendRequest(requestId: string): Promise<void>;
+  rejectFriendRequest(requestId: string): Promise<void>;
+  removeFriend(userId: string, friendId: string): Promise<void>;
+  blockUser(userId: string, blockedUserId: string): Promise<void>;
+  unblockUser(userId: string, blockedUserId: string): Promise<void>;
+  
+  // フレンド情報取得
+  getFriends(userId: string): Promise<User[]>;
+  getFriendRequests(userId: string): Promise<FriendRequest[]>;
+  getSentFriendRequests(userId: string): Promise<FriendRequest[]>;
+  getBlockedUsers(userId: string): Promise<User[]>;
+  getFriendRecommendations(userId: string, limit?: number): Promise<FriendRecommendation[]>;
+  
+  // フレンド関係確認
+  areFriends(userId: string, friendId: string): Promise<boolean>;
+  hasPendingRequest(fromUserId: string, toUserId: string): Promise<boolean>;
+  isBlocked(userId: string, blockedUserId: string): Promise<boolean>;
+  
+  // リアルタイム更新
+  subscribeToFriends(userId: string, callback: (friends: User[]) => void): () => void;
+  subscribeToFriendRequests(userId: string, callback: (requests: FriendRequest[]) => void): () => void;
+}
+
+// コミュニティサービスインターフェース
+export interface CommunityService {
+  // コミュニティ管理
+  createCommunity(community: Omit<Community, 'id' | 'createdAt' | 'memberCount' | 'postCount'>): Promise<string>;
+  updateCommunity(communityId: string, updates: Partial<Community>): Promise<void>;
+  deleteCommunity(communityId: string): Promise<void>;
+  
+  // メンバーシップ管理
+  joinCommunity(communityId: string, userId: string): Promise<void>;
+  leaveCommunity(communityId: string, userId: string): Promise<void>;
+  inviteToCommunity(communityId: string, userId: string, invitedUserId: string): Promise<void>;
+  removeMember(communityId: string, userId: string, removedUserId: string): Promise<void>;
+  
+  // コミュニティ情報取得
+  getCommunities(userId?: string): Promise<Community[]>;
+  getCommunity(communityId: string): Promise<Community | null>;
+  getCommunityMembers(communityId: string): Promise<User[]>;
+  getUserCommunities(userId: string): Promise<Community[]>;
+  
+  // コミュニティ投稿
+  addCommunityPost(post: Omit<CommunityPost, 'id' | 'createdAt' | 'likeCount' | 'commentCount'>): Promise<string>;
+  updateCommunityPost(postId: string, content: string): Promise<void>;
+  deleteCommunityPost(postId: string): Promise<void>;
+  getCommunityPosts(communityId: string, limit?: number): Promise<CommunityPost[]>;
+  
+  // リアルタイム更新
+  subscribeToCommunity(communityId: string, callback: (community: Community) => void): () => void;
+  subscribeToCommunityPosts(communityId: string, callback: (posts: CommunityPost[]) => void): () => void;
+}
+
+// フレンドストアインターフェース
+export interface FriendStore {
+  friends: User[];
+  friendRequests: FriendRequest[];
+  sentRequests: FriendRequest[];
+  blockedUsers: User[];
+  recommendations: FriendRecommendation[];
+  isLoading: boolean;
+  error: string | null;
+  
+  // Actions
+  loadFriends(userId: string): Promise<void>;
+  loadFriendRequests(userId: string): Promise<void>;
+  loadSentRequests(userId: string): Promise<void>;
+  loadBlockedUsers(userId: string): Promise<void>;
+  loadRecommendations(userId: string): Promise<void>;
+  
+  sendFriendRequest(fromUserId: string, toUserId: string, message?: string): Promise<void>;
+  acceptFriendRequest(requestId: string): Promise<void>;
+  rejectFriendRequest(requestId: string): Promise<void>;
+  removeFriend(userId: string, friendId: string): Promise<void>;
+  blockUser(userId: string, blockedUserId: string): Promise<void>;
+  unblockUser(userId: string, blockedUserId: string): Promise<void>;
+  
+  setLoading(loading: boolean): void;
+  setError(error: string | null): void;
+  reset(): void;
+}
+
+// コミュニティストアインターフェース
+export interface CommunityStore {
+  communities: Community[];
+  userCommunities: Community[];
+  currentCommunity: Community | null;
+  communityPosts: CommunityPost[];
+  isLoading: boolean;
+  error: string | null;
+  
+  // Actions
+  loadCommunities(userId?: string): Promise<void>;
+  loadUserCommunities(userId: string): Promise<void>;
+  loadCommunity(communityId: string): Promise<void>;
+  loadCommunityPosts(communityId: string): Promise<void>;
+  
+  createCommunity(community: Omit<Community, 'id' | 'createdAt' | 'memberCount' | 'postCount'>): Promise<string>;
+  joinCommunity(communityId: string, userId: string): Promise<void>;
+  leaveCommunity(communityId: string, userId: string): Promise<void>;
+  
+  addCommunityPost(post: Omit<CommunityPost, 'id' | 'createdAt' | 'likeCount' | 'commentCount'>): Promise<string>;
+  
+  setLoading(loading: boolean): void;
+  setError(error: string | null): void;
+  reset(): void;
+}
+
+// Navigation型定義を更新
 export type RootStackParamList = {
   Home: undefined;
   Profile: undefined;
   CreateStory: { editMode?: boolean; storyData?: FailureStory } | undefined;
   StoryDetail: { storyId: string };
   MyStories: undefined;
+  Friends: undefined;
+  FriendRequests: undefined;
+  FriendSearch: undefined;
+  Communities: undefined;
+  CommunityDetail: { communityId: string };
+  CreateCommunity: undefined;
 }; 

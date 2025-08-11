@@ -92,6 +92,12 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
       icon: 'account-edit-outline',
       onPress: handleEditProfile,
     },
+    {
+      title: 'フレンド',
+      subtitle: `${user?.stats.friendsCount || 0}人のフレンド`,
+      icon: 'account-group-outline',
+      onPress: () => navigation.navigate('Friends'),
+    },
   ];
 
   const supportItems = [
