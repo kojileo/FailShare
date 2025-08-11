@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { IconButton } from 'react-native-paper';
 import { Comment } from '../types';
 import { useAuthStore } from '../stores/authStore';
 import { useCommentStore } from '../stores/commentStore';
@@ -132,12 +132,12 @@ export const CommentItem: React.FC<CommentItemProps> = ({ comment, storyId }) =>
         
         <View style={styles.editActions}>
           <TouchableOpacity style={styles.editButton} onPress={handleSave}>
-            <Ionicons name="checkmark" size={16} color="#4CAF50" />
+            <IconButton icon="check" size={16} iconColor="#4CAF50" style={styles.editIcon} />
             <Text style={[styles.editButtonText, { color: '#4CAF50' }]}>保存</Text>
           </TouchableOpacity>
           
           <TouchableOpacity style={styles.editButton} onPress={handleCancel}>
-            <Ionicons name="close" size={16} color="#666" />
+            <IconButton icon="close" size={16} iconColor="#666" style={styles.editIcon} />
             <Text style={[styles.editButtonText, { color: '#666' }]}>キャンセル</Text>
           </TouchableOpacity>
         </View>
@@ -170,7 +170,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({ comment, storyId }) =>
               activeOpacity={0.6}
               testID="edit-button"
             >
-              <Ionicons name="pencil" size={16} color="#007AFF" />
+              <IconButton icon="pencil" size={16} iconColor="#007AFF" style={styles.actionIcon} />
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.actionButton} 
@@ -178,7 +178,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({ comment, storyId }) =>
               activeOpacity={0.6}
               testID="delete-button"
             >
-              <Ionicons name="trash" size={16} color="#e74c3c" />
+              <IconButton icon="delete" size={16} iconColor="#e74c3c" style={styles.actionIcon} />
             </TouchableOpacity>
           </View>
         )}
@@ -190,7 +190,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({ comment, storyId }) =>
       
       {comment.isHelpful && (
         <View style={styles.helpfulBadge}>
-          <Ionicons name="checkmark-circle" size={14} color="#4CAF50" />
+          <IconButton icon="check-circle" size={14} iconColor="#4CAF50" style={styles.helpfulIcon} />
           <Text style={styles.helpfulText}>役に立った</Text>
         </View>
       )}
@@ -326,5 +326,14 @@ const styles = StyleSheet.create({
     color: '#4CAF50',
     fontWeight: '500',
     marginLeft: 4,
+  },
+  actionIcon: {
+    margin: 0,
+  },
+  editIcon: {
+    margin: 0,
+  },
+  helpfulIcon: {
+    margin: 0,
   },
 }); 
