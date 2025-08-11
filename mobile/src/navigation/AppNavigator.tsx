@@ -10,6 +10,7 @@ import MyStoriesScreen from '../screens/MyStoriesScreen';
 import FriendsScreen from '../screens/FriendsScreen';
 import FriendRequestsScreen from '../screens/FriendRequestsScreen';
 import FriendSearchScreen from '../screens/FriendSearchScreen';
+import BlockedUsersScreen from '../screens/BlockedUsersScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -54,6 +55,10 @@ const AppNavigator: React.FC = () => {
         <Stack.Screen
           name="FriendSearch"
           component={FriendSearchScreen}
+        />
+        <Stack.Screen
+          name="BlockedUsers"
+          component={BlockedUsersScreen}
         />
       </Stack.Navigator>
     </NavigationContainer>

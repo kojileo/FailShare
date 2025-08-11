@@ -33,7 +33,9 @@ const FriendsScreen: React.FC = () => {
     loadFriends, 
     loadFriendRequests,
     removeFriend,
-    blockUser
+    blockUser,
+    subscribeToFriends,
+    subscribeToFriendRequests
   } = useFriendStore();
   
   const [refreshing, setRefreshing] = useState(false);
@@ -42,6 +44,16 @@ const FriendsScreen: React.FC = () => {
     if (user) {
       loadFriends(user.id);
       loadFriendRequests(user.id);
+      
+      // リアルタイム更新の購読
+      const unsubscribeFriends = subscribeToFriends(user.id);
+      const unsubscribeRequests = subscribeToFriendRequests(user.id);
+      
+      // クリーンアップ関数
+      return () => {
+        unsubscribeFriends();
+        unsubscribeRequests();
+      };
     }
   }, [user]);
 
@@ -176,6 +188,12 @@ const FriendsScreen: React.FC = () => {
             onPress={() => navigation.navigate('FriendSearch')}
           >
             <MaterialIcons name="search" size={24} color="#007AFF" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.headerButton}
+            onPress={() => navigation.navigate('BlockedUsers')}
+          >
+            <MaterialIcons name="block" size={24} color="#007AFF" />
           </TouchableOpacity>
         </View>
       </View>

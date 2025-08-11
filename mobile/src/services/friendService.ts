@@ -384,39 +384,6 @@ export class FriendServiceImpl implements FriendService {
 
   async getFriendRecommendations(userId: string, limitCount: number = 10): Promise<FriendRecommendation[]> {
     try {
-      // 一時的にダミーデータを返す（権限問題の回避）
-      console.log('フレンド推薦機能: ダミーデータを返します（権限問題の回避）');
-      
-      const dummyRecommendations: FriendRecommendation[] = [
-        {
-          userId: 'dummy_user_1',
-          displayName: 'サンプルユーザー1',
-          avatar: '',
-          commonInterests: ['プログラミング', '読書'],
-          mutualFriends: 2,
-          score: 85
-        },
-        {
-          userId: 'dummy_user_2',
-          displayName: 'サンプルユーザー2',
-          avatar: '',
-          commonInterests: ['デザイン', 'アート'],
-          mutualFriends: 1,
-          score: 72
-        },
-        {
-          userId: 'dummy_user_3',
-          displayName: 'サンプルユーザー3',
-          avatar: '',
-          commonInterests: ['音楽', '映画'],
-          mutualFriends: 0,
-          score: 65
-        }
-      ];
-      
-      return dummyRecommendations.slice(0, limitCount);
-      
-      /* 本来の実装（権限問題が解決されたら有効化）
       // 現在のフレンドを取得
       const currentFriends = await this.getFriends(userId);
       const currentFriendIds = currentFriends.map(friend => friend.id);
@@ -439,7 +406,7 @@ export class FriendServiceImpl implements FriendService {
         .map(doc => ({
           id: doc.id,
           ...doc.data()
-        }))
+        } as any))
         .filter(user => !excludeIds.includes(user.id))
         .filter(user => user.displayName && user.displayName !== '匿名ユーザー'); // 有効なユーザーのみ
       
@@ -462,7 +429,6 @@ export class FriendServiceImpl implements FriendService {
       return recommendations
         .sort((a, b) => b.score - a.score)
         .slice(0, limitCount);
-      */
     } catch (error) {
       console.error('フレンド推薦取得エラー:', error);
       // エラーが発生した場合は空配列を返す

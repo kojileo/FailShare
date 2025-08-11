@@ -296,6 +296,8 @@ export interface FriendStore {
   
   setLoading(loading: boolean): void;
   setError(error: string | null): void;
+  subscribeToFriends(userId: string): () => void;
+  subscribeToFriendRequests(userId: string): () => void;
   reset(): void;
 }
 
@@ -335,6 +337,7 @@ export type RootStackParamList = {
   Friends: undefined;
   FriendRequests: undefined;
   FriendSearch: undefined;
+  BlockedUsers: undefined;
   Communities: undefined;
   CommunityDetail: { communityId: string };
   CreateCommunity: undefined;

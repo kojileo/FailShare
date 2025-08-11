@@ -261,6 +261,20 @@ export const useFriendStore = create<FriendStore>((set, get) => ({
 
   setLoading: (loading: boolean) => set({ isLoading: loading }),
   setError: (error: string | null) => set({ error }),
+  
+  // リアルタイム更新の購読
+  subscribeToFriends: (userId: string) => {
+    return friendService.subscribeToFriends(userId, (friends) => {
+      set({ friends });
+    });
+  },
+  
+  subscribeToFriendRequests: (userId: string) => {
+    return friendService.subscribeToFriendRequests(userId, (requests) => {
+      set({ friendRequests: requests });
+    });
+  },
+  
   reset: () => set({ 
     friends: [], 
     friendRequests: [], 
