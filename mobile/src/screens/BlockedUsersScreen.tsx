@@ -90,12 +90,13 @@ const BlockedUsersScreen: React.FC = () => {
           </Text>
         </View>
       </View>
-      <TouchableOpacity
-        style={styles.unblockButton}
-        onPress={() => handleUnblockUser(item)}
-      >
-        <MaterialIcons name="block" size={20} color="#fff" />
-      </TouchableOpacity>
+                   <TouchableOpacity
+               style={styles.unblockButton}
+               onPress={() => handleUnblockUser(item)}
+               testID="unblock-user-button"
+             >
+               <MaterialIcons name="block" size={20} color="#fff" />
+             </TouchableOpacity>
     </View>
   );
 
@@ -128,7 +129,7 @@ const BlockedUsersScreen: React.FC = () => {
         style={styles.modernHeader}
       >
         <View style={styles.headerContent}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerBackButton}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerBackButton} testID="back-button">
             <IconButton icon="arrow-left" size={24} iconColor="#FFFFFF" />
           </TouchableOpacity>
           <View style={styles.headerCenter}>
@@ -149,20 +150,21 @@ const BlockedUsersScreen: React.FC = () => {
         </View>
       </LinearGradient>
 
-      <FlatList
-        data={blockedUsers || []}
-        renderItem={renderBlockedUserItem}
-        keyExtractor={(item) => item.id}
-        ListEmptyComponent={renderEmptyState}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            colors={['#007AFF']}
-          />
-        }
-        contentContainerStyle={styles.listContainer}
-      />
+                   <FlatList
+               data={blockedUsers || []}
+               renderItem={renderBlockedUserItem}
+               keyExtractor={(item) => item.id}
+               ListEmptyComponent={renderEmptyState}
+               refreshControl={
+                 <RefreshControl
+                   refreshing={refreshing}
+                   onRefresh={handleRefresh}
+                   colors={['#007AFF']}
+                 />
+               }
+               contentContainerStyle={styles.listContainer}
+               testID="blocked-users-flatlist"
+             />
       {error && (
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{error}</Text>

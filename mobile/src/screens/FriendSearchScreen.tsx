@@ -125,6 +125,7 @@ const FriendSearchScreen: React.FC = () => {
       <TouchableOpacity
         style={styles.addButton}
         onPress={() => handleSendFriendRequest(item)}
+        testID="send-request-button"
       >
         <MaterialIcons name="person-add" size={20} color="#fff" />
       </TouchableOpacity>
@@ -202,7 +203,7 @@ const FriendSearchScreen: React.FC = () => {
         style={styles.modernHeader}
       >
         <View style={styles.headerContent}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerBackButton}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerBackButton} testID="back-button">
             <IconButton icon="arrow-left" size={24} iconColor="#FFFFFF" />
           </TouchableOpacity>
           <View style={styles.headerCenter}>
@@ -233,6 +234,7 @@ const FriendSearchScreen: React.FC = () => {
           onChangeText={setSearchQuery}
           autoCapitalize="none"
           autoCorrect={false}
+          testID="search-input"
         />
         {searchQuery.length > 0 && (
           <TouchableOpacity
@@ -257,6 +259,7 @@ const FriendSearchScreen: React.FC = () => {
           />
         }
         contentContainerStyle={styles.listContainer}
+        testID="recommendations-flatlist"
       />
       {error && (
         <View style={styles.errorContainer}>
@@ -270,6 +273,7 @@ const FriendSearchScreen: React.FC = () => {
         transparent={true}
         animationType="fade"
         onRequestClose={handleCancelSendRequest}
+        testID="request-modal"
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -287,6 +291,7 @@ const FriendSearchScreen: React.FC = () => {
               multiline
               numberOfLines={3}
               textAlignVertical="top"
+              testID="request-message-input"
             />
             <View style={styles.modalButtons}>
               <TouchableOpacity

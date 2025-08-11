@@ -113,12 +113,14 @@ const FriendRequestsScreen: React.FC = () => {
         <TouchableOpacity
           style={[styles.actionButton, styles.acceptButton]}
           onPress={() => handleAcceptRequest(item)}
+          testID="accept-request-button"
         >
           <MaterialIcons name="check" size={20} color="#fff" />
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.actionButton, styles.rejectButton]}
           onPress={() => handleRejectRequest(item)}
+          testID="reject-request-button"
         >
           <MaterialIcons name="close" size={20} color="#fff" />
         </TouchableOpacity>
@@ -231,7 +233,7 @@ const FriendRequestsScreen: React.FC = () => {
         style={styles.modernHeader}
       >
         <View style={styles.headerContent}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerBackButton}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerBackButton} testID="back-button">
             <IconButton icon="arrow-left" size={24} iconColor="#FFFFFF" />
           </TouchableOpacity>
           <View style={styles.headerCenter}>
@@ -288,6 +290,7 @@ const FriendRequestsScreen: React.FC = () => {
           />
         }
         contentContainerStyle={styles.listContainer}
+        testID="requests-flatlist"
       />
       {error && (
         <View style={styles.errorContainer}>

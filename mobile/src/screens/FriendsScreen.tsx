@@ -138,12 +138,14 @@ const FriendsScreen: React.FC = () => {
         <TouchableOpacity
           style={styles.actionButton}
           onPress={() => handleRemoveFriend(item)}
+          testID="remove-friend-button"
         >
           <MaterialIcons name="person-remove" size={20} color="#666" />
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.actionButton}
           onPress={() => handleBlockUser(item)}
+          testID="block-friend-button"
         >
           <MaterialIcons name="block" size={20} color="#666" />
         </TouchableOpacity>
@@ -192,6 +194,7 @@ const FriendsScreen: React.FC = () => {
           <TouchableOpacity
             style={styles.headerButton}
             onPress={() => navigation.navigate('BlockedUsers')}
+            testID="blocked-users-button"
           >
             <MaterialIcons name="block" size={24} color="#007AFF" />
           </TouchableOpacity>
@@ -249,6 +252,7 @@ const FriendsScreen: React.FC = () => {
           <TouchableOpacity
             style={styles.actionButton}
             onPress={() => navigation.navigate('FriendRequests')}
+            testID="friend-requests-button"
           >
             <MaterialIcons name="person-add" size={24} color="#007AFF" />
             {friendRequests && friendRequests.length > 0 && (
@@ -260,6 +264,7 @@ const FriendsScreen: React.FC = () => {
           <TouchableOpacity
             style={styles.actionButton}
             onPress={() => navigation.navigate('FriendSearch')}
+            testID="search-button"
           >
             <MaterialIcons name="search" size={24} color="#007AFF" />
           </TouchableOpacity>
@@ -279,6 +284,7 @@ const FriendsScreen: React.FC = () => {
           />
         }
         contentContainerStyle={styles.listContainer}
+        testID="friends-flatlist"
       />
       {error && (
         <View style={styles.errorContainer}>
