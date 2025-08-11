@@ -69,7 +69,7 @@ export const CommentInput: React.FC<CommentInputProps> = ({ storyId, onCommentAd
 
   const handleKeyPress = (e: any) => {
     // Enterキーで投稿（Shift+Enterは改行）
-    if (e.nativeEvent.key === 'Enter' && !e.nativeEvent.shiftKey) {
+    if (e.nativeEvent?.key === 'Enter' && !e.nativeEvent?.shiftKey) {
       e.preventDefault();
       handleSubmit();
     }

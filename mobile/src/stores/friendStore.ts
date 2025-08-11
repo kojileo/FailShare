@@ -1,8 +1,6 @@
 import { create } from 'zustand';
 import { 
-  User, 
   FriendRequest, 
-  FriendRecommendation, 
   FriendStore 
 } from '../types';
 import { friendService } from '../services/friendService';

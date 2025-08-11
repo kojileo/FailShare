@@ -29,7 +29,6 @@ const FriendsScreen: React.FC = () => {
     friends, 
     friendRequests, 
     isLoading, 
-    error,
     loadFriends, 
     loadFriendRequests,
     removeFriend,
@@ -55,7 +54,7 @@ const FriendsScreen: React.FC = () => {
         unsubscribeRequests();
       };
     }
-  }, [user]);
+  }, [user, loadFriends, loadFriendRequests, subscribeToFriends, subscribeToFriendRequests]);
 
   const handleRefresh = async () => {
     if (!user) return;
@@ -86,7 +85,7 @@ const FriendsScreen: React.FC = () => {
             try {
               await removeFriend(user.id, friend.id);
               Alert.alert('削除完了', 'フレンドを削除しました');
-            } catch (error) {
+            } catch {
               Alert.alert('エラー', 'フレンドの削除に失敗しました');
             }
           }
@@ -110,7 +109,7 @@ const FriendsScreen: React.FC = () => {
             try {
               await blockUser(user.id, friend.id);
               Alert.alert('ブロック完了', 'ユーザーをブロックしました');
-            } catch (error) {
+            } catch {
               Alert.alert('エラー', 'ユーザーのブロックに失敗しました');
             }
           }
@@ -169,42 +168,7 @@ const FriendsScreen: React.FC = () => {
     </View>
   );
 
-  const renderHeader = () => (
-    <View style={styles.header}>
-      <View style={styles.headerTop}>
-        <Text style={styles.title}>フレンド</Text>
-        <View style={styles.headerActions}>
-          <TouchableOpacity
-            style={styles.headerButton}
-            onPress={() => navigation.navigate('FriendRequests')}
-          >
-            <MaterialIcons name="person-add" size={24} color="#007AFF" />
-            {friendRequests && friendRequests.length > 0 && (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{friendRequests.length}</Text>
-              </View>
-            )}
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.headerButton}
-            onPress={() => navigation.navigate('FriendSearch')}
-          >
-            <MaterialIcons name="search" size={24} color="#007AFF" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.headerButton}
-            onPress={() => navigation.navigate('BlockedUsers')}
-            testID="blocked-users-button"
-          >
-            <MaterialIcons name="block" size={24} color="#007AFF" />
-          </TouchableOpacity>
-        </View>
-      </View>
-      <Text style={styles.subtitle}>
-        {friends ? friends.length : 0}人のフレンド
-      </Text>
-    </View>
-  );
+
 
   if (isLoading && !refreshing) {
     return (
@@ -286,11 +250,7 @@ const FriendsScreen: React.FC = () => {
         contentContainerStyle={styles.listContainer}
         testID="friends-flatlist"
       />
-      {error && (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{error}</Text>
-        </View>
-      )}
+
     </SafeAreaView>
   );
 };

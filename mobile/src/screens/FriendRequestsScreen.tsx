@@ -29,7 +29,6 @@ const FriendRequestsScreen: React.FC = () => {
     friendRequests, 
     sentRequests,
     isLoading, 
-    error,
     loadFriendRequests,
     loadSentRequests,
     acceptFriendRequest,
@@ -44,7 +43,7 @@ const FriendRequestsScreen: React.FC = () => {
       loadFriendRequests(user.id);
       loadSentRequests(user.id);
     }
-  }, [user]);
+  }, [user, loadFriendRequests, loadSentRequests]);
 
   const handleRefresh = async () => {
     if (!user) return;
@@ -64,7 +63,7 @@ const FriendRequestsScreen: React.FC = () => {
     try {
       await acceptFriendRequest(request.id);
       Alert.alert('承認完了', 'フレンドリクエストを承認しました');
-    } catch (error) {
+    } catch {
       Alert.alert('エラー', 'フレンドリクエストの承認に失敗しました');
     }
   };
@@ -82,7 +81,7 @@ const FriendRequestsScreen: React.FC = () => {
             try {
               await rejectFriendRequest(request.id);
               Alert.alert('拒否完了', 'フレンドリクエストを拒否しました');
-            } catch (error) {
+            } catch {
               Alert.alert('エラー', 'フレンドリクエストの拒否に失敗しました');
             }
           }
@@ -179,38 +178,7 @@ const FriendRequestsScreen: React.FC = () => {
     </View>
   );
 
-  const renderHeader = () => (
-    <View style={styles.header}>
-      <View style={styles.headerTop}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <MaterialIcons name="arrow-back" size={24} color="#007AFF" />
-        </TouchableOpacity>
-        <Text style={styles.title}>フレンドリクエスト</Text>
-        <View style={styles.placeholder} />
-      </View>
-      <View style={styles.tabContainer}>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'received' && styles.activeTab]}
-          onPress={() => setActiveTab('received')}
-        >
-          <Text style={[styles.tabText, activeTab === 'received' && styles.activeTabText]}>
-            受信 ({friendRequests ? friendRequests.length : 0})
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'sent' && styles.activeTab]}
-          onPress={() => setActiveTab('sent')}
-        >
-          <Text style={[styles.tabText, activeTab === 'sent' && styles.activeTabText]}>
-            送信 ({sentRequests ? sentRequests.length : 0})
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
+
 
   if (isLoading && !refreshing) {
     return (
@@ -292,11 +260,7 @@ const FriendRequestsScreen: React.FC = () => {
         contentContainerStyle={styles.listContainer}
         testID="requests-flatlist"
       />
-      {error && (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{error}</Text>
-        </View>
-      )}
+
     </SafeAreaView>
   );
 };

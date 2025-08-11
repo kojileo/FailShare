@@ -40,17 +40,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
   const mainCategories = getMainCategories();
 
-  // 画面フォーカス時に自動リフレッシュ
-  useFocusEffect(
-    React.useCallback(() => {
-      loadStories();
-    }, [])
-  );
-
-  useEffect(() => {
-    filterStories();
-  }, [searchQuery, selectedMainCategory, selectedSubCategory, stories]);
-
   const loadStories = async (showLoading = true) => {
     try {
       // 認証状態をチェックし、必要に応じて匿名認証を実行
@@ -108,6 +97,17 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
     setFilteredStories(filtered);
   };
+
+  // 画面フォーカス時に自動リフレッシュ
+  useFocusEffect(
+    React.useCallback(() => {
+      loadStories();
+    }, [loadStories])
+  );
+
+  useEffect(() => {
+    filterStories();
+  }, [searchQuery, selectedMainCategory, selectedSubCategory, stories, filterStories]);
 
   const handleMainCategorySelect = (category: MainCategory | null) => {
     setSelectedMainCategory(category);

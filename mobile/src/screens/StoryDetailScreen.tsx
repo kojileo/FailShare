@@ -36,10 +36,6 @@ const StoryDetailScreen: React.FC<StoryDetailScreenProps> = ({ route, navigation
   const [showComments, setShowComments] = useState(false);
   const [commentCount, setCommentCount] = useState(0);
 
-  useEffect(() => {
-    loadStory();
-  }, [storyId]);
-
   const loadStory = async () => {
     try {
       setIsLoading(true);
@@ -58,6 +54,10 @@ const StoryDetailScreen: React.FC<StoryDetailScreenProps> = ({ route, navigation
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadStory();
+  }, [storyId, loadStory]);
 
   const getTimeAgo = (date: Date | any): string => {
     try {

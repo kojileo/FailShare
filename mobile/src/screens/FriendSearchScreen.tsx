@@ -30,7 +30,6 @@ const FriendSearchScreen: React.FC = () => {
   const { 
     recommendations, 
     isLoading, 
-    error,
     loadRecommendations,
     sendFriendRequest
   } = useFriendStore();
@@ -46,7 +45,7 @@ const FriendSearchScreen: React.FC = () => {
     if (user) {
       loadRecommendations(user.id);
     }
-  }, [user]);
+  }, [user, loadRecommendations]);
 
   useEffect(() => {
     // 検索クエリに基づいて推薦リストをフィルタリング
@@ -91,7 +90,7 @@ const FriendSearchScreen: React.FC = () => {
       setModalVisible(false);
       setSelectedRecommendation(null);
       setRequestMessage('');
-    } catch (error) {
+    } catch {
       Alert.alert('エラー', 'フレンドリクエストの送信に失敗しました');
     }
   };
@@ -147,42 +146,7 @@ const FriendSearchScreen: React.FC = () => {
     </View>
   );
 
-  const renderHeader = () => (
-    <View style={styles.header}>
-      <View style={styles.headerTop}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <MaterialIcons name="arrow-back" size={24} color="#007AFF" />
-        </TouchableOpacity>
-        <Text style={styles.title}>フレンドを探す</Text>
-        <View style={styles.placeholder} />
-      </View>
-      <View style={styles.searchContainer}>
-        <MaterialIcons name="search" size={20} color="#666" style={styles.searchIcon} />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="名前や興味で検索..."
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
-        {searchQuery.length > 0 && (
-          <TouchableOpacity
-            style={styles.clearButton}
-            onPress={() => setSearchQuery('')}
-          >
-            <MaterialIcons name="clear" size={20} color="#666" />
-          </TouchableOpacity>
-        )}
-      </View>
-      <Text style={styles.subtitle}>
-        {filteredRecommendations.length}人のユーザーを推薦
-      </Text>
-    </View>
-  );
+
 
   if (isLoading && !refreshing) {
     return (
@@ -261,11 +225,7 @@ const FriendSearchScreen: React.FC = () => {
         contentContainerStyle={styles.listContainer}
         testID="recommendations-flatlist"
       />
-      {error && (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{error}</Text>
-        </View>
-      )}
+
 
       {/* フレンドリクエスト送信モーダル */}
       <Modal

@@ -33,13 +33,6 @@ export const LikeButton: React.FC<LikeButtonProps> = ({
     setIsLiked(initialIsLiked);
   }, [storyId, initialHelpfulCount, initialIsLiked]);
 
-  // ユーザーが認証されている場合、現在のいいね状態を取得
-  useEffect(() => {
-    if (user?.id) {
-      loadCurrentLikeState();
-    }
-  }, [user?.id, storyId]);
-
   const loadCurrentLikeState = async () => {
     try {
       console.log(`🔄 いいね状態を取得中 [${storyId}]:`, { userId: user!.id });
@@ -51,6 +44,13 @@ export const LikeButton: React.FC<LikeButtonProps> = ({
       setIsLiked(initialIsLiked);
     }
   };
+
+  // ユーザーが認証されている場合、現在のいいね状態を取得
+  useEffect(() => {
+    if (user?.id) {
+      loadCurrentLikeState();
+    }
+  }, [user?.id, storyId, loadCurrentLikeState]);
 
   const handleToggleLike = async () => {
     if (isLoading) return;

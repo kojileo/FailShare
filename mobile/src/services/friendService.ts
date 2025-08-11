@@ -3,21 +3,17 @@ import {
   doc, 
   addDoc, 
   updateDoc, 
-  deleteDoc, 
   getDocs, 
   getDoc, 
   query, 
   where, 
-  orderBy, 
   limit, 
   onSnapshot,
   writeBatch,
-  serverTimestamp,
-  Timestamp
+  serverTimestamp
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { 
-  Friendship, 
   FriendRequest, 
   FriendRecommendation, 
   User, 
@@ -406,7 +402,7 @@ export class FriendServiceImpl implements FriendService {
         .map(doc => ({
           id: doc.id,
           ...doc.data()
-        } as any))
+        } as User))
         .filter(user => !excludeIds.includes(user.id))
         .filter(user => user.displayName && user.displayName !== '匿名ユーザー'); // 有効なユーザーのみ
       

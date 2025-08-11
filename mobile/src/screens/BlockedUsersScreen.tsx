@@ -28,7 +28,6 @@ const BlockedUsersScreen: React.FC = () => {
   const { 
     blockedUsers, 
     isLoading, 
-    error,
     loadBlockedUsers,
     unblockUser
   } = useFriendStore();
@@ -39,7 +38,7 @@ const BlockedUsersScreen: React.FC = () => {
     if (user) {
       loadBlockedUsers(user.id);
     }
-  }, [user]);
+  }, [user, loadBlockedUsers]);
 
   const handleRefresh = async () => {
     if (!user) return;
@@ -66,7 +65,7 @@ const BlockedUsersScreen: React.FC = () => {
             try {
               await unblockUser(user.id, blockedUser.id);
               Alert.alert('解除完了', 'ブロックを解除しました');
-            } catch (error) {
+            } catch {
               Alert.alert('エラー', 'ブロック解除に失敗しました');
             }
           }
@@ -165,11 +164,6 @@ const BlockedUsersScreen: React.FC = () => {
                contentContainerStyle={styles.listContainer}
                testID="blocked-users-flatlist"
              />
-      {error && (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{error}</Text>
-        </View>
-      )}
     </SafeAreaView>
   );
 };
