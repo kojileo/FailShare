@@ -26,6 +26,11 @@ export class FriendServiceImpl implements FriendService {
   // フレンド関係管理
   async sendFriendRequest(fromUserId: string, toUserId: string, message?: string): Promise<void> {
     try {
+      // 自分自身へのリクエストを防ぐ
+      if (fromUserId === toUserId) {
+        throw new Error('自分自身にフレンドリクエストを送信できません');
+      }
+
       // 既存のリクエストをチェック
       const existingRequest = await this.hasPendingRequest(fromUserId, toUserId);
       if (existingRequest) {
@@ -36,11 +41,6 @@ export class FriendServiceImpl implements FriendService {
       const areFriends = await this.areFriends(fromUserId, toUserId);
       if (areFriends) {
         throw new Error('既にフレンドです');
-      }
-
-      // 自分自身へのリクエストを防ぐ
-      if (fromUserId === toUserId) {
-        throw new Error('自分自身にフレンドリクエストを送信できません');
       }
 
       // フレンドリクエストを作成
