@@ -153,7 +153,7 @@ const FriendRequestsScreen: React.FC = () => {
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
       <MaterialIcons 
-        name={activeTab === 'received' ? 'person-add-outline' : 'send-outline'} 
+        name={activeTab === 'received' ? 'person-add' : 'send'} 
         size={64} 
         color="#ccc" 
       />
