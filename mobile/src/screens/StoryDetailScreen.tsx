@@ -15,6 +15,7 @@ import type { RootStackParamList } from '../types';
 import { FailureStory } from '../types';
 import { storyService } from '../services/storyService';
 import { useAuthStore } from '../stores/authStore';
+import { useStoryStore } from '../stores/storyStore';
 import { 
   getCategoryHierarchyColor,
   getCategoryHierarchyIcon
@@ -32,6 +33,7 @@ interface StoryDetailScreenProps {
 const StoryDetailScreen: React.FC<StoryDetailScreenProps> = ({ route, navigation }) => {
   const { storyId } = route.params;
   const { user: _user } = useAuthStore();
+  const { stories, setStories } = useStoryStore();
   const [story, setStory] = useState<FailureStory | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showComments, setShowComments] = useState(false);
@@ -40,6 +42,18 @@ const StoryDetailScreen: React.FC<StoryDetailScreenProps> = ({ route, navigation
   const loadStory = useCallback(async () => {
     try {
       setIsLoading(true);
+      
+      // まずグローバルストアから最新のストーリー情報を取得
+      const globalStory = stories.find(s => s.id === storyId);
+      
+      if (globalStory) {
+        // グローバルストアに存在する場合はそれを使用
+        setStory(globalStory);
+        setIsLoading(false);
+        return;
+      }
+      
+      // グローバルストアにない場合はAPIから取得
       const foundStory = await storyService.getStoryById(storyId);
       if (foundStory) {
         setStory(foundStory);
@@ -53,7 +67,7 @@ const StoryDetailScreen: React.FC<StoryDetailScreenProps> = ({ route, navigation
     } finally {
       setIsLoading(false);
     }
-  }, [storyId, navigation]);
+  }, [storyId, navigation, stories]);
 
   useEffect(() => {
     loadStory();
@@ -267,11 +281,20 @@ const StoryDetailScreen: React.FC<StoryDetailScreenProps> = ({ route, navigation
             showCount={true}
             onLikeChange={(isLiked, newCount) => {
               console.log(`📱 StoryDetailScreen: 参考になったボタン [${story.id}]:`, { isLiked, newCount });
-              // ストーリーのいいね数を更新
+              
+              // ローカルストーリー状態を更新
               setStory(prev => prev ? {
                 ...prev,
                 metadata: { ...prev.metadata, helpfulCount: newCount }
               } : null);
+              
+              // グローバルストアも更新（HomeScreenとの同期のため）
+              const updatedStories = stories.map(s => 
+                s.id === story.id 
+                  ? { ...s, metadata: { ...s.metadata, helpfulCount: newCount } }
+                  : s
+              );
+              setStories(updatedStories);
             }}
           />
         </View>
