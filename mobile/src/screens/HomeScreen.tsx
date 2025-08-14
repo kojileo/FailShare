@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, TouchableOpacity, StyleSheet, StatusBar } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, StatusBar, ScrollView } from 'react-native';
 import { 
   Text, 
   Avatar, 
@@ -252,7 +252,11 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       )}
 
       {/* ストーリーリスト */}
-      <View style={styles.storyListContainer}>
+      <ScrollView 
+        style={styles.storyListContainer}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.storyListContent}
+      >
         {displayStories.length === 0 && !isLoading ? (
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyIcon}>
@@ -373,7 +377,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             </TouchableOpacity>
           ))
         )}
-      </View>
+      </ScrollView>
 
       <View style={styles.bottomSpace} />
     </SafeAreaView>
@@ -639,7 +643,11 @@ const styles = StyleSheet.create({
     marginLeft: -6,
   },
   storyListContainer: {
+    flex: 1,
+  },
+  storyListContent: {
     paddingTop: 16,
+    paddingBottom: 40,
   },
   bottomSpace: {
     height: 40,
