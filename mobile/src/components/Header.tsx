@@ -10,13 +10,15 @@ interface HeaderProps {
   showBackButton?: boolean;
   onBackPress?: () => void;
   rightComponent?: React.ReactNode;
+  title?: string;
 }
 
 const Header: React.FC<HeaderProps> = ({
   navigation,
   showBackButton = true,
   onBackPress,
-  rightComponent
+  rightComponent,
+  title
 }) => {
   const handleBackPress = () => {
     if (onBackPress) {
@@ -40,7 +42,7 @@ const Header: React.FC<HeaderProps> = ({
           <View style={styles.backButton} />
         )}
         
-        <Text style={styles.headerTitle}>FailShare</Text>
+        <Text style={styles.headerTitle}>{title || 'FailShare'}</Text>
         
         {rightComponent ? (
           rightComponent

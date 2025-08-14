@@ -20,19 +20,30 @@ import Header from '../components/Header';
 
 interface CreateStoryScreenProps {
   navigation: NativeStackNavigationProp<RootStackParamList, 'CreateStory'>;
+  route?: {
+    params?: {
+      editMode?: boolean;
+      storyData?: FailureStory;
+    };
+  };
 }
 
-const CreateStoryScreen: React.FC<CreateStoryScreenProps> = ({ navigation }) => {
+const CreateStoryScreen: React.FC<CreateStoryScreenProps> = ({ navigation, route }) => {
   const { user } = useAuthStore();
-  const { addStory } = useStoryStore();
+  const { addStory, updateStory } = useStoryStore();
+  
+  // 編集モードの判定
+  const isEditMode = route?.params?.editMode || false;
+  const storyToEdit = route?.params?.storyData;
+  
   const [formData, setFormData] = useState({
-    title: '',
-    category: { main: '' as MainCategory, sub: '' as SubCategory } as CategoryHierarchy,
-    situation: '',
-    action: '',
-    result: '',
-    learning: '',
-    emotion: '' as EmotionType
+    title: storyToEdit?.content.title || '',
+    category: storyToEdit?.content.category || { main: '' as MainCategory, sub: '' as SubCategory } as CategoryHierarchy,
+    situation: storyToEdit?.content.situation || '',
+    action: storyToEdit?.content.action || '',
+    result: storyToEdit?.content.result || '',
+    learning: storyToEdit?.content.learning || '',
+    emotion: storyToEdit?.content.emotion || '' as EmotionType
   });
 
   const [loading, setLoading] = useState(false);
@@ -67,7 +78,7 @@ const CreateStoryScreen: React.FC<CreateStoryScreenProps> = ({ navigation }) => 
   };
 
   const handleSubmit = async () => {
-    console.log('🚀 投稿処理開始');
+    console.log(`🚀 ${isEditMode ? '編集' : '投稿'}処理開始`);
     
     if (!validateForm()) {
       console.log('❌ バリデーション失敗');
@@ -80,7 +91,7 @@ const CreateStoryScreen: React.FC<CreateStoryScreenProps> = ({ navigation }) => 
       return;
     }
 
-    console.log('✅ バリデーション成功、投稿処理中...');
+    console.log('✅ バリデーション成功、処理中...');
     setLoading(true);
     
     try {
@@ -94,98 +105,82 @@ const CreateStoryScreen: React.FC<CreateStoryScreenProps> = ({ navigation }) => 
         emotion: formData.emotion
       };
 
-      console.log('📝 投稿データ:', storyData);
-      const storyId = await storyService.createStory(user.id, storyData);
-      console.log('✅ Firestore投稿成功 ID:', storyId);
-      
-      const newStory: FailureStory = {
-        id: storyId,
-        authorId: user.id,
-        content: {
-          title: formData.title,
-          category: formData.category,
-          situation: formData.situation,
-          action: formData.action,
-          result: formData.result,
-          learning: formData.learning,
-          emotion: formData.emotion
-        },
-        metadata: {
-          createdAt: new Date(),
-          viewCount: 0,
-          helpfulCount: 0,
-          commentCount: 0,
-          tags: [formData.category.main, formData.category.sub, formData.emotion]
-        }
-      };
-      
-      // グローバルstateに追加
-      console.log('📊 グローバルstateに追加中...');
-      addStory(newStory);
-      console.log('✅ グローバルstate追加完了');
-      
-      // フォームをリセット
-      setFormData({
-        title: '',
-        category: { main: '' as MainCategory, sub: '' as SubCategory } as CategoryHierarchy,
-        situation: '',
-        action: '',
-        result: '',
-        learning: '',
-        emotion: '' as EmotionType
-      });
-      setCurrentStep(1);
-      console.log('🔄 フォームリセット完了');
-      
-      // ホーム画面に遷移
-      console.log('📱 ホーム画面への遷移実行中...');
-      navigation.navigate('Home');
-      console.log('✅ ホーム画面への遷移実行完了');
-      
-      // 成功フィードバック（画面遷移後）
-      console.log('🎉 成功アラート表示中...');
-      setTimeout(() => {
-        Alert.alert(
-          '🎉 投稿完了！', 
-          'あなたの失敗談を投稿しました。\nホーム画面で確認できます。'
-        );
-      }, 500);
-      
-      // 元のAlert実装（コメントアウト）
-      /*
-      Alert.alert(
-        '🎉 投稿完了！', 
-        'あなたの失敗談を投稿しました。\nホーム画面で確認できます。', 
-        [
-          { 
-            text: 'ホームに戻る', 
-            onPress: () => {
-              console.log('🏠 ホーム画面へ遷移中...');
-              
-              // フォームをリセット
-              setFormData({
-                title: '',
-                category: { main: '' as MainCategory, sub: '' as SubCategory } as CategoryHierarchy,
-                situation: '',
-                action: '',
-                result: '',
-                learning: '',
-                emotion: '' as EmotionType
-              });
-              setCurrentStep(1);
-              
-              console.log('🔄 フォームリセット完了');
-              console.log('📱 navigation.navigate("Home") 実行中...');
-              
-              // 画面遷移
-              navigation.navigate('Home');
-              
-              console.log('✅ navigation.navigate("Home") 実行完了');
-            }
+      if (isEditMode && storyToEdit) {
+        // 編集モード
+        console.log('📝 編集データ:', storyData);
+        await storyService.updateStory(storyToEdit.id, user.id, storyData);
+        console.log('✅ Firestore編集成功');
+        
+        // グローバルstateを更新
+        console.log('📊 グローバルstate更新中...');
+        updateStory(storyToEdit.id, {
+          ...storyToEdit,
+          content: storyData
+        });
+        console.log('✅ グローバルstate更新完了');
+        
+        // マイストーリー画面に遷移
+        console.log('📱 マイストーリー画面への遷移実行中...');
+        navigation.navigate('MyStories');
+        console.log('✅ マイストーリー画面への遷移実行完了');
+        
+        // 成功フィードバック
+        setTimeout(() => {
+          Alert.alert(
+            '✅ 編集完了！', 
+            '失敗談を更新しました。'
+          );
+        }, 500);
+      } else {
+        // 新規投稿モード
+        console.log('📝 投稿データ:', storyData);
+        const storyId = await storyService.createStory(user.id, storyData);
+        console.log('✅ Firestore投稿成功 ID:', storyId);
+        
+        const newStory: FailureStory = {
+          id: storyId,
+          authorId: user.id,
+          content: storyData,
+          metadata: {
+            createdAt: new Date(),
+            viewCount: 0,
+            helpfulCount: 0,
+            commentCount: 0,
+            tags: [formData.category.main, formData.category.sub, formData.emotion]
           }
-        ]
-      );
-      */
+        };
+        
+        // グローバルstateに追加
+        console.log('📊 グローバルstateに追加中...');
+        addStory(newStory);
+        console.log('✅ グローバルstate追加完了');
+        
+        // フォームをリセット
+        setFormData({
+          title: '',
+          category: { main: '' as MainCategory, sub: '' as SubCategory } as CategoryHierarchy,
+          situation: '',
+          action: '',
+          result: '',
+          learning: '',
+          emotion: '' as EmotionType
+        });
+        setCurrentStep(1);
+        console.log('🔄 フォームリセット完了');
+        
+        // ホーム画面に遷移
+        console.log('📱 ホーム画面への遷移実行中...');
+        navigation.navigate('Home');
+        console.log('✅ ホーム画面への遷移実行完了');
+        
+        // 成功フィードバック
+        setTimeout(() => {
+          Alert.alert(
+            '🎉 投稿完了！', 
+            'あなたの失敗談を投稿しました。\nホーム画面で確認できます。'
+          );
+        }, 500);
+      }
     } catch (error) {
       console.error('❌ 投稿エラー:', error);
       Alert.alert('❌ 投稿失敗', '投稿に失敗しました。\nもう一度お試しください。');
@@ -518,7 +513,10 @@ const CreateStoryScreen: React.FC<CreateStoryScreenProps> = ({ navigation }) => 
       <StatusBar barStyle="light-content" backgroundColor="#1DA1F2" />
       
       {/* モダンヘッダー */}
-      <Header navigation={navigation} />
+      <Header 
+        navigation={navigation} 
+        title={isEditMode ? '失敗談を編集' : '失敗談を投稿'}
+      />
 
       {/* ステップインジケーター */}
       {renderStepIndicator()}
@@ -562,7 +560,7 @@ const CreateStoryScreen: React.FC<CreateStoryScreenProps> = ({ navigation }) => 
             style={[styles.submitButton, (!isStepValid() || loading) && styles.disabledButton]}
             labelStyle={styles.submitButtonText}
           >
-            {loading ? '投稿中...' : '投稿する'}
+            {loading ? (isEditMode ? '更新中...' : '投稿中...') : (isEditMode ? '更新する' : '投稿する')}
           </Button>
         )}
       </View>

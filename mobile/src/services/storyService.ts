@@ -421,6 +421,44 @@ class StoryService {
   }
 
   /**
+   * 投稿を更新
+   */
+  async updateStory(storyId: string, userId: string, storyData: CreateStoryData): Promise<void> {
+    try {
+      // 投稿の存在確認と所有者確認
+      const docRef = doc(db, this.COLLECTION_NAME, storyId);
+      const docSnap = await getDoc(docRef);
+
+      if (!docSnap.exists()) {
+        throw new Error('投稿が見つかりません');
+      }
+
+      const data = docSnap.data();
+      if (data.authorId !== userId) {
+        throw new Error('この投稿を編集する権限がありません');
+      }
+
+      // クライアントサイドでの事前検証
+      this.validateStoryData(storyData);
+
+      // 投稿を更新
+      await updateDoc(docRef, {
+        content: storyData,
+        metadata: {
+          ...data.metadata,
+          updatedAt: Timestamp.now(),
+          tags: [storyData.category.main, storyData.category.sub, storyData.emotion]
+        }
+      });
+
+      console.log('投稿更新成功:', storyId);
+    } catch (error) {
+      console.error('投稿更新エラー:', error);
+      throw error;
+    }
+  }
+
+  /**
    * 投稿を削除
    */
   async deleteStory(storyId: string, userId: string): Promise<void> {
