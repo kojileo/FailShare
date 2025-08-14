@@ -14,7 +14,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MaterialIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Avatar } from 'react-native-paper';
+
 import { useAuthStore } from '../stores/authStore';
 import { useFriendStore } from '../stores/friendStore';
 import { User, RootStackParamList } from '../types';
@@ -123,16 +123,7 @@ const BlockedUsersScreen: React.FC = () => {
       <StatusBar barStyle="light-content" backgroundColor="#1DA1F2" />
       
       {/* モダンヘッダー */}
-      <Header
-        navigation={navigation}
-        rightComponent={user ? (
-          <Avatar.Image 
-            size={32} 
-            source={{ uri: `https://robohash.org/${user.displayName}?set=set4` }}
-            style={styles.headerAvatar}
-          />
-        ) : undefined}
-      />
+      <Header navigation={navigation} />
 
                    <FlatList
                data={blockedUsers || []}
@@ -158,41 +149,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8FAFC',
   },
-  modernHeader: {
-    paddingTop: 10,
-    paddingBottom: 16,
-    paddingHorizontal: 16,
-  },
-  headerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  headerBackButton: {
-    width: 40,
-  },
-  headerCenter: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-  },
-  headerSubtitle: {
-    fontSize: 12,
-    color: '#FFFFFF',
-    opacity: 0.9,
-  },
-  headerRight: {
-    width: 40,
-    alignItems: 'center',
-  },
-  headerAvatar: {
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-  },
+
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',

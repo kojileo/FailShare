@@ -6,7 +6,6 @@ import {
   Button, 
   HelperText,
   Chip,
-  Avatar,
   Surface
 } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -519,16 +518,7 @@ const CreateStoryScreen: React.FC<CreateStoryScreenProps> = ({ navigation }) => 
       <StatusBar barStyle="light-content" backgroundColor="#1DA1F2" />
       
       {/* モダンヘッダー */}
-      <Header
-        navigation={navigation}
-        rightComponent={user ? (
-          <Avatar.Image 
-            size={32} 
-            source={{ uri: `https://robohash.org/${user.displayName}?set=set4` }}
-            style={styles.headerAvatar}
-          />
-        ) : undefined}
-      />
+      <Header navigation={navigation} />
 
       {/* ステップインジケーター */}
       {renderStepIndicator()}
@@ -585,41 +575,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8FAFC',
   },
-  modernHeader: {
-    paddingTop: 10,
-    paddingBottom: 16,
-    paddingHorizontal: 16,
-  },
-  headerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  backButton: {
-    width: 40,
-  },
-  headerCenter: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-  },
-  headerSubtitle: {
-    fontSize: 12,
-    color: '#FFFFFF',
-    opacity: 0.9,
-  },
-  headerRight: {
-    width: 40,
-    alignItems: 'center',
-  },
-  headerAvatar: {
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-  },
+
   stepIndicator: {
     flexDirection: 'row',
     justifyContent: 'center',

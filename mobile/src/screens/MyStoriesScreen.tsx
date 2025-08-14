@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, FlatList, StyleSheet, RefreshControl, Alert, TouchableOpacity, StatusBar } from 'react-native';
 import { 
   Text, 
-  Avatar, 
+  Avatar,
   Chip,
   IconButton,
   Surface,
@@ -251,16 +251,7 @@ const MyStoriesScreen: React.FC<MyStoriesScreenProps> = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#1DA1F2" />
-      <Header
-        navigation={navigation}
-        rightComponent={user ? (
-          <Avatar.Image 
-            size={36} 
-            source={{ uri: `https://robohash.org/${user.displayName}?set=set4` }}
-            style={styles.headerAvatar}
-          />
-        ) : undefined}
-      />
+      <Header navigation={navigation} />
 
       {/* 統計情報カード */}
       <Surface style={styles.statsCard} elevation={2}>
@@ -346,37 +337,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8FAFC',
   },
-  modernHeader: {
-    paddingTop: 50,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
-    borderBottomLeftRadius: 25,
-    borderBottomRightRadius: 25,
-  },
-  headerContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  headerLeft: {
-    flex: 1,
-  },
-  modernHeaderTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    letterSpacing: 0.5,
-    marginBottom: 2,
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    color: '#FFFFFF',
-    opacity: 0.9,
-  },
-  headerAvatar: {
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-  },
+
   statsCard: {
     marginHorizontal: 16,
     marginTop: -10,
