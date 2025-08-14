@@ -102,10 +102,6 @@ const StoryDetailScreen: React.FC<StoryDetailScreenProps> = ({ route, navigation
 
 
 
-  const handleShare = () => {
-    Alert.alert('シェア', 'この機能は開発中です');
-  };
-
   const handleComment = () => {
     setShowComments(!showComments);
   };
@@ -259,11 +255,6 @@ const StoryDetailScreen: React.FC<StoryDetailScreenProps> = ({ route, navigation
           <Text style={[styles.actionText, showComments && styles.activeActionText]}>
             {commentCount > 0 ? commentCount : story.metadata.commentCount}
           </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
-          <IconButton icon="share-outline" size={24} iconColor="#8E9AAF" />
-          <Text style={styles.actionText}>シェア</Text>
         </TouchableOpacity>
 
         <View style={styles.actionSpacer} />

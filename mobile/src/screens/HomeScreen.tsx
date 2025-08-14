@@ -367,10 +367,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                       <IconButton icon="message-outline" size={18} iconColor="#8E9AAF" style={styles.actionIcon} />
                       <Text style={styles.actionText}>{story.metadata.commentCount}</Text>
                     </TouchableOpacity>
-                    
-                    <TouchableOpacity style={styles.actionItem}>
-                      <IconButton icon="share-outline" size={18} iconColor="#8E9AAF" style={styles.actionIcon} />
-                    </TouchableOpacity>
                   </View>
                 </View>
               </Surface>

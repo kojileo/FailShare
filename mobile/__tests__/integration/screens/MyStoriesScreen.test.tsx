@@ -352,25 +352,15 @@ describe('MyStoriesScreen Component Tests', () => {
             confirmDelete(); // テスト用に直接実行
           },
         },
-        {
-          id: 'share',
-          title: '共有',
-          icon: 'share',
-          onPress: () => {
-            // 共有機能（モック）
-            console.log(`Sharing story: ${story.id}`);
-          },
-        },
       ];
     };
 
     const testStory = mockStories[0];
     const actions = getStoryActions(testStory);
 
-    expect(actions).toHaveLength(3);
+    expect(actions).toHaveLength(2);
     expect(actions[0].id).toBe('edit');
     expect(actions[1].id).toBe('delete');
-    expect(actions[2].id).toBe('share');
 
     // 編集アクションのテスト
     actions[0].onPress();
