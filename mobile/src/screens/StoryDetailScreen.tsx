@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ScrollView, View, StyleSheet, Alert, TouchableOpacity, StatusBar } from 'react-native';
 import { 
   Text, 
@@ -36,11 +36,10 @@ const StoryDetailScreen: React.FC<StoryDetailScreenProps> = ({ route, navigation
   const [showComments, setShowComments] = useState(false);
   const [commentCount, setCommentCount] = useState(0);
 
-  const loadStory = async () => {
+  const loadStory = useCallback(async () => {
     try {
       setIsLoading(true);
-      const { stories } = await storyService.getStories();
-      const foundStory = stories.find(s => s.id === storyId);
+      const foundStory = await storyService.getStoryById(storyId);
       if (foundStory) {
         setStory(foundStory);
       } else {
@@ -53,11 +52,11 @@ const StoryDetailScreen: React.FC<StoryDetailScreenProps> = ({ route, navigation
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [storyId, navigation]);
 
   useEffect(() => {
     loadStory();
-  }, [storyId, loadStory]);
+  }, [loadStory]);
 
   const getTimeAgo = (date: Date | any): string => {
     try {
