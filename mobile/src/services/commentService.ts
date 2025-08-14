@@ -14,7 +14,8 @@ import {
   limit,
   startAfter,
   QueryDocumentSnapshot,
-  increment
+  increment,
+  Firestore
 } from 'firebase/firestore';
 import { Comment } from '../types';
 
@@ -31,7 +32,7 @@ export interface CommentService {
 class CommentServiceImpl implements CommentService {
   private readonly COLLECTION_NAME = 'comments';
 
-  constructor(private db: any) {}
+  constructor(private db: Firestore) {}
 
   async addComment(storyId: string, authorId: string, content: string): Promise<string> {
     try {

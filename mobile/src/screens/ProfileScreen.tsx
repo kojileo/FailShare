@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ScrollView, View, StyleSheet, Alert, TouchableOpacity, StatusBar } from 'react-native';
 import { 
   Text, 
-  Avatar, 
+  Avatar,
   Button, 
   IconButton,
   Surface
@@ -15,6 +15,7 @@ import { useAuthStore } from '../stores/authStore';
 import { useStoryStore } from '../stores/storyStore';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types';
+import Header from '../components/Header';
 
 interface ProfileScreenProps {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Profile'>;
@@ -124,22 +125,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#1DA1F2" />
-      
-      {/* モダンヘッダー */}
-      <LinearGradient
-        colors={['#1DA1F2', '#1991DB']}
-        style={styles.modernHeader}
-      >
-        <View style={styles.headerContent}>
-          <TouchableOpacity onPress={() => navigation?.goBack()}>
-            <IconButton icon="arrow-left" size={24} iconColor="#FFFFFF" />
-          </TouchableOpacity>
-          <Text style={styles.modernHeaderTitle}>プロフィール</Text>
-          <TouchableOpacity onPress={() => signOut()}>
-            <IconButton icon="logout" size={24} iconColor="#FFFFFF" />
-          </TouchableOpacity>
-        </View>
-      </LinearGradient>
+      <Header navigation={navigation} />
 
       <ScrollView 
         style={styles.content} 
@@ -286,26 +272,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8FAFC',
   },
-  modernHeader: {
-    paddingTop: 50,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
-    borderBottomLeftRadius: 25,
-    borderBottomRightRadius: 25,
-  },
-  headerContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  modernHeaderTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    letterSpacing: 0.5,
-    flex: 1,
-    textAlign: 'center',
-  },
+
   content: {
     flexGrow: 1,
   },

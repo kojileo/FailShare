@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { View, FlatList, StyleSheet, RefreshControl, Alert, TouchableOpacity, StatusBar } from 'react-native';
 import { 
   Text, 
-  Avatar, 
+  Avatar,
   Chip,
   IconButton,
   Surface,
-  Button
+  Button,
+  Dialog,
+  Portal
 } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -20,6 +22,7 @@ import {
 } from '../utils/categories';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types';
+import Header from '../components/Header';
 
 interface MyStoriesScreenProps {
   navigation: NativeStackNavigationProp<RootStackParamList, 'MyStories'>;
@@ -27,54 +30,64 @@ interface MyStoriesScreenProps {
 
 const MyStoriesScreen: React.FC<MyStoriesScreenProps> = ({ navigation }) => {
   const { user } = useAuthStore();
-  const { stories, setStories, setLoading, isLoading } = useStoryStore();
+  const { setStories, setLoading, isLoading, removeStory } = useStoryStore();
   const [userStories, setUserStories] = useState<FailureStory[]>([]);
   const [refreshing, setRefreshing] = useState(false);
-
-  const loadUserStories = async () => {
-    if (!user) {
-      console.log('⚠️ ユーザー未認証のため、マイストーリー取得をスキップ');
-      return;
-    }
-    
-    try {
-      setLoading(true);
-      const { stories: allStories } = await storyService.getStories();
-      const filtered = allStories.filter(story => story.authorId === user.id);
-      setUserStories(filtered);
-      setStories(allStories);
-    } catch (error) {
-      console.error('ユーザーストーリー取得エラー:', error);
-      Alert.alert('エラー', 'データの取得に失敗しました');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
+  const [storyToDelete, setStoryToDelete] = useState<FailureStory | null>(null);
 
   useEffect(() => {
+    const loadUserStories = async () => {
+      if (!user) {
+        console.log('⚠️ ユーザー未認証のため、マイストーリー取得をスキップ');
+        return;
+      }
+      
+      try {
+        setLoading(true);
+        const { stories: allStories } = await storyService.getStories();
+        const filtered = allStories.filter(story => story.authorId === user.id);
+        setUserStories(filtered);
+        setStories(allStories);
+      } catch (error) {
+        console.error('ユーザーストーリー取得エラー:', error);
+        Alert.alert('エラー', 'データの取得に失敗しました');
+      } finally {
+        setLoading(false);
+      }
+    };
+
     loadUserStories();
-  }, [user, stories, loadUserStories]);
+  }, [user, setLoading, setStories]);
 
   const onRefresh = async () => {
     setRefreshing(true);
     try {
-      await loadUserStories();
+      if (user) {
+        const { stories: allStories } = await storyService.getStories();
+        const filtered = allStories.filter(story => story.authorId === user.id);
+        setUserStories(filtered);
+        setStories(allStories);
+      }
+    } catch (error) {
+      console.error('ユーザーストーリー取得エラー:', error);
+      Alert.alert('エラー', 'データの取得に失敗しました');
     } finally {
       setRefreshing(false);
     }
   };
 
-  const getTimeAgo = (date: Date | any): string => {
+  const getTimeAgo = (date: unknown): string => {
     try {
       // Firestore Timestampの場合の処理
       let actualDate: Date;
-      if (date && typeof date.toDate === 'function') {
-        actualDate = date.toDate();
+      if (date && typeof date === 'object' && 'toDate' in date && typeof (date as any).toDate === 'function') {
+        actualDate = (date as any).toDate();
       } else if (date instanceof Date) {
         actualDate = date;
-      } else if (date && typeof date === 'object' && date.seconds) {
+      } else if (date && typeof date === 'object' && 'seconds' in date && typeof (date as any).seconds === 'number') {
         // Firestore Timestamp形式 {seconds: number, nanoseconds: number}
-        actualDate = new Date(date.seconds * 1000);
+        actualDate = new Date((date as any).seconds * 1000);
       } else {
         return '不明';
       }
@@ -116,39 +129,65 @@ const MyStoriesScreen: React.FC<MyStoriesScreenProps> = ({ navigation }) => {
     }
   };
 
-  const handleDeleteStory = async (storyId: string) => {
-    if (!user) return;
+  const handleDeleteStory = (storyId: string) => {
+    console.log('🗑️ 削除処理開始:', storyId);
     
-    Alert.alert(
-      '削除確認',
-      'この失敗談を削除しますか？この操作は取り消せません。',
-      [
-        { text: 'キャンセル', style: 'cancel' },
-        { 
-          text: '削除', 
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              setLoading(true);
-              await storyService.deleteStory(storyId, user.id);
-              
-              // ローカル状態を更新
-              const updatedUserStories = userStories.filter(story => story.id !== storyId);
-              const updatedAllStories = stories.filter(story => story.id !== storyId);
-              setUserStories(updatedUserStories);
-              setStories(updatedAllStories);
-              
-              Alert.alert('削除完了', '失敗談を削除しました。');
-            } catch (error) {
-              console.error('削除エラー:', error);
-              Alert.alert('削除失敗', '削除に失敗しました。もう一度お試しください。');
-            } finally {
-              setLoading(false);
-            }
-          }
-        }
-      ]
-    );
+    if (!user) {
+      console.log('❌ ユーザー未認証');
+      Alert.alert('エラー', 'ログインが必要です');
+      return;
+    }
+    
+    // 削除対象のストーリーを取得
+    const story = userStories.find(s => s.id === storyId);
+    if (!story) {
+      console.log('❌ 削除対象のストーリーが見つかりません:', storyId);
+      Alert.alert('エラー', '削除対象の投稿が見つかりません');
+      return;
+    }
+    
+    console.log('✅ 削除対象ストーリー:', story.content.title);
+    
+    // 削除確認ダイアログを表示
+    setStoryToDelete(story);
+    setDeleteDialogVisible(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!storyToDelete || !user) return;
+    
+    console.log('🚀 削除実行開始');
+    try {
+      setLoading(true);
+      console.log('📝 Firestore削除処理中...');
+      await storyService.deleteStory(storyToDelete.id, user.id);
+      console.log('✅ Firestore削除成功');
+      
+      // グローバル状態を更新
+      console.log('🔄 グローバル状態更新中...');
+      removeStory(storyToDelete.id);
+      
+      // ローカル状態を更新
+      console.log('🔄 ローカル状態更新中...');
+      const updatedUserStories = userStories.filter(story => story.id !== storyToDelete.id);
+      setUserStories(updatedUserStories);
+      
+      console.log('✅ 削除処理完了');
+      Alert.alert('削除完了', '失敗談を削除しました。');
+    } catch (error) {
+      console.error('❌ 削除エラー:', error);
+      Alert.alert('削除失敗', '削除に失敗しました。もう一度お試しください。');
+    } finally {
+      setLoading(false);
+      setDeleteDialogVisible(false);
+      setStoryToDelete(null);
+    }
+  };
+
+  const cancelDelete = () => {
+    console.log('❌ 削除キャンセル');
+    setDeleteDialogVisible(false);
+    setStoryToDelete(null);
   };
 
   const renderStoryItem = ({ item }: { item: FailureStory }) => (
@@ -220,18 +259,26 @@ const MyStoriesScreen: React.FC<MyStoriesScreenProps> = ({ navigation }) => {
             </View>
             <View style={styles.spacer} />
             <View style={styles.actionButtons}>
-              <TouchableOpacity 
-                style={styles.actionButton}
-                onPress={() => handleEditStory(item.id)}
-              >
-                <IconButton icon="pencil-outline" size={18} iconColor="#1DA1F2" />
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.actionButton}
-                onPress={() => handleDeleteStory(item.id)}
-              >
-                <IconButton icon="delete-outline" size={18} iconColor="#EF4444" />
-              </TouchableOpacity>
+                             <TouchableOpacity 
+                 style={styles.actionButton}
+                 onPress={() => {
+                   console.log('✏️ 編集ボタンタップ:', item.id);
+                   handleEditStory(item.id);
+                 }}
+                 activeOpacity={0.7}
+               >
+                 <IconButton icon="pencil-outline" size={18} iconColor="#1DA1F2" />
+               </TouchableOpacity>
+                             <TouchableOpacity 
+                 style={styles.actionButton}
+                 onPress={() => {
+                   console.log('🗑️ 削除ボタンタップ:', item.id);
+                   handleDeleteStory(item.id);
+                 }}
+                 activeOpacity={0.7}
+               >
+                 <IconButton icon="delete-outline" size={18} iconColor="#EF4444" />
+               </TouchableOpacity>
             </View>
           </View>
         </View>
@@ -242,31 +289,7 @@ const MyStoriesScreen: React.FC<MyStoriesScreenProps> = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#1DA1F2" />
-      
-      {/* モダンヘッダー */}
-      <LinearGradient
-        colors={['#1DA1F2', '#1991DB']}
-        style={styles.modernHeader}
-      >
-        <View style={styles.headerContent}>
-          <TouchableOpacity onPress={() => navigation?.goBack()}>
-            <IconButton icon="arrow-left" size={24} iconColor="#FFFFFF" />
-          </TouchableOpacity>
-          <View style={styles.headerLeft}>
-            <Text style={styles.modernHeaderTitle}>マイ失敗談</Text>
-            <Text style={styles.headerSubtitle}>
-              {userStories.length}件の投稿
-            </Text>
-          </View>
-          {user && (
-            <Avatar.Image 
-              size={36} 
-              source={{ uri: `https://robohash.org/${user.displayName}?set=set4` }}
-              style={styles.headerAvatar}
-            />
-          )}
-        </View>
-      </LinearGradient>
+      <Header navigation={navigation} />
 
       {/* 統計情報カード */}
       <Surface style={styles.statsCard} elevation={2}>
@@ -331,61 +354,54 @@ const MyStoriesScreen: React.FC<MyStoriesScreenProps> = ({ navigation }) => {
         }
       />
 
-      {/* 投稿FAB */}
-      <LinearGradient
-        colors={['#1DA1F2', '#1991DB']}
-        style={styles.modernFab}
-      >
-        <TouchableOpacity 
-          style={styles.fabButton}
-          onPress={() => navigation?.navigate('CreateStory')}
-        >
-          <IconButton icon="plus" size={24} iconColor="#FFFFFF" />
-        </TouchableOpacity>
-      </LinearGradient>
-    </SafeAreaView>
-  );
-};
+             {/* 投稿FAB */}
+       <LinearGradient
+         colors={['#1DA1F2', '#1991DB']}
+         style={styles.modernFab}
+       >
+         <TouchableOpacity 
+           style={styles.fabButton}
+           onPress={() => navigation?.navigate('CreateStory')}
+         >
+           <IconButton icon="plus" size={24} iconColor="#FFFFFF" />
+         </TouchableOpacity>
+       </LinearGradient>
+
+       {/* 削除確認ダイアログ */}
+       <Portal>
+         <Dialog visible={deleteDialogVisible} onDismiss={cancelDelete}>
+           <Dialog.Title>削除確認</Dialog.Title>
+           <Dialog.Content>
+             <Text>
+               「{storyToDelete?.content.title}」を削除しますか？{'\n\n'}
+               この操作は取り消せません。
+             </Text>
+           </Dialog.Content>
+           <Dialog.Actions>
+             <Button onPress={cancelDelete}>キャンセル</Button>
+             <Button 
+               onPress={confirmDelete} 
+               textColor="#EF4444"
+               disabled={isLoading}
+             >
+               {isLoading ? '削除中...' : '削除'}
+             </Button>
+           </Dialog.Actions>
+         </Dialog>
+       </Portal>
+     </SafeAreaView>
+   );
+ };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F8FAFC',
   },
-  modernHeader: {
-    paddingTop: 50,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
-    borderBottomLeftRadius: 25,
-    borderBottomRightRadius: 25,
-  },
-  headerContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  headerLeft: {
-    flex: 1,
-  },
-  modernHeaderTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    letterSpacing: 0.5,
-    marginBottom: 2,
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    color: '#FFFFFF',
-    opacity: 0.9,
-  },
-  headerAvatar: {
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-  },
+
   statsCard: {
     marginHorizontal: 16,
-    marginTop: -10,
+    marginTop: 16,
     borderRadius: 16,
     backgroundColor: '#FFFFFF',
     padding: 20,
@@ -534,6 +550,8 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     marginLeft: 4,
+    padding: 4,
+    borderRadius: 8,
   },
   separator: {
     height: 12,

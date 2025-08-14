@@ -341,4 +341,5 @@ export type RootStackParamList = {
   Communities: undefined;
   CommunityDetail: { communityId: string };
   CreateCommunity: undefined;
+  Chat: { friendId: string; friendName: string } | undefined;
 }; 

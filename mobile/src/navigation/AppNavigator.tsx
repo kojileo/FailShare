@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { View, Text } from 'react-native';
 import { RootStackParamList } from '../types';
 import HomeScreen from '../screens/HomeScreen';
 import ProfileScreen from '../screens/ProfileScreen';
@@ -12,13 +13,21 @@ import FriendRequestsScreen from '../screens/FriendRequestsScreen';
 import FriendSearchScreen from '../screens/FriendSearchScreen';
 import BlockedUsersScreen from '../screens/BlockedUsersScreen';
 
+// チャット画面のプレースホルダーコンポーネント
+const ChatScreen: React.FC = () => (
+  <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8FAFC' }}>
+    <Text style={{ fontSize: 18, color: '#1E293B', marginBottom: 8 }}>チャット機能</Text>
+    <Text style={{ fontSize: 14, color: '#8E9AAF' }}>開発中です</Text>
+  </View>
+);
+
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const AppNavigator: React.FC = () => {
   return (
     <NavigationContainer>
       <Stack.Navigator
-        {...({ id: "RootStack" } as any)}
+        id={undefined}
         initialRouteName="Home"
         screenOptions={{
           headerShown: false,
@@ -59,6 +68,10 @@ const AppNavigator: React.FC = () => {
         <Stack.Screen
           name="BlockedUsers"
           component={BlockedUsersScreen}
+        />
+        <Stack.Screen
+          name="Chat"
+          component={ChatScreen}
         />
       </Stack.Navigator>
     </NavigationContainer>

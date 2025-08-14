@@ -11,16 +11,16 @@ import {
   StatusBar
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MaterialIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { IconButton, Avatar } from 'react-native-paper';
+
 import { useAuthStore } from '../stores/authStore';
 import { useFriendStore } from '../stores/friendStore';
 import { User, RootStackParamList } from '../types';
+import Header from '../components/Header';
 
-type FriendsScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Friends'>;
+type FriendsScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Friends'>;
 
 const FriendsScreen: React.FC = () => {
   const navigation = useNavigation<FriendsScreenNavigationProp>();
@@ -182,33 +182,7 @@ const FriendsScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#1DA1F2" />
-      
-      {/* モダンヘッダー */}
-      <LinearGradient
-        colors={['#1DA1F2', '#1991DB']}
-        style={styles.modernHeader}
-      >
-        <View style={styles.headerContent}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <IconButton icon="arrow-left" size={24} iconColor="#FFFFFF" />
-          </TouchableOpacity>
-          <View style={styles.headerCenter}>
-            <Text style={styles.headerTitle}>フレンド</Text>
-            <Text style={styles.headerSubtitle}>
-              {friends ? friends.length : 0}人のフレンド
-            </Text>
-          </View>
-          <View style={styles.headerRight}>
-            {user && (
-              <Avatar.Image 
-                size={32} 
-                source={{ uri: `https://robohash.org/${user.displayName}?set=set4` }}
-                style={styles.headerAvatar}
-              />
-            )}
-          </View>
-        </View>
-      </LinearGradient>
+      <Header navigation={navigation} />
 
       {/* アクションボタン */}
       <View style={styles.actionHeader}>
@@ -260,41 +234,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8FAFC',
   },
-  modernHeader: {
-    paddingTop: 10,
-    paddingBottom: 16,
-    paddingHorizontal: 16,
-  },
-  headerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  backButton: {
-    width: 40,
-  },
-  headerCenter: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-  },
-  headerSubtitle: {
-    fontSize: 12,
-    color: '#FFFFFF',
-    opacity: 0.9,
-  },
-  headerRight: {
-    width: 40,
-    alignItems: 'center',
-  },
-  headerAvatar: {
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-  },
+
   actionHeader: {
     backgroundColor: '#FFFFFF',
     paddingHorizontal: 16,

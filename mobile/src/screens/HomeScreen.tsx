@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, StatusBar, ScrollView } from 'react-native';
 import { 
   Text, 
   Avatar, 
@@ -9,6 +9,7 @@ import {
   Surface
 } from 'react-native-paper';
 import { useFocusEffect } from '@react-navigation/native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types';
 import { FailureStory, MainCategory, SubCategory } from '../types';
@@ -21,6 +22,7 @@ import {
   getCategoryHierarchyIcon
 } from '../utils/categories';
 import { LikeButton } from '../components/LikeButton';
+import Header from '../components/Header';
 
 
 interface HomeScreenProps {
@@ -102,7 +104,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   useFocusEffect(
     React.useCallback(() => {
       loadStories();
-    }, [])
+    }, [loadStories])
   );
 
   useEffect(() => {
@@ -114,7 +116,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     setSelectedSubCategory(null);
   };
 
-  const getTimeAgo = (date: Date | any): string => {
+  const getTimeAgo = (date: any): string => {
     try {
       // Firestore Timestampの場合の処理
       let actualDate: Date;
@@ -158,36 +160,12 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const displayStories = searchQuery || selectedMainCategory || selectedSubCategory ? filteredStories : stories;
 
   return (
-    <View style={styles.container}>
-      {/* ヘッダー */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.headerTitle}>
-            FailShare
-          </Text>
-          <Text style={styles.headerSubtitle}>
-            失敗から学ぶコミュニティ
-          </Text>
-        </View>
-        {user && (
-          <TouchableOpacity 
-            onPress={() => navigation?.navigate('Profile')}
-            style={styles.profileButton}
-          >
-            <Avatar.Image 
-              size={36} 
-              source={{ uri: `https://robohash.org/${user.displayName}?set=set4` }}
-              style={styles.headerAvatar}
-            />
-            <IconButton 
-              icon="account-circle" 
-              size={20} 
-              iconColor="#FFFFFF" 
-              style={styles.profileIcon}
-            />
-          </TouchableOpacity>
-        )}
-      </View>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
+      <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
+      <Header
+        navigation={navigation}
+        showBackButton={false}
+      />
 
       {/* 検索セクション */}
       <View style={styles.searchSection}>
@@ -274,7 +252,11 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       )}
 
       {/* ストーリーリスト */}
-      <View style={styles.storyListContainer}>
+      <ScrollView 
+        style={styles.storyListContainer}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.storyListContent}
+      >
         {displayStories.length === 0 && !isLoading ? (
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyIcon}>
@@ -385,20 +367,16 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                       <IconButton icon="message-outline" size={18} iconColor="#8E9AAF" style={styles.actionIcon} />
                       <Text style={styles.actionText}>{story.metadata.commentCount}</Text>
                     </TouchableOpacity>
-                    
-                    <TouchableOpacity style={styles.actionItem}>
-                      <IconButton icon="share-outline" size={18} iconColor="#8E9AAF" style={styles.actionIcon} />
-                    </TouchableOpacity>
                   </View>
                 </View>
               </Surface>
             </TouchableOpacity>
           ))
         )}
-      </View>
+      </ScrollView>
 
       <View style={styles.bottomSpace} />
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -452,7 +430,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     backgroundColor: '#FFFFFF',
     marginHorizontal: 16,
-    marginTop: -10,
+    marginTop: 16,
     borderRadius: 16,
     elevation: 4,
   },
@@ -661,7 +639,11 @@ const styles = StyleSheet.create({
     marginLeft: -6,
   },
   storyListContainer: {
+    flex: 1,
+  },
+  storyListContent: {
     paddingTop: 16,
+    paddingBottom: 40,
   },
   bottomSpace: {
     height: 40,

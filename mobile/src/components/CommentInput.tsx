@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, NativeSyntheticEvent, TextInputKeyPressEventData } from 'react-native';
 import { IconButton } from 'react-native-paper';
 import { useAuthStore } from '../stores/authStore';
 import { useCommentStore } from '../stores/commentStore';
@@ -67,10 +67,9 @@ export const CommentInput: React.FC<CommentInputProps> = ({ storyId, onCommentAd
     }
   };
 
-  const handleKeyPress = (e: any) => {
-    // Enterキーで投稿（Shift+Enterは改行）
-    if (e.nativeEvent?.key === 'Enter' && !e.nativeEvent?.shiftKey) {
-      e.preventDefault();
+  const handleKeyPress = (e: NativeSyntheticEvent<TextInputKeyPressEventData>) => {
+    // Enterキーで投稿（React NativeのTextInputではShift+Enterの判定が困難なため、単純にEnterキーで投稿）
+    if (e.nativeEvent?.key === 'Enter') {
       handleSubmit();
     }
   };

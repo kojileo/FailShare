@@ -10,7 +10,8 @@ import {
   limit, 
   onSnapshot,
   writeBatch,
-  serverTimestamp
+  serverTimestamp,
+  increment
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { 
@@ -25,6 +26,11 @@ export class FriendServiceImpl implements FriendService {
   // フレンド関係管理
   async sendFriendRequest(fromUserId: string, toUserId: string, message?: string): Promise<void> {
     try {
+      // 自分自身へのリクエストを防ぐ
+      if (fromUserId === toUserId) {
+        throw new Error('自分自身にフレンドリクエストを送信できません');
+      }
+
       // 既存のリクエストをチェック
       const existingRequest = await this.hasPendingRequest(fromUserId, toUserId);
       if (existingRequest) {
@@ -35,11 +41,6 @@ export class FriendServiceImpl implements FriendService {
       const areFriends = await this.areFriends(fromUserId, toUserId);
       if (areFriends) {
         throw new Error('既にフレンドです');
-      }
-
-      // 自分自身へのリクエストを防ぐ
-      if (fromUserId === toUserId) {
-        throw new Error('自分自身にフレンドリクエストを送信できません');
       }
 
       // フレンドリクエストを作成
@@ -82,7 +83,10 @@ export class FriendServiceImpl implements FriendService {
         acceptedAt: serverTimestamp()
       });
       
-      // 双方向のフレンドシップを作成
+      // 双方向のフレンドシップを作成（適切なドキュメントIDを指定）
+      const friendship1Id = `${requestData.fromUserId}_${requestData.toUserId}`;
+      const friendship2Id = `${requestData.toUserId}_${requestData.fromUserId}`;
+      
       const friendship1 = {
         userId: requestData.fromUserId,
         friendId: requestData.toUserId,
@@ -99,19 +103,19 @@ export class FriendServiceImpl implements FriendService {
         acceptedAt: serverTimestamp()
       };
       
-      batch.set(doc(collection(db, 'friendships')), friendship1);
-      batch.set(doc(collection(db, 'friendships')), friendship2);
+      batch.set(doc(db, 'friendships', friendship1Id), friendship1);
+      batch.set(doc(db, 'friendships', friendship2Id), friendship2);
       
-      // ユーザー統計を更新
+      // ユーザー統計を更新（増分処理）
       const user1Ref = doc(db, 'anonymousUsers', requestData.fromUserId);
       const user2Ref = doc(db, 'anonymousUsers', requestData.toUserId);
       
       batch.update(user1Ref, {
-        'stats.friendsCount': serverTimestamp() // 実際は増分処理が必要
+        'stats.friendsCount': increment(1)
       });
       
       batch.update(user2Ref, {
-        'stats.friendsCount': serverTimestamp() // 実際は増分処理が必要
+        'stats.friendsCount': increment(1)
       });
       
       await batch.commit();
@@ -138,38 +142,26 @@ export class FriendServiceImpl implements FriendService {
     try {
       const batch = writeBatch(db);
       
-      // 双方向のフレンドシップを削除
-      const friendshipsQuery1 = query(
-        collection(db, 'friendships'),
-        where('userId', '==', userId),
-        where('friendId', '==', friendId)
-      );
+      // 双方向のフレンドシップを削除（適切なドキュメントIDを使用）
+      const friendship1Id = `${userId}_${friendId}`;
+      const friendship2Id = `${friendId}_${userId}`;
       
-      const friendshipsQuery2 = query(
-        collection(db, 'friendships'),
-        where('userId', '==', friendId),
-        where('friendId', '==', userId)
-      );
+      const friendship1Ref = doc(db, 'friendships', friendship1Id);
+      const friendship2Ref = doc(db, 'friendships', friendship2Id);
       
-      const [friendshipsSnapshot1, friendshipsSnapshot2] = await Promise.all([
-        getDocs(friendshipsQuery1),
-        getDocs(friendshipsQuery2)
-      ]);
+      batch.delete(friendship1Ref);
+      batch.delete(friendship2Ref);
       
-      [...friendshipsSnapshot1.docs, ...friendshipsSnapshot2.docs].forEach((doc) => {
-        batch.delete(doc.ref);
-      });
-      
-      // ユーザー統計を更新
+      // ユーザー統計を更新（減分処理）
       const user1Ref = doc(db, 'anonymousUsers', userId);
       const user2Ref = doc(db, 'anonymousUsers', friendId);
       
       batch.update(user1Ref, {
-        'stats.friendsCount': serverTimestamp() // 実際は減分処理が必要
+        'stats.friendsCount': increment(-1)
       });
       
       batch.update(user2Ref, {
-        'stats.friendsCount': serverTimestamp() // 実際は減分処理が必要
+        'stats.friendsCount': increment(-1)
       });
       
       await batch.commit();
@@ -223,6 +215,7 @@ export class FriendServiceImpl implements FriendService {
   // フレンド情報取得
   async getFriends(userId: string): Promise<User[]> {
     try {
+      // ユーザーIDで始まるフレンドシップを検索
       const friendshipsQuery = query(
         collection(db, 'friendships'),
         where('userId', '==', userId),
@@ -435,15 +428,9 @@ export class FriendServiceImpl implements FriendService {
   // フレンド関係確認
   async areFriends(userId: string, friendId: string): Promise<boolean> {
     try {
-      const friendshipQuery = query(
-        collection(db, 'friendships'),
-        where('userId', '==', userId),
-        where('friendId', '==', friendId),
-        where('status', '==', 'accepted')
-      );
-      
-      const friendshipSnapshot = await getDocs(friendshipQuery);
-      return !friendshipSnapshot.empty;
+      const friendshipId = `${userId}_${friendId}`;
+      const friendshipDoc = await getDoc(doc(db, 'friendships', friendshipId));
+      return friendshipDoc.exists() && friendshipDoc.data().status === 'accepted';
     } catch (error) {
       console.error('フレンド関係確認エラー:', error);
       return false;
