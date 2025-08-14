@@ -162,7 +162,9 @@ const generateAnonymousProfile = async (userId: string): Promise<User> => {
       helpfulVotes: 0,
       learningPoints: 0,
       totalLikes: 0,
-      receivedLikes: 0
+      receivedLikes: 0,
+      friendsCount: 0,
+      communitiesCount: 0
     }
   };
 
@@ -381,7 +383,7 @@ export const updateUserProfile = async (userId: string, updates: Partial<User>):
     const userDocRef = doc(db, 'anonymousUsers', userId);
     
     // 更新データを準備
-    const updateData: any = {
+    const updateData: Record<string, unknown> = {
       ...updates,
       lastActive: serverTimestamp()
     };

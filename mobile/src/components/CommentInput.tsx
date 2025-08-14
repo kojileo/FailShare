@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, NativeSyntheticEvent, TextInputKeyPressEventData } from 'react-native';
+import { IconButton } from 'react-native-paper';
 import { useAuthStore } from '../stores/authStore';
 import { useCommentStore } from '../stores/commentStore';
 
@@ -67,10 +67,9 @@ export const CommentInput: React.FC<CommentInputProps> = ({ storyId, onCommentAd
     }
   };
 
-  const handleKeyPress = (e: any) => {
-    // Enterキーで投稿（Shift+Enterは改行）
-    if (e.nativeEvent.key === 'Enter' && !e.nativeEvent.shiftKey) {
-      e.preventDefault();
+  const handleKeyPress = (e: NativeSyntheticEvent<TextInputKeyPressEventData>) => {
+    // Enterキーで投稿（React NativeのTextInputではShift+Enterの判定が困難なため、単純にEnterキーで投稿）
+    if (e.nativeEvent?.key === 'Enter') {
       handleSubmit();
     }
   };
@@ -79,7 +78,7 @@ export const CommentInput: React.FC<CommentInputProps> = ({ storyId, onCommentAd
     <View style={styles.container}>
       <View style={styles.inputContainer}>
         <View style={styles.inputHeader}>
-          <Ionicons name="chatbubble-outline" size={16} color="#666" />
+          <IconButton icon="chat-outline" size={16} iconColor="#666" style={styles.inputIcon} />
           <Text style={styles.inputLabel}>コメントを投稿</Text>
         </View>
         
@@ -118,9 +117,9 @@ export const CommentInput: React.FC<CommentInputProps> = ({ storyId, onCommentAd
             disabled={isEmpty || isOverLimit || isSubmitting}
           >
             {isSubmitting ? (
-              <Ionicons name="hourglass" size={16} color="#999" />
+              <IconButton icon="clock" size={16} iconColor="#999" style={styles.submitIcon} />
             ) : (
-              <Ionicons name="send" size={16} color="#fff" />
+              <IconButton icon="send" size={16} iconColor="#fff" style={styles.submitIcon} />
             )}
             <Text style={[
               styles.submitButtonText,
@@ -227,5 +226,11 @@ const styles = StyleSheet.create({
     color: '#e74c3c',
     marginTop: 4,
     textAlign: 'center',
+  },
+  inputIcon: {
+    margin: 0,
+  },
+  submitIcon: {
+    margin: 0,
   },
 }); 

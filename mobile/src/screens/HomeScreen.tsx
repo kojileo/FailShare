@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, StatusBar, ScrollView } from 'react-native';
 import { 
   Text, 
   Avatar, 
@@ -9,6 +9,7 @@ import {
   Surface
 } from 'react-native-paper';
 import { useFocusEffect } from '@react-navigation/native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types';
 import { FailureStory, MainCategory, SubCategory } from '../types';
@@ -21,6 +22,7 @@ import {
   getCategoryHierarchyIcon
 } from '../utils/categories';
 import { LikeButton } from '../components/LikeButton';
+import Header from '../components/Header';
 
 
 interface HomeScreenProps {
@@ -40,18 +42,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
   const mainCategories = getMainCategories();
 
-  // 画面フォーカス時に自動リフレッシュ
-  useFocusEffect(
-    React.useCallback(() => {
-      loadStories();
-    }, [])
-  );
-
-  useEffect(() => {
-    filterStories();
-  }, [searchQuery, selectedMainCategory, selectedSubCategory, stories]);
-
-  const loadStories = async (showLoading = true) => {
+  const loadStories = React.useCallback(async (showLoading = true) => {
     try {
       // 認証状態をチェックし、必要に応じて匿名認証を実行
       if (!user) {
@@ -75,9 +66,9 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     } finally {
       if (showLoading) setLoading(false);
     }
-  };
+  }, [user, signIn, setLoading, setStories]);
 
-  const filterStories = () => {
+  const filterStories = React.useCallback(() => {
     let filtered = stories;
 
     // テキスト検索
@@ -107,14 +98,25 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     }
 
     setFilteredStories(filtered);
-  };
+  }, [stories, searchQuery, selectedMainCategory, selectedSubCategory]);
+
+  // 画面フォーカス時に自動リフレッシュ
+  useFocusEffect(
+    React.useCallback(() => {
+      loadStories();
+    }, [loadStories])
+  );
+
+  useEffect(() => {
+    filterStories();
+  }, [filterStories]);
 
   const handleMainCategorySelect = (category: MainCategory | null) => {
     setSelectedMainCategory(category);
     setSelectedSubCategory(null);
   };
 
-  const getTimeAgo = (date: Date | any): string => {
+  const getTimeAgo = (date: any): string => {
     try {
       // Firestore Timestampの場合の処理
       let actualDate: Date;
@@ -157,57 +159,13 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
   const displayStories = searchQuery || selectedMainCategory || selectedSubCategory ? filteredStories : stories;
 
-  // CSS Styles for HTML elements
-  const containerStyle: React.CSSProperties = {
-    width: '100%',
-    height: '100vh',
-    backgroundColor: '#F8FAFC',
-    overflow: 'auto',
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-  };
-
-  const headerStyle: React.CSSProperties = {
-    background: 'linear-gradient(135deg, #1DA1F2, #1991DB)',
-    padding: '20px',
-    color: 'white',
-    borderBottomLeftRadius: '25px',
-    borderBottomRightRadius: '25px',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  };
-
   return (
-    <div style={containerStyle}>
-      {/* ヘッダー */}
-      <div style={headerStyle}>
-        <div>
-          <h1 style={{fontSize: '28px', margin: '0 0 2px 0', fontWeight: 'bold', letterSpacing: '0.5px'}}>
-            FailShare
-          </h1>
-          <p style={{fontSize: '12px', margin: '0', opacity: 0.9}}>
-            失敗から学ぶコミュニティ
-          </p>
-        </div>
-        {user && (
-          <TouchableOpacity 
-            onPress={() => navigation?.navigate('Profile')}
-            style={styles.profileButton}
-          >
-            <Avatar.Image 
-              size={36} 
-              source={{ uri: `https://robohash.org/${user.displayName}?set=set4` }}
-              style={styles.headerAvatar}
-            />
-            <IconButton 
-              icon="account-circle" 
-              size={20} 
-              iconColor="#FFFFFF" 
-              style={styles.profileIcon}
-            />
-          </TouchableOpacity>
-        )}
-      </div>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
+      <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
+      <Header
+        navigation={navigation}
+        showBackButton={false}
+      />
 
       {/* 検索セクション */}
       <View style={styles.searchSection}>
@@ -294,7 +252,11 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       )}
 
       {/* ストーリーリスト */}
-      <div style={{paddingTop: '16px'}}>
+      <ScrollView 
+        style={styles.storyListContainer}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.storyListContent}
+      >
         {displayStories.length === 0 && !isLoading ? (
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyIcon}>
@@ -377,27 +339,27 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                         initialHelpfulCount={story.metadata.helpfulCount || 0}
                         size="small"
                         showCount={true}
-                                                 onLikeChange={(isLiked, newCount) => {
-                           console.log(`🏠 HomeScreen: いいね更新 [${story.id}]:`, { isLiked, newCount });
-                           
-                           // ストーリーのいいね数を更新（グローバルストアも更新）
-                           const updatedStories = stories.map(s => 
-                             s.id === story.id 
-                               ? { ...s, metadata: { ...s.metadata, helpfulCount: newCount } }
-                               : s
-                           );
-                           setStories(updatedStories);
-                           
-                           // フィルター済みストーリーも更新
-                           if (searchQuery || selectedMainCategory || selectedSubCategory) {
-                             const updatedFilteredStories = filteredStories.map(s => 
-                               s.id === story.id 
-                                 ? { ...s, metadata: { ...s.metadata, helpfulCount: newCount } }
-                                 : s
-                             );
-                             setFilteredStories(updatedFilteredStories);
-                           }
-                         }}
+                        onLikeChange={(isLiked, newCount) => {
+                          console.log(`🏠 HomeScreen: いいね更新 [${story.id}]:`, { isLiked, newCount });
+                          
+                          // ストーリーのいいね数を更新（グローバルストアも更新）
+                          const updatedStories = stories.map(s => 
+                            s.id === story.id 
+                              ? { ...s, metadata: { ...s.metadata, helpfulCount: newCount } }
+                              : s
+                          );
+                          setStories(updatedStories);
+                          
+                          // フィルター済みストーリーも更新
+                          if (searchQuery || selectedMainCategory || selectedSubCategory) {
+                            const updatedFilteredStories = filteredStories.map(s => 
+                              s.id === story.id 
+                                ? { ...s, metadata: { ...s.metadata, helpfulCount: newCount } }
+                                : s
+                            );
+                            setFilteredStories(updatedFilteredStories);
+                          }
+                        }}
                       />
                     </View>
                     
@@ -405,24 +367,45 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                       <IconButton icon="message-outline" size={18} iconColor="#8E9AAF" style={styles.actionIcon} />
                       <Text style={styles.actionText}>{story.metadata.commentCount}</Text>
                     </TouchableOpacity>
-                    
-                    <TouchableOpacity style={styles.actionItem}>
-                      <IconButton icon="share-outline" size={18} iconColor="#8E9AAF" style={styles.actionIcon} />
-                    </TouchableOpacity>
                   </View>
                 </View>
               </Surface>
             </TouchableOpacity>
           ))
         )}
-      </div>
+      </ScrollView>
 
-      <div style={{height: '40px'}}></div>
-    </div>
+      <View style={styles.bottomSpace} />
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+  },
+  header: {
+    backgroundColor: '#1DA1F2',
+    padding: 20,
+    borderBottomLeftRadius: 25,
+    borderBottomRightRadius: 25,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 2,
+    letterSpacing: 0.5,
+  },
+  headerSubtitle: {
+    fontSize: 12,
+    color: '#FFFFFF',
+    opacity: 0.9,
+  },
   profileButton: {
     position: 'relative',
     alignItems: 'center',
@@ -447,7 +430,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     backgroundColor: '#FFFFFF',
     marginHorizontal: 16,
-    marginTop: -10,
+    marginTop: 16,
     borderRadius: 16,
     elevation: 4,
   },
@@ -654,6 +637,16 @@ const styles = StyleSheet.create({
     color: '#8E9AAF',
     fontWeight: '500',
     marginLeft: -6,
+  },
+  storyListContainer: {
+    flex: 1,
+  },
+  storyListContent: {
+    paddingTop: 16,
+    paddingBottom: 40,
+  },
+  bottomSpace: {
+    height: 40,
   },
 });
 

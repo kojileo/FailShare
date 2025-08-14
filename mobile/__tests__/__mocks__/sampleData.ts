@@ -1,4 +1,4 @@
-import { FailureStory, CategoryHierarchy, EmotionType, Like, LikeStats } from '../../src/types';
+import { FailureStory, CategoryHierarchy, EmotionType, Like, LikeStats, User, FriendRequest, FriendRecommendation, Friendship } from '../../src/types';
 
 export const mockCategory: CategoryHierarchy = {
   main: '恋愛',
@@ -103,3 +103,221 @@ export const mockLikeStatsArray: LikeStats[] = [
     isLikedByCurrentUser: false
   }
 ]; 
+
+// フレンド機能のモックデータ
+export const mockUsers: User[] = [
+  {
+    id: 'user-1',
+    displayName: '田中太郎',
+    avatar: 'https://robohash.org/user-1?set=set4',
+    joinedAt: new Date('2024-01-01'),
+    lastActive: new Date(),
+    stats: {
+      totalPosts: 5,
+      totalComments: 10,
+      helpfulVotes: 20,
+      learningPoints: 15,
+      totalLikes: 30,
+      receivedLikes: 25,
+      friendsCount: 3,
+      communitiesCount: 1,
+    },
+  },
+  {
+    id: 'user-2',
+    displayName: '佐藤花子',
+    avatar: 'https://robohash.org/user-2?set=set4',
+    joinedAt: new Date('2024-01-15'),
+    lastActive: new Date(),
+    stats: {
+      totalPosts: 3,
+      totalComments: 8,
+      helpfulVotes: 15,
+      learningPoints: 12,
+      totalLikes: 25,
+      receivedLikes: 20,
+      friendsCount: 2,
+      communitiesCount: 0,
+    },
+  },
+  {
+    id: 'user-3',
+    displayName: '山田次郎',
+    avatar: 'https://robohash.org/user-3?set=set4',
+    joinedAt: new Date('2024-02-01'),
+    lastActive: new Date(),
+    stats: {
+      totalPosts: 7,
+      totalComments: 15,
+      helpfulVotes: 30,
+      learningPoints: 25,
+      totalLikes: 40,
+      receivedLikes: 35,
+      friendsCount: 4,
+      communitiesCount: 2,
+    },
+  },
+  {
+    id: 'user-4',
+    displayName: '鈴木美咲',
+    avatar: 'https://robohash.org/user-4?set=set4',
+    joinedAt: new Date('2024-02-15'),
+    lastActive: new Date(),
+    stats: {
+      totalPosts: 2,
+      totalComments: 5,
+      helpfulVotes: 10,
+      learningPoints: 8,
+      totalLikes: 15,
+      receivedLikes: 12,
+      friendsCount: 1,
+      communitiesCount: 0,
+    },
+  },
+];
+
+export const mockFriendships: Friendship[] = [
+  {
+    id: 'friendship-1',
+    userId: 'user-1',
+    friendId: 'user-2',
+    status: 'accepted',
+    createdAt: new Date('2024-01-20'),
+  },
+  {
+    id: 'friendship-2',
+    userId: 'user-2',
+    friendId: 'user-1',
+    status: 'accepted',
+    createdAt: new Date('2024-01-20'),
+  },
+  {
+    id: 'friendship-3',
+    userId: 'user-3',
+    friendId: 'user-4',
+    status: 'accepted',
+    createdAt: new Date('2024-02-20'),
+  },
+  {
+    id: 'friendship-4',
+    userId: 'user-4',
+    friendId: 'user-3',
+    status: 'accepted',
+    createdAt: new Date('2024-02-20'),
+  },
+];
+
+export const mockFriendRequests: FriendRequest[] = [
+  {
+    id: 'request-1',
+    fromUserId: 'user-1',
+    toUserId: 'user-3',
+    message: 'よろしくお願いします！',
+    status: 'pending',
+    createdAt: new Date('2024-03-01'),
+  },
+  {
+    id: 'request-2',
+    fromUserId: 'user-4',
+    toUserId: 'user-1',
+    message: '同じカテゴリの投稿が面白いです',
+    status: 'pending',
+    createdAt: new Date('2024-03-02'),
+  },
+  {
+    id: 'request-3',
+    fromUserId: 'user-1',
+    toUserId: 'user-5',
+    message: 'フレンドリクエストを送信しました',
+    status: 'pending',
+    createdAt: new Date('2024-03-03'),
+  },
+];
+
+export const mockFriendRecommendations: FriendRecommendation[] = [
+  {
+    userId: 'user-5',
+    displayName: '高橋健一',
+    avatar: 'https://robohash.org/user-5?set=set4',
+    commonInterests: ['恋愛', 'デート'],
+    mutualFriends: 2,
+    score: 85,
+  },
+  {
+    userId: 'user-6',
+    displayName: '渡辺愛',
+    avatar: 'https://robohash.org/user-6?set=set4',
+    commonInterests: ['恋愛', '告白'],
+    mutualFriends: 1,
+    score: 72,
+  },
+  {
+    userId: 'user-7',
+    displayName: '伊藤誠',
+    avatar: 'https://robohash.org/user-7?set=set4',
+    commonInterests: ['恋愛'],
+    mutualFriends: 0,
+    score: 65,
+  },
+];
+
+// ブロックユーザーのモックデータ
+export const mockBlockedUsers: User[] = [
+  {
+    id: 'blocked-user-1',
+    displayName: 'ブロックユーザー1',
+    avatar: 'https://robohash.org/blocked-1?set=set4',
+    joinedAt: new Date('2024-01-01'),
+    lastActive: new Date(),
+    stats: {
+      totalPosts: 1,
+      totalComments: 2,
+      helpfulVotes: 3,
+      learningPoints: 2,
+      totalLikes: 5,
+      receivedLikes: 3,
+      friendsCount: 0,
+      communitiesCount: 0,
+    },
+  },
+];
+
+// フレンド機能のテスト用ヘルパー関数
+export const createMockFriendRequest = (overrides: Partial<FriendRequest> = {}): FriendRequest => ({
+  id: `request-${Date.now()}`,
+  fromUserId: 'user-1',
+  toUserId: 'user-2',
+  message: 'テストメッセージ',
+  status: 'pending',
+  createdAt: new Date(),
+  ...overrides,
+});
+
+export const createMockUser = (overrides: Partial<User> = {}): User => ({
+  id: `user-${Date.now()}`,
+  displayName: 'テストユーザー',
+  avatar: 'https://robohash.org/test?set=set4',
+  joinedAt: new Date(),
+  lastActive: new Date(),
+  stats: {
+    totalPosts: 0,
+    totalComments: 0,
+    helpfulVotes: 0,
+    learningPoints: 0,
+    totalLikes: 0,
+    receivedLikes: 0,
+    friendsCount: 0,
+    communitiesCount: 0,
+  },
+  ...overrides,
+});
+
+export const createMockFriendRecommendation = (overrides: Partial<FriendRecommendation> = {}): FriendRecommendation => ({
+  userId: `user-${Date.now()}`,
+  displayName: '推薦ユーザー',
+  avatar: 'https://robohash.org/recommend?set=set4',
+  commonInterests: [],
+  mutualFriends: 0,
+  score: 50,
+  ...overrides,
+}); 
