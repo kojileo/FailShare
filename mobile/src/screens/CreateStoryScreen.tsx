@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ScrollView, View, StyleSheet, Alert, TouchableOpacity, StatusBar } from 'react-native';
+import { ScrollView, View, StyleSheet, Alert, StatusBar } from 'react-native';
 import { 
   Text, 
   TextInput, 
@@ -7,10 +7,8 @@ import {
   HelperText,
   Chip,
   Avatar,
-  Surface,
-  IconButton
+  Surface
 } from 'react-native-paper';
-import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { EmotionType, FailureStory, MainCategory, SubCategory, CategoryHierarchy } from '../types';
 import { storyService } from '../services/storyService';
@@ -19,6 +17,7 @@ import { useStoryStore } from '../stores/storyStore';
 import { getMainCategories, getSubCategories } from '../utils/categories';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types';
+import Header from '../components/Header';
 
 interface CreateStoryScreenProps {
   navigation: NativeStackNavigationProp<RootStackParamList, 'CreateStory'>;
@@ -520,29 +519,16 @@ const CreateStoryScreen: React.FC<CreateStoryScreenProps> = ({ navigation }) => 
       <StatusBar barStyle="light-content" backgroundColor="#1DA1F2" />
       
       {/* モダンヘッダー */}
-      <LinearGradient
-        colors={['#1DA1F2', '#1991DB']}
-        style={styles.modernHeader}
-      >
-        <View style={styles.headerContent}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <IconButton icon="arrow-left" size={24} iconColor="#FFFFFF" />
-          </TouchableOpacity>
-          <View style={styles.headerCenter}>
-            <Text style={styles.headerTitle}>失敗談を投稿</Text>
-            <Text style={styles.headerSubtitle}>ステップ {currentStep}/3</Text>
-          </View>
-          <View style={styles.headerRight}>
-            {user && (
-              <Avatar.Image 
-                size={32} 
-                source={{ uri: `https://robohash.org/${user.displayName}?set=set4` }}
-                style={styles.headerAvatar}
-              />
-            )}
-          </View>
-        </View>
-      </LinearGradient>
+      <Header
+        navigation={navigation}
+        rightComponent={user ? (
+          <Avatar.Image 
+            size={32} 
+            source={{ uri: `https://robohash.org/${user.displayName}?set=set4` }}
+            style={styles.headerAvatar}
+          />
+        ) : undefined}
+      />
 
       {/* ステップインジケーター */}
       {renderStepIndicator()}

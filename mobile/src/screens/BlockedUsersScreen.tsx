@@ -11,16 +11,16 @@ import {
   StatusBar
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MaterialIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { IconButton, Avatar } from 'react-native-paper';
+import { Avatar } from 'react-native-paper';
 import { useAuthStore } from '../stores/authStore';
 import { useFriendStore } from '../stores/friendStore';
 import { User, RootStackParamList } from '../types';
+import Header from '../components/Header';
 
-type BlockedUsersScreenNavigationProp = StackNavigationProp<RootStackParamList, 'BlockedUsers'>;
+type BlockedUsersScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'BlockedUsers'>;
 
 const BlockedUsersScreen: React.FC = () => {
   const navigation = useNavigation<BlockedUsersScreenNavigationProp>();
@@ -123,31 +123,16 @@ const BlockedUsersScreen: React.FC = () => {
       <StatusBar barStyle="light-content" backgroundColor="#1DA1F2" />
       
       {/* モダンヘッダー */}
-      <LinearGradient
-        colors={['#1DA1F2', '#1991DB']}
-        style={styles.modernHeader}
-      >
-        <View style={styles.headerContent}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerBackButton} testID="back-button">
-            <IconButton icon="arrow-left" size={24} iconColor="#FFFFFF" />
-          </TouchableOpacity>
-          <View style={styles.headerCenter}>
-            <Text style={styles.headerTitle}>ブロックユーザー</Text>
-            <Text style={styles.headerSubtitle}>
-              {blockedUsers ? blockedUsers.length : 0}人のユーザーをブロック中
-            </Text>
-          </View>
-          <View style={styles.headerRight}>
-            {user && (
-              <Avatar.Image 
-                size={32} 
-                source={{ uri: `https://robohash.org/${user.displayName}?set=set4` }}
-                style={styles.headerAvatar}
-              />
-            )}
-          </View>
-        </View>
-      </LinearGradient>
+      <Header
+        navigation={navigation}
+        rightComponent={user ? (
+          <Avatar.Image 
+            size={32} 
+            source={{ uri: `https://robohash.org/${user.displayName}?set=set4` }}
+            style={styles.headerAvatar}
+          />
+        ) : undefined}
+      />
 
                    <FlatList
                data={blockedUsers || []}

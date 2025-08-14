@@ -13,7 +13,8 @@ import {
   deleteDoc,
   DocumentData,
   QueryDocumentSnapshot,
-  Timestamp
+  Timestamp,
+  Firestore
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { FailureStory, StoryCategory, EmotionType, CategoryHierarchy } from '../types';
@@ -39,7 +40,7 @@ export interface StoryFilters {
 }
 
 class StoryService {
-  private db: any;
+  private db: Firestore;
   private COLLECTION_NAME = 'stories';
 
   constructor() {
@@ -238,7 +239,7 @@ class StoryService {
   async getCategoryStats(): Promise<{ [key in StoryCategory]: number }> {
     try {
       const categories = getCategoryNames();
-      const stats: { [key in StoryCategory]: number } = {} as any;
+      const stats: { [key in StoryCategory]: number } = {} as { [key in StoryCategory]: number };
 
       for (const category of categories) {
         const q = query(

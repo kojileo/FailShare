@@ -1,28 +1,28 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   FlatList,
   TouchableOpacity,
   StyleSheet,
-  TextInput,
   Alert,
   RefreshControl,
   ActivityIndicator,
   StatusBar,
+  TextInput,
   Modal
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MaterialIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { IconButton, Avatar } from 'react-native-paper';
+import { Avatar } from 'react-native-paper';
 import { useAuthStore } from '../stores/authStore';
 import { useFriendStore } from '../stores/friendStore';
-import { FriendRecommendation, RootStackParamList } from '../types';
+import { RootStackParamList } from '../types';
+import Header from '../components/Header';
 
-type FriendSearchScreenNavigationProp = StackNavigationProp<RootStackParamList, 'FriendSearch'>;
+type FriendSearchScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'FriendSearch'>;
 
 const FriendSearchScreen: React.FC = () => {
   const navigation = useNavigation<FriendSearchScreenNavigationProp>();
@@ -36,9 +36,9 @@ const FriendSearchScreen: React.FC = () => {
   
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filteredRecommendations, setFilteredRecommendations] = useState<FriendRecommendation[]>([]);
+  const [filteredRecommendations, setFilteredRecommendations] = useState<any[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
-  const [selectedRecommendation, setSelectedRecommendation] = useState<FriendRecommendation | null>(null);
+  const [selectedRecommendation, setSelectedRecommendation] = useState<any | null>(null);
   const [requestMessage, setRequestMessage] = useState('');
 
   useEffect(() => {
@@ -73,7 +73,7 @@ const FriendSearchScreen: React.FC = () => {
     }
   };
 
-  const handleSendFriendRequest = async (recommendation: FriendRecommendation) => {
+  const handleSendFriendRequest = async (recommendation: any) => {
     if (!user) return;
 
     setSelectedRecommendation(recommendation);
@@ -101,7 +101,7 @@ const FriendSearchScreen: React.FC = () => {
     setRequestMessage('');
   };
 
-  const renderRecommendationItem = ({ item }: { item: FriendRecommendation }) => (
+  const renderRecommendationItem = ({ item }: { item: any }) => (
     <View style={styles.recommendationItem}>
       <View style={styles.recommendationInfo}>
         <View style={styles.avatarContainer}>
@@ -162,31 +162,16 @@ const FriendSearchScreen: React.FC = () => {
       <StatusBar barStyle="light-content" backgroundColor="#1DA1F2" />
       
       {/* モダンヘッダー */}
-      <LinearGradient
-        colors={['#1DA1F2', '#1991DB']}
-        style={styles.modernHeader}
-      >
-        <View style={styles.headerContent}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerBackButton} testID="back-button">
-            <IconButton icon="arrow-left" size={24} iconColor="#FFFFFF" />
-          </TouchableOpacity>
-          <View style={styles.headerCenter}>
-            <Text style={styles.headerTitle}>フレンドを探す</Text>
-            <Text style={styles.headerSubtitle}>
-              {recommendations ? recommendations.length : 0}人のおすすめ
-            </Text>
-          </View>
-          <View style={styles.headerRight}>
-            {user && (
-              <Avatar.Image 
-                size={32} 
-                source={{ uri: `https://robohash.org/${user.displayName}?set=set4` }}
-                style={styles.headerAvatar}
-              />
-            )}
-          </View>
-        </View>
-      </LinearGradient>
+      <Header
+        navigation={navigation}
+        rightComponent={user ? (
+          <Avatar.Image 
+            size={32} 
+            source={{ uri: `https://robohash.org/${user.displayName}?set=set4` }}
+            style={styles.headerAvatar}
+          />
+        ) : undefined}
+      />
 
       {/* 検索バー */}
       <View style={styles.searchContainer}>

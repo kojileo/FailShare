@@ -7,7 +7,7 @@ import {
   Chip,
   Surface
 } from 'react-native-paper';
-import { LinearGradient } from 'expo-linear-gradient';
+
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
@@ -22,6 +22,7 @@ import {
 import { LikeButton } from '../components/LikeButton';
 import { CommentList } from '../components/CommentList';
 import { CommentInput } from '../components/CommentInput';
+import Header from '../components/Header';
 
 interface StoryDetailScreenProps {
   navigation: NativeStackNavigationProp<RootStackParamList, 'StoryDetail'>;
@@ -58,7 +59,7 @@ const StoryDetailScreen: React.FC<StoryDetailScreenProps> = ({ route, navigation
     loadStory();
   }, [loadStory]);
 
-  const getTimeAgo = (date: Date | any): string => {
+  const getTimeAgo = (date: any): string => {
     try {
       // Firestore Timestampの場合の処理
       let actualDate: Date;
@@ -113,18 +114,7 @@ const StoryDetailScreen: React.FC<StoryDetailScreenProps> = ({ route, navigation
     return (
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="light-content" backgroundColor="#1DA1F2" />
-        <LinearGradient
-          colors={['#1DA1F2', '#1991DB']}
-          style={styles.modernHeader}
-        >
-          <View style={styles.headerContent}>
-            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-              <IconButton icon="arrow-left" size={24} iconColor="#FFFFFF" />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>失敗談</Text>
-            <View style={styles.headerRight} />
-          </View>
-        </LinearGradient>
+        <Header navigation={navigation} />
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>読み込み中...</Text>
         </View>
@@ -135,22 +125,7 @@ const StoryDetailScreen: React.FC<StoryDetailScreenProps> = ({ route, navigation
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#1DA1F2" />
-      
-      {/* モダンヘッダー */}
-      <LinearGradient
-        colors={['#1DA1F2', '#1991DB']}
-        style={styles.modernHeader}
-      >
-        <View style={styles.headerContent}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <IconButton icon="arrow-left" size={24} iconColor="#FFFFFF" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>失敗談</Text>
-          <TouchableOpacity style={styles.headerRight}>
-            <IconButton icon="dots-horizontal" size={24} iconColor="#FFFFFF" />
-          </TouchableOpacity>
-        </View>
-      </LinearGradient>
+      <Header navigation={navigation} />
 
       <ScrollView 
         style={styles.content} 
@@ -318,30 +293,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F8FAFC',
-  },
-  modernHeader: {
-    paddingTop: 10,
-    paddingBottom: 16,
-    paddingHorizontal: 16,
-  },
-  headerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  backButton: {
-    width: 40,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    flex: 1,
-    textAlign: 'center',
-  },
-  headerRight: {
-    width: 40,
-    alignItems: 'center',
   },
   content: {
     flex: 1,

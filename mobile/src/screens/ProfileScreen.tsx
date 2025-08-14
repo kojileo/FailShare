@@ -15,6 +15,7 @@ import { useAuthStore } from '../stores/authStore';
 import { useStoryStore } from '../stores/storyStore';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types';
+import Header from '../components/Header';
 
 interface ProfileScreenProps {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Profile'>;
@@ -124,22 +125,14 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#1DA1F2" />
-      
-      {/* モダンヘッダー */}
-      <LinearGradient
-        colors={['#1DA1F2', '#1991DB']}
-        style={styles.modernHeader}
-      >
-        <View style={styles.headerContent}>
-          <TouchableOpacity onPress={() => navigation?.goBack()}>
-            <IconButton icon="arrow-left" size={24} iconColor="#FFFFFF" />
-          </TouchableOpacity>
-          <Text style={styles.modernHeaderTitle}>プロフィール</Text>
+      <Header
+        navigation={navigation}
+        rightComponent={
           <TouchableOpacity onPress={() => signOut()}>
             <IconButton icon="logout" size={24} iconColor="#FFFFFF" />
           </TouchableOpacity>
-        </View>
-      </LinearGradient>
+        }
+      />
 
       <ScrollView 
         style={styles.content} 

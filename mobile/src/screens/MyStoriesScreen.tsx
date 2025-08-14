@@ -20,6 +20,7 @@ import {
 } from '../utils/categories';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types';
+import Header from '../components/Header';
 
 interface MyStoriesScreenProps {
   navigation: NativeStackNavigationProp<RootStackParamList, 'MyStories'>;
@@ -31,40 +32,48 @@ const MyStoriesScreen: React.FC<MyStoriesScreenProps> = ({ navigation }) => {
   const [userStories, setUserStories] = useState<FailureStory[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
-  const loadUserStories = async () => {
-    if (!user) {
-      console.log('⚠️ ユーザー未認証のため、マイストーリー取得をスキップ');
-      return;
-    }
-    
-    try {
-      setLoading(true);
-      const { stories: allStories } = await storyService.getStories();
-      const filtered = allStories.filter(story => story.authorId === user.id);
-      setUserStories(filtered);
-      setStories(allStories);
-    } catch (error) {
-      console.error('ユーザーストーリー取得エラー:', error);
-      Alert.alert('エラー', 'データの取得に失敗しました');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
+    const loadUserStories = async () => {
+      if (!user) {
+        console.log('⚠️ ユーザー未認証のため、マイストーリー取得をスキップ');
+        return;
+      }
+      
+      try {
+        setLoading(true);
+        const { stories: allStories } = await storyService.getStories();
+        const filtered = allStories.filter(story => story.authorId === user.id);
+        setUserStories(filtered);
+        setStories(allStories);
+      } catch (error) {
+        console.error('ユーザーストーリー取得エラー:', error);
+        Alert.alert('エラー', 'データの取得に失敗しました');
+      } finally {
+        setLoading(false);
+      }
+    };
+
     loadUserStories();
-  }, [user, stories, loadUserStories]);
+  }, [user, setLoading, setStories]);
 
   const onRefresh = async () => {
     setRefreshing(true);
     try {
-      await loadUserStories();
+      if (user) {
+        const { stories: allStories } = await storyService.getStories();
+        const filtered = allStories.filter(story => story.authorId === user.id);
+        setUserStories(filtered);
+        setStories(allStories);
+      }
+    } catch (error) {
+      console.error('ユーザーストーリー取得エラー:', error);
+      Alert.alert('エラー', 'データの取得に失敗しました');
     } finally {
       setRefreshing(false);
     }
   };
 
-  const getTimeAgo = (date: Date | any): string => {
+  const getTimeAgo = (date: any): string => {
     try {
       // Firestore Timestampの場合の処理
       let actualDate: Date;
@@ -242,31 +251,16 @@ const MyStoriesScreen: React.FC<MyStoriesScreenProps> = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#1DA1F2" />
-      
-      {/* モダンヘッダー */}
-      <LinearGradient
-        colors={['#1DA1F2', '#1991DB']}
-        style={styles.modernHeader}
-      >
-        <View style={styles.headerContent}>
-          <TouchableOpacity onPress={() => navigation?.goBack()}>
-            <IconButton icon="arrow-left" size={24} iconColor="#FFFFFF" />
-          </TouchableOpacity>
-          <View style={styles.headerLeft}>
-            <Text style={styles.modernHeaderTitle}>マイ失敗談</Text>
-            <Text style={styles.headerSubtitle}>
-              {userStories.length}件の投稿
-            </Text>
-          </View>
-          {user && (
-            <Avatar.Image 
-              size={36} 
-              source={{ uri: `https://robohash.org/${user.displayName}?set=set4` }}
-              style={styles.headerAvatar}
-            />
-          )}
-        </View>
-      </LinearGradient>
+      <Header
+        navigation={navigation}
+        rightComponent={user ? (
+          <Avatar.Image 
+            size={36} 
+            source={{ uri: `https://robohash.org/${user.displayName}?set=set4` }}
+            style={styles.headerAvatar}
+          />
+        ) : undefined}
+      />
 
       {/* 統計情報カード */}
       <Surface style={styles.statsCard} elevation={2}>

@@ -383,7 +383,7 @@ export const updateUserProfile = async (userId: string, updates: Partial<User>):
     const userDocRef = doc(db, 'anonymousUsers', userId);
     
     // 更新データを準備
-    const updateData: any = {
+    const updateData: Record<string, unknown> = {
       ...updates,
       lastActive: serverTimestamp()
     };

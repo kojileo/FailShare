@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, StatusBar } from 'react-native';
 import { 
   Text, 
   Avatar, 
@@ -9,6 +9,7 @@ import {
   Surface
 } from 'react-native-paper';
 import { useFocusEffect } from '@react-navigation/native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types';
 import { FailureStory, MainCategory, SubCategory } from '../types';
@@ -21,6 +22,7 @@ import {
   getCategoryHierarchyIcon
 } from '../utils/categories';
 import { LikeButton } from '../components/LikeButton';
+import Header from '../components/Header';
 
 
 interface HomeScreenProps {
@@ -102,7 +104,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   useFocusEffect(
     React.useCallback(() => {
       loadStories();
-    }, [])
+    }, [loadStories])
   );
 
   useEffect(() => {
@@ -114,7 +116,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     setSelectedSubCategory(null);
   };
 
-  const getTimeAgo = (date: Date | any): string => {
+  const getTimeAgo = (date: any): string => {
     try {
       // Firestore Timestampの場合の処理
       let actualDate: Date;
@@ -158,36 +160,12 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const displayStories = searchQuery || selectedMainCategory || selectedSubCategory ? filteredStories : stories;
 
   return (
-    <View style={styles.container}>
-      {/* ヘッダー */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.headerTitle}>
-            FailShare
-          </Text>
-          <Text style={styles.headerSubtitle}>
-            失敗から学ぶコミュニティ
-          </Text>
-        </View>
-        {user && (
-          <TouchableOpacity 
-            onPress={() => navigation?.navigate('Profile')}
-            style={styles.profileButton}
-          >
-            <Avatar.Image 
-              size={36} 
-              source={{ uri: `https://robohash.org/${user.displayName}?set=set4` }}
-              style={styles.headerAvatar}
-            />
-            <IconButton 
-              icon="account-circle" 
-              size={20} 
-              iconColor="#FFFFFF" 
-              style={styles.profileIcon}
-            />
-          </TouchableOpacity>
-        )}
-      </View>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
+      <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
+      <Header
+        navigation={navigation}
+        showBackButton={false}
+      />
 
       {/* 検索セクション */}
       <View style={styles.searchSection}>
@@ -398,7 +376,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       </View>
 
       <View style={styles.bottomSpace} />
-    </View>
+    </SafeAreaView>
   );
 };
 

@@ -1,11 +1,11 @@
 import { db } from './firebase';
-import { collection, addDoc, deleteDoc, getDocs, query, where, doc, onSnapshot, Timestamp, updateDoc, increment } from 'firebase/firestore';
+import { collection, addDoc, deleteDoc, getDocs, query, where, doc, onSnapshot, Timestamp, updateDoc, increment, Firestore } from 'firebase/firestore';
 import { Like, LikeStats, LikeService as ILikeService } from '../types';
 
 class LikeService implements ILikeService {
   private readonly COLLECTION_NAME = 'likes';
 
-  constructor(private db: any) {}
+  constructor(private db: Firestore) {}
 
   async addLike(storyId: string, userId: string): Promise<void> {
     try {
