@@ -340,7 +340,7 @@ const styles = StyleSheet.create({
 
   statsCard: {
     marginHorizontal: 16,
-    marginTop: -10,
+    marginTop: 16,
     borderRadius: 16,
     backgroundColor: '#FFFFFF',
     padding: 20,

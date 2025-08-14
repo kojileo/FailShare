@@ -430,7 +430,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     backgroundColor: '#FFFFFF',
     marginHorizontal: 16,
-    marginTop: -10,
+    marginTop: 16,
     borderRadius: 16,
     elevation: 4,
   },
