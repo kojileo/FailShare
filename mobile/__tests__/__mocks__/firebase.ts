@@ -68,6 +68,14 @@ export const mockFirestore = {
   })),
 };
 
+// バッチ処理のモック
+export const mockBatch = {
+  set: jest.fn().mockReturnThis(),
+  update: jest.fn().mockReturnThis(),
+  delete: jest.fn().mockReturnThis(),
+  commit: jest.fn().mockResolvedValue(undefined),
+};
+
 // Firebase SDK モック
 jest.mock('firebase/app', () => ({
   initializeApp: jest.fn(),
@@ -110,9 +118,14 @@ jest.mock('firebase/firestore', () => ({
   where: jest.fn().mockReturnValue({}),
   orderBy: jest.fn().mockReturnValue({}),
   limit: jest.fn().mockReturnValue({}),
+  writeBatch: jest.fn(() => mockBatch),
   Timestamp: {
-    now: jest.fn(() => ({ seconds: Date.now() / 1000 })),
+    now: jest.fn(() => ({ seconds: Date.now() / 1000, toDate: () => new Date() })),
     fromDate: jest.fn((date: Date) => ({ seconds: date.getTime() / 1000 })),
   },
   increment: jest.fn((value: number) => value),
+  onSnapshot: jest.fn(),
+  serverTimestamp: jest.fn(() => ({ seconds: Date.now() / 1000 })),
+  startAfter: jest.fn().mockReturnValue({}),
+  QueryDocumentSnapshot: jest.fn(),
 })); 
