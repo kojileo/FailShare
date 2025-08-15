@@ -134,6 +134,16 @@ const FriendsScreen: React.FC = () => {
         </View>
       </View>
       <View style={styles.actionButtons}>
+                 <TouchableOpacity
+           style={styles.actionButton}
+           onPress={() => navigation.navigate('Chat', {
+             friendId: item.id,
+             friendName: item.displayName,
+           })}
+           testID="chat-friend-button"
+         >
+           <MaterialIcons name="chat" size={20} color="#6366F1" />
+         </TouchableOpacity>
         <TouchableOpacity
           style={styles.actionButton}
           onPress={() => handleRemoveFriend(item)}

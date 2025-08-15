@@ -327,6 +327,94 @@ export interface CommunityStore {
   reset(): void;
 }
 
+// チャット機能の型定義
+export interface ChatMessage {
+  id: string;
+  chatId: string;
+  senderId: string;
+  content: string;
+  messageType: 'text' | 'image' | 'file';
+  createdAt: Date;
+  isRead: boolean;
+  isEdited: boolean;
+  editedAt?: Date;
+}
+
+export interface Chat {
+  id: string;
+  participants: string[]; // ユーザーIDの配列
+  lastMessage?: ChatMessage;
+  lastMessageAt?: Date;
+  unreadCount: { [userId: string]: number };
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ChatPreview {
+  chatId: string;
+  friendId: string;
+  friendName: string;
+  friendAvatar: string;
+  lastMessage?: string;
+  lastMessageAt?: Date;
+  unreadCount: number;
+  isOnline: boolean;
+}
+
+// チャットサービスインターフェース
+export interface ChatService {
+  // チャット管理
+  createChat(participants: string[]): Promise<string>;
+  getChat(chatId: string): Promise<Chat | null>;
+  getUserChats(userId: string): Promise<Chat[]>;
+  getChatPreview(userId: string): Promise<ChatPreview[]>;
+  
+  // メッセージ管理
+  sendMessage(chatId: string, senderId: string, content: string, messageType?: 'text' | 'image' | 'file'): Promise<string>;
+  editMessage(messageId: string, content: string): Promise<void>;
+  deleteMessage(messageId: string): Promise<void>;
+  markMessageAsRead(messageId: string, userId: string): Promise<void>;
+  markChatAsRead(chatId: string, userId: string): Promise<void>;
+  
+  // メッセージ取得
+  getChatMessages(chatId: string, limit?: number): Promise<ChatMessage[]>;
+  getUnreadMessages(userId: string): Promise<ChatMessage[]>;
+  
+  // リアルタイム更新
+  subscribeToChat(chatId: string, callback: (chat: Chat) => void): () => void;
+  subscribeToChatMessages(chatId: string, callback: (messages: ChatMessage[]) => void): () => void;
+  subscribeToUserChats(userId: string, callback: (chats: Chat[]) => void): () => void;
+}
+
+// チャットストアインターフェース
+export interface ChatStore {
+  chats: Chat[];
+  chatPreviews: ChatPreview[];
+  currentChat: Chat | null;
+  currentChatMessages: ChatMessage[];
+  isLoading: boolean;
+  error: string | null;
+  
+  // Actions
+  loadUserChats(userId: string): Promise<void>;
+  loadChat(chatId: string): Promise<void>;
+  loadChatMessages(chatId: string): Promise<void>;
+  
+  sendMessage(chatId: string, senderId: string, content: string): Promise<void>;
+  editMessage(messageId: string, content: string): Promise<void>;
+  deleteMessage(messageId: string): Promise<void>;
+  markChatAsRead(chatId: string, userId: string): Promise<void>;
+  
+  setCurrentChat(chat: Chat | null): void;
+  setLoading(loading: boolean): void;
+  setError(error: string | null): void;
+  reset(): void;
+  
+  // リアルタイム更新
+  subscribeToChat(chatId: string): () => void;
+  subscribeToUserChats(userId: string): () => void;
+}
+
 // Navigation型定義を更新
 export type RootStackParamList = {
   Home: undefined;
@@ -342,4 +430,5 @@ export type RootStackParamList = {
   CommunityDetail: { communityId: string };
   CreateCommunity: undefined;
   Chat: { friendId: string; friendName: string } | undefined;
+  ChatList: undefined;
 }; 
