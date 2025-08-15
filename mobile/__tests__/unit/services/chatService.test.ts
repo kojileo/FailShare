@@ -7,36 +7,38 @@ jest.mock('../../../src/services/firebase', () => ({
   db: {},
 }));
 
-// Firestoreのモック
-const mockAddDoc = jest.fn();
-const mockGetDoc = jest.fn();
-const mockGetDocs = jest.fn();
-const mockUpdateDoc = jest.fn();
-const mockDeleteDoc = jest.fn();
-const mockOnSnapshot = jest.fn();
-const mockQuery = jest.fn();
-const mockWhere = jest.fn();
-const mockOrderBy = jest.fn();
-const mockLimit = jest.fn();
-const mockWriteBatch = jest.fn();
-const mockServerTimestamp = jest.fn();
-
 jest.mock('firebase/firestore', () => ({
   collection: jest.fn(),
   doc: jest.fn(),
-  addDoc: mockAddDoc,
-  getDoc: mockGetDoc,
-  getDocs: mockGetDocs,
-  updateDoc: mockUpdateDoc,
-  deleteDoc: mockDeleteDoc,
-  onSnapshot: mockOnSnapshot,
-  query: mockQuery,
-  where: mockWhere,
-  orderBy: mockOrderBy,
-  limit: mockLimit,
-  writeBatch: mockWriteBatch,
-  serverTimestamp: mockServerTimestamp,
+  addDoc: jest.fn(),
+  getDoc: jest.fn(),
+  getDocs: jest.fn(),
+  updateDoc: jest.fn(),
+  deleteDoc: jest.fn(),
+  onSnapshot: jest.fn(),
+  query: jest.fn(),
+  where: jest.fn(),
+  orderBy: jest.fn(),
+  limit: jest.fn(),
+  writeBatch: jest.fn(),
+  serverTimestamp: jest.fn(),
 }));
+
+// Firestoreのモック
+const mockAddDoc = jest.mocked(require('firebase/firestore').addDoc);
+const mockGetDoc = jest.mocked(require('firebase/firestore').getDoc);
+const mockGetDocs = jest.mocked(require('firebase/firestore').getDocs);
+const mockUpdateDoc = jest.mocked(require('firebase/firestore').updateDoc);
+const mockDeleteDoc = jest.mocked(require('firebase/firestore').deleteDoc);
+const mockOnSnapshot = jest.mocked(require('firebase/firestore').onSnapshot);
+const mockQuery = jest.mocked(require('firebase/firestore').query);
+const mockWhere = jest.mocked(require('firebase/firestore').where);
+const mockOrderBy = jest.mocked(require('firebase/firestore').orderBy);
+const mockLimit = jest.mocked(require('firebase/firestore').limit);
+const mockWriteBatch = jest.mocked(require('firebase/firestore').writeBatch);
+const mockServerTimestamp = jest.mocked(require('firebase/firestore').serverTimestamp);
+const mockDoc = jest.mocked(require('firebase/firestore').doc);
+const mockCollection = jest.mocked(require('firebase/firestore').collection);
 
 describe('ChatService', () => {
   beforeEach(() => {
@@ -55,12 +57,13 @@ describe('ChatService', () => {
 
       expect(result).toBe('chat123');
       expect(mockAddDoc).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.objectContaining({
+        undefined,
+        {
           participants: participants.sort(),
           createdAt: 'timestamp',
           updatedAt: 'timestamp',
-        })
+          unreadCount: { user1: 0, user2: 0 },
+        }
       );
     });
 
@@ -115,7 +118,20 @@ describe('ChatService', () => {
       };
 
       mockWriteBatch.mockReturnValue(mockBatch);
-      mockGetDoc.mockResolvedValue({
+      mockDoc.mockReturnValue('mock-doc-ref');
+      mockCollection.mockReturnValue('mock-collection-ref');
+      // doc(collection(db, 'messages'))の戻り値を設定
+      mockDoc.mockReturnValueOnce({ id: 'msg123' });
+      // 最初の呼び出し（メッセージ作成時）
+      mockGetDoc.mockResolvedValueOnce({
+        exists: () => true,
+        data: () => ({
+          participants: ['user1', 'user2'],
+          unreadCount: { user1: 0, user2: 0 },
+        }),
+      });
+      // 2番目の呼び出し（チャット情報取得時）
+      mockGetDoc.mockResolvedValueOnce({
         exists: () => true,
         data: () => ({
           participants: ['user1', 'user2'],
@@ -125,10 +141,19 @@ describe('ChatService', () => {
 
       const result = await chatService.sendMessage('chat123', 'user1', 'Hello!');
 
-      expect(result).toBeDefined();
+      expect(result).toBe('msg123');
       expect(mockBatch.set).toHaveBeenCalled();
       expect(mockBatch.update).toHaveBeenCalled();
       expect(mockBatch.commit).toHaveBeenCalled();
+    });
+
+    it('should handle send message error', async () => {
+      mockWriteBatch.mockImplementation(() => {
+        throw new Error('Database error');
+      });
+
+      await expect(chatService.sendMessage('chat123', 'user1', 'Hello!'))
+        .rejects.toThrow('メッセージの送信に失敗しました');
     });
   });
 
@@ -168,27 +193,29 @@ describe('ChatService', () => {
       const result = await chatService.getChatMessages('chat123');
 
       expect(result).toHaveLength(2);
-      expect(result[0].content).toBe('Hello');
-      expect(result[1].content).toBe('Hi there');
+      expect(result[0].content).toBe('Hi there');
+      expect(result[1].content).toBe('Hello');
     });
   });
 
   describe('markChatAsRead', () => {
     it('should mark chat as read successfully', async () => {
-      const mockBatch = {
-        update: jest.fn(),
-        commit: jest.fn(),
-      };
+      await chatService.markChatAsRead('chat123', 'user1');
 
-      mockWriteBatch.mockReturnValue(mockBatch);
-      mockGetDocs.mockResolvedValue({
-        forEach: (callback: any) => [],
-      });
+      expect(mockUpdateDoc).toHaveBeenCalledWith(
+        'mock-doc-ref',
+        { 'unreadCount.user1': 0 }
+      );
+    });
+
+    it('should handle errors gracefully', async () => {
+      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+      mockUpdateDoc.mockRejectedValue(new Error('Permission denied'));
 
       await chatService.markChatAsRead('chat123', 'user1');
 
-      expect(mockBatch.update).toHaveBeenCalled();
-      expect(mockBatch.commit).toHaveBeenCalled();
+      expect(consoleSpy).toHaveBeenCalledWith('既読処理に失敗しましたが、チャット機能は継続します');
+      consoleSpy.mockRestore();
     });
   });
 

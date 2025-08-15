@@ -80,15 +80,16 @@ const ChatInput: React.FC<ChatInputProps> = ({ chatId, onSend }) => {
           blurOnSubmit={false}
         />
         
-        <TouchableOpacity
-          style={[
-            styles.sendButton,
-            isTyping ? styles.sendButtonActive : styles.sendButtonInactive
-          ]}
-          onPress={handleSend}
-          disabled={!isTyping}
-          activeOpacity={0.7}
-        >
+                 <TouchableOpacity
+           style={[
+             styles.sendButton,
+             isTyping ? styles.sendButtonActive : styles.sendButtonInactive
+           ]}
+           onPress={handleSend}
+           disabled={!isTyping}
+           activeOpacity={0.7}
+           testID="send-button"
+         >
           <Ionicons
             name="send"
             size={20}

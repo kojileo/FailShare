@@ -121,14 +121,15 @@ const ChatMessageItem: React.FC<ChatMessageItemProps> = ({ message, isOwnMessage
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>メッセージを編集</Text>
-            <TextInput
-              style={styles.editInput}
-              value={editContent}
-              onChangeText={setEditContent}
-              multiline
-              placeholder="メッセージを入力..."
-              autoFocus
-            />
+                         <TextInput
+               style={styles.editInput}
+               value={editContent}
+               onChangeText={setEditContent}
+               multiline
+               placeholder="メッセージを入力..."
+               autoFocus
+               testID="edit-input"
+             />
             <View style={styles.modalButtons}>
               <TouchableOpacity style={styles.cancelButton} onPress={handleCancelEdit}>
                 <Text style={styles.cancelButtonText}>キャンセル</Text>
