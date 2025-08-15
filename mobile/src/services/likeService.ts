@@ -34,6 +34,19 @@ class LikeServiceImpl implements LikeService {
     try {
       console.log('👍 いいね追加開始:', { storyId, userId });
       
+      // 既存のいいねをチェック
+      const existingLikesQuery = query(
+        collection(db, this.COLLECTION_NAME),
+        where('storyId', '==', storyId),
+        where('userId', '==', userId)
+      );
+      
+      const existingSnapshot = await getDocs(existingLikesQuery);
+      
+      if (!existingSnapshot.empty) {
+        throw new Error('既にいいね済みです');
+      }
+      
       // 🔧 最適化: バッチ処理を使用して統計も同時更新
       const batch = writeBatch(db);
       
