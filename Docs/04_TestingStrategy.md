@@ -1,618 +1,368 @@
 # FailShare テスト戦略
 
-## 🎯 テスト戦略の目的
+## 📊 テスト戦略概要
 
-### 品質保証目標
-- **機能の正確性**: すべての機能が仕様通りに動作することを保証
-- **リグレッション防止**: 新機能追加時に既存機能が破損しないことを確認
-- **パフォーマンス保証**: アプリの応答性とパフォーマンスを維持
-- **ユーザーエクスペリエンス**: エンドユーザーの視点でアプリ全体をテスト
-- **エンゲージメント品質**: いいね・コメント・シェア機能の安定性確保
-- **コミュニティ安全性**: フレンド・コミュニティ機能のプライバシー保護
+### 基本方針
+- **品質保証**: ユーザー体験を損なわない高品質なアプリケーション
+- **開発効率**: テストによる開発速度の向上
+- **保守性**: 長期的なコード保守性の確保
+- **信頼性**: 本番環境での安定動作
 
-### 対象範囲
-- **ユニットテスト**: 個別関数・コンポーネントの動作
-- **インテグレーションテスト**: コンポーネント間の連携
-- **E2Eテスト**: エンドユーザーシナリオの完全テスト
-- **エンゲージメントテスト**: いいね・コメント・シェア機能の統合テスト
-- **コミュニティテスト**: フレンド・コミュニティ機能の統合テスト
-
----
-
-## 📊 テストピラミッド
-
-```
-    🔺 E2E テスト (10%)
-       ユーザーフロー・ブラウザテスト・エンゲージメント統合
-    
-  🔺🔺 インテグレーションテスト (20%)
-     コンポーネント間連携・API統合・コミュニティ機能
-     
-🔺🔺🔺 ユニットテスト (70%)
-   関数・コンポーネント・状態管理・エンゲージメントロジック
-```
-
-### テスト分散比率
+### テスト配分
 - **ユニットテスト**: 70% - 高速・詳細・開発者フィードバック
 - **インテグレーションテスト**: 20% - 中速・統合確認
 - **E2Eテスト**: 10% - 低速・全体シナリオ確認
 
 ---
 
-## 🛠️ 技術スタック
+## 🧪 テスト環境
 
-### ユニットテスト
-- **Jest**: テストランナー・アサーション
+### 開発環境
+- **Firebase Emulator**: ローカルでのFirebase機能テスト
+- **Jest**: テストフレームワーク
 - **React Native Testing Library**: コンポーネントテスト
-- **Jest Native**: React Native専用マッチャー
+- **TypeScript**: 型チェック
 
-### インテグレーションテスト
-- **Jest + React Native Testing Library**: 画面レベルテスト
-- **Firebase Emulator**: Firestore・Auth のモックテスト
-- **MSW (Mock Service Worker)**: API モック
-
-### E2Eテスト
-- **Detox**: React Native アプリケーション E2E テスト
-- **iOS Simulator / Android Emulator**: 実機環境シミュレーション
-
-### エンゲージメントテスト
-- **Firebase Emulator**: リアルタイム機能のテスト
-- **Mock Service Worker**: Twitter API モック
-- **React Native Animated**: アニメーション機能テスト
+### テストデータ
+- **開発環境**: 5件のサンプルデータ
+- **ステージング環境**: 6件のサンプルデータ
+- **本番環境**: 3件のサンプルデータ
 
 ---
 
-## 📁 テストファイル構成
+## 🔧 ユニットテスト
 
-```
-mobile/
-├── __tests__/
-│   ├── unit/                    # ユニットテスト
-│   │   ├── utils/              # ユーティリティ関数
-│   │   ├── services/           # Firebase・API サービス
-│   │   ├── stores/             # Zustand 状態管理
-│   │   ├── components/         # 個別コンポーネント
-│   │   └── engagement/         # エンゲージメント機能
-│   │
-│   ├── integration/            # インテグレーションテスト
-│   │   ├── screens/           # 画面統合テスト
-│   │   ├── navigation/        # ナビゲーションテスト
-│   │   ├── workflows/         # ビジネスロジック統合
-│   │   ├── engagement/        # エンゲージメント統合
-│   │   └── community/         # コミュニティ機能統合
-│   │
-│   └── __mocks__/             # モックデータ・関数
-│       ├── firebase.ts        # Firebase モック
-│       ├── @react-navigation/ # ナビゲーションモック
-│       ├── sampleData.ts      # テストデータ
-│       └── twitter-api.ts     # Twitter API モック
-│
-├── e2e/                       # E2E テスト
-│   ├── tests/                 # テストシナリオ
-│   ├── helpers/               # テストヘルパー
-│   └── jest.config.js         # E2E Jest 設定
-│
-└── src/
-    └── **/*.test.{ts,tsx}     # コロケーションテスト
-```
+### サービス層テスト ✅ **実装済み**
 
----
+#### 認証サービス (`authService.test.ts`)
+- **匿名認証**: 匿名ユーザーの作成・認証
+- **ユーザー管理**: ユーザー情報の取得・更新
+- **統計管理**: ユーザー統計の更新
+- **エラーハンドリング**: 認証エラーの適切な処理
 
-## 🧪 ユニットテスト戦略
+#### ストーリーサービス (`storyService.test.ts`)
+- **投稿機能**: 失敗談の投稿・編集・削除
+- **検索機能**: カテゴリ別・キーワード検索
+- **統計更新**: ビュー数・コメント数の更新
+- **権限管理**: 自分の投稿のみ編集可能
 
-### テスト対象と優先度
+#### いいねサービス (`likeService.test.ts`)
+- **いいね機能**: いいねの追加・削除
+- **統計管理**: いいね数のリアルタイム更新
+- **状態管理**: ユーザー別のいいね状態
+- **パフォーマンス**: 大量データの効率的処理
 
-#### 🔥 **高優先度** (カバレッジ100%目標)
-- **utils/categories.ts**: カテゴリ管理ロジック
-- **services/storyService.ts**: Firestore CRUD操作
-- **services/authService.ts**: 認証ロジック
-- **stores/**: Zustand 状態管理
-- **services/engagementService.ts**: いいね・コメント・シェア機能
-- **services/communityService.ts**: フレンド・コミュニティ機能
+#### コメントサービス (`commentService.test.ts`)
+- **コメント機能**: コメントの投稿・編集・削除
+- **リアルタイム更新**: 新規コメントの即座反映
+- **権限管理**: 自分のコメントのみ編集可能
+- **ページネーション**: 大量コメントの効率的表示
 
-#### 🟡 **中優先度** (カバレッジ80%目標)
-- **screens/**: 画面コンポーネントの基本動作
-- **navigation/**: ナビゲーション設定
-- **components/**: 再利用可能コンポーネント
-- **utils/**: ユーティリティ関数
+#### フレンドサービス (`friendService.test.ts`)
+- **フレンドリクエスト**: リクエストの送信・承認・拒否
+- **フレンド管理**: フレンドの追加・削除・ブロック
+- **検索機能**: フレンド検索・推薦機能
+- **統計更新**: フレンド数の自動増減
 
-#### 🟢 **低優先度** (カバレッジ60%目標)
-- **assets/**: 静的リソース
-- **config/**: 設定ファイル
-- **types/**: 型定義
+### ストア層テスト ✅ **実装済み**
 
-### エンゲージメント機能テスト
+#### 認証ストア (`authStore.test.ts`)
+- **状態管理**: 認証状態の管理
+- **アクション**: ログイン・ログアウト・ユーザー更新
+- **エラーハンドリング**: 認証エラーの状態管理
 
-#### いいね機能テスト
-```typescript
-describe('LikeService', () => {
-  test('いいねの追加・削除', async () => {
-    const likeService = new LikeService();
-    const storyId = 'test-story-id';
-    const userId = 'test-user-id';
-    
-    // いいね追加
-    await likeService.addLike(storyId, userId);
-    expect(await likeService.getLikeCount(storyId)).toBe(1);
-    
-    // いいね削除
-    await likeService.removeLike(storyId, userId);
-    expect(await likeService.getLikeCount(storyId)).toBe(0);
-  });
-  
-  test('いいね状態の取得', async () => {
-    const likeService = new LikeService();
-    const storyId = 'test-story-id';
-    const userId = 'test-user-id';
-    
-    await likeService.addLike(storyId, userId);
-    expect(await likeService.isLikedByUser(storyId, userId)).toBe(true);
-  });
-});
-```
+#### ストーリーストア (`storyStore.test.ts`)
+- **状態管理**: ストーリー一覧・詳細の管理
+- **アクション**: 投稿・編集・削除・検索
+- **リアルタイム更新**: Firestoreリスナーによる更新
 
-#### コメント機能テスト
-```typescript
-describe('CommentService', () => {
-  test('コメントの投稿・取得', async () => {
-    const commentService = new CommentService();
-    const storyId = 'test-story-id';
-    const comment = {
-      content: 'テストコメント',
-      authorId: 'test-user-id',
-      timestamp: new Date()
-    };
-    
-    const commentId = await commentService.addComment(storyId, comment);
-    const comments = await commentService.getComments(storyId);
-    
-    expect(comments).toHaveLength(1);
-    expect(comments[0].content).toBe('テストコメント');
-  });
-  
-  test('コメント返信機能', async () => {
-    const commentService = new CommentService();
-    const storyId = 'test-story-id';
-    const parentCommentId = 'parent-comment-id';
-    const reply = {
-      content: '返信コメント',
-      authorId: 'test-user-id',
-      parentId: parentCommentId
-    };
-    
-    await commentService.addReply(storyId, reply);
-    const replies = await commentService.getReplies(parentCommentId);
-    
-    expect(replies).toHaveLength(1);
-    expect(replies[0].content).toBe('返信コメント');
-  });
-});
-```
+#### いいねストア (`likeStore.test.ts`)
+- **状態管理**: いいね状態・カウントの管理
+- **アクション**: いいねの追加・削除・切り替え
+- **楽観的更新**: UI即座更新 + エラー時復旧
 
-#### シェア機能テスト
-```typescript
-describe('ShareService', () => {
-  test('Twitterシェア機能', async () => {
-    const shareService = new ShareService();
-    const storyId = 'test-story-id';
-    const storyTitle = 'テスト投稿';
-    
-    const shareUrl = await shareService.generateTwitterShareUrl(storyId, storyTitle);
-    expect(shareUrl).toContain('twitter.com/intent/tweet');
-    expect(shareUrl).toContain(encodeURIComponent(storyTitle));
-  });
-  
-  test('URLシェア機能', async () => {
-    const shareService = new ShareService();
-    const storyId = 'test-story-id';
-    
-    const shareUrl = await shareService.generateShareUrl(storyId);
-    expect(shareUrl).toContain(storyId);
-  });
-});
-```
+#### コメントストア (`commentStore.test.ts`)
+- **状態管理**: コメント一覧・状態の管理
+- **アクション**: コメントの投稿・編集・削除
+- **リアルタイム更新**: 新規コメントの即座反映
 
-### コミュニティ機能テスト
+#### フレンドストア (`friendStore.test.ts`)
+- **状態管理**: フレンド・リクエスト・ブロックの管理
+- **アクション**: リクエスト送信・承認・拒否・ブロック
+- **リアルタイム更新**: フレンド関係の即座反映
 
-#### フレンド機能テスト
-```typescript
-describe('FriendService', () => {
-  test('フレンド追加・削除', async () => {
-    const friendService = new FriendService();
-    const userId = 'test-user-id';
-    const friendId = 'friend-user-id';
-    
-    // フレンド追加
-    await friendService.addFriend(userId, friendId);
-    expect(await friendService.getFriends(userId)).toContain(friendId);
-    
-    // フレンド削除
-    await friendService.removeFriend(userId, friendId);
-    expect(await friendService.getFriends(userId)).not.toContain(friendId);
-  });
-  
-  test('フレンド推薦機能', async () => {
-    const friendService = new FriendService();
-    const userId = 'test-user-id';
-    
-    const recommendations = await friendService.getRecommendations(userId);
-    expect(recommendations).toBeInstanceOf(Array);
-    expect(recommendations.length).toBeGreaterThan(0);
-  });
-});
-```
+### ユーティリティテスト ✅ **実装済み**
 
-#### コミュニティ機能テスト
-```typescript
-describe('CommunityService', () => {
-  test('コミュニティ作成・参加', async () => {
-    const communityService = new CommunityService();
-    const community = {
-      name: 'テストコミュニティ',
-      description: 'テスト用コミュニティ',
-      creatorId: 'test-user-id'
-    };
-    
-    const communityId = await communityService.createCommunity(community);
-    await communityService.joinCommunity(communityId, 'test-user-id');
-    
-    const members = await communityService.getMembers(communityId);
-    expect(members).toContain('test-user-id');
-  });
-  
-  test('コミュニティ投稿機能', async () => {
-    const communityService = new CommunityService();
-    const communityId = 'test-community-id';
-    const post = {
-      content: 'コミュニティ投稿',
-      authorId: 'test-user-id'
-    };
-    
-    const postId = await communityService.addPost(communityId, post);
-    const posts = await communityService.getPosts(communityId);
-    
-    expect(posts).toHaveLength(1);
-    expect(posts[0].content).toBe('コミュニティ投稿');
-  });
-});
-```
+#### カテゴリ機能 (`categories.test.ts`)
+- **カテゴリ検証**: 階層カテゴリの妥当性チェック
+- **変換機能**: カテゴリ形式の変換
+- **バリデーション**: カテゴリデータの検証
 
 ---
 
-## 🔗 インテグレーションテスト戦略
+## 🔗 インテグレーションテスト
 
-### エンゲージメント統合テスト
+### Firebase統合テスト ✅ **実装済み**
 
-#### いいね・コメント・シェア統合テスト
-```typescript
-describe('Engagement Integration', () => {
-  test('投稿へのエンゲージメント一連の流れ', async () => {
-    // 1. 投稿作成
-    const story = await createTestStory();
-    
-    // 2. いいね追加
-    await addLike(story.id, 'user1');
-    await addLike(story.id, 'user2');
-    
-    // 3. コメント投稿
-    await addComment(story.id, 'user1', '素晴らしい投稿です！');
-    await addComment(story.id, 'user2', '参考になりました');
-    
-    // 4. シェア実行
-    await shareStory(story.id, 'user1');
-    
-    // 5. 統計確認
-    const stats = await getStoryStats(story.id);
-    expect(stats.likeCount).toBe(2);
-    expect(stats.commentCount).toBe(2);
-    expect(stats.shareCount).toBe(1);
-  });
-});
-```
+#### Firestore統合
+- **データ操作**: 実際のFirestoreとの統合テスト
+- **リアルタイム更新**: Firestoreリスナーの動作確認
+- **セキュリティルール**: Firestoreルールの動作確認
+- **バッチ処理**: 大量データの一括処理
 
-#### リアルタイム更新テスト
-```typescript
-describe('Real-time Updates', () => {
-  test('いいねのリアルタイム更新', async () => {
-    const story = await createTestStory();
-    const listener = subscribeToLikes(story.id);
-    
-    // いいね追加
-    await addLike(story.id, 'user1');
-    
-    // リアルタイム更新確認
-    await waitFor(() => {
-      expect(listener.getLatestCount()).toBe(1);
-    });
-  });
-});
-```
+#### 認証統合
+- **匿名認証**: Firebase Authとの統合テスト
+- **ユーザー管理**: 認証状態とユーザーデータの同期
+- **権限管理**: 認証に基づくアクセス制御
 
-### コミュニティ統合テスト
+### サービス間統合テスト ✅ **実装済み**
 
-#### フレンド・コミュニティ統合テスト
-```typescript
-describe('Community Integration', () => {
-  test('フレンドを通じたコミュニティ参加', async () => {
-    // 1. フレンド追加
-    await addFriend('user1', 'user2');
-    
-    // 2. コミュニティ作成
-    const community = await createCommunity('user1', 'テストコミュニティ');
-    
-    // 3. フレンド招待
-    await inviteFriendToCommunity(community.id, 'user2');
-    
-    // 4. フレンド参加
-    await joinCommunity(community.id, 'user2');
-    
-    // 5. コミュニティ内投稿
-    await addCommunityPost(community.id, 'user2', '参加しました！');
-    
-    // 6. 投稿確認
-    const posts = await getCommunityPosts(community.id);
-    expect(posts).toHaveLength(1);
-  });
-});
-```
+#### エンゲージメント機能統合
+- **いいね・コメント連携**: いいねとコメントの相互連携
+- **統計更新**: 複数サービスによる統計更新
+- **リアルタイム同期**: 複数サービスのリアルタイム更新
+
+#### フレンド機能統合
+- **フレンド・リクエスト連携**: フレンド機能とリクエスト機能の連携
+- **ブロック機能**: ブロックによる各種機能の制限
+- **統計更新**: フレンド関係による統計更新
+
+### 画面・サービス統合テスト ✅ **実装済み**
+
+#### ホーム画面統合
+- **データ取得**: ストーリー一覧の取得・表示
+- **フィルタリング**: カテゴリ・キーワードによる絞り込み
+- **リアルタイム更新**: 新規投稿の即座表示
+
+#### 投稿画面統合
+- **投稿フロー**: 投稿作成から保存までの一連の流れ
+- **バリデーション**: 入力データの検証
+- **エラーハンドリング**: 投稿エラーの適切な処理
+
+#### 詳細画面統合
+- **データ表示**: ストーリー詳細・コメントの表示
+- **エンゲージメント**: いいね・コメント機能の動作
+- **リアルタイム更新**: いいね・コメントの即座反映
+
+#### フレンド画面統合
+- **フレンド管理**: フレンド一覧・リクエストの表示
+- **フレンド操作**: リクエスト送信・承認・拒否
+- **検索機能**: フレンド検索・推薦機能
 
 ---
 
-## 🌐 E2Eテスト戦略
+## 🌐 E2Eテスト
 
-### エンゲージメントE2Eテスト
+### ユーザーフローテスト 🔄 **設計中**
 
-#### いいね機能E2Eテスト
-```typescript
-describe('Like Feature E2E', () => {
-  test('投稿へのいいね機能', async () => {
-    await device.launchApp();
-    
-    // 投稿一覧画面に移動
-    await element(by.id('home-screen')).tap();
-    
-    // 最初の投稿を選択
-    await element(by.id('story-card-0')).tap();
-    
-    // いいねボタンをタップ
-    await element(by.id('like-button')).tap();
-    
-    // いいね数が増加することを確認
-    await expect(element(by.id('like-count'))).toHaveText('1');
-    
-    // いいねボタンがアクティブ状態になることを確認
-    await expect(element(by.id('like-button'))).toHaveProp('isLiked', true);
-  });
-});
-```
+#### 新規ユーザーフロー
+1. **アプリ起動**: アプリの正常起動
+2. **匿名認証**: 自動的な匿名認証
+3. **初回投稿**: 失敗談の投稿
+4. **エンゲージメント**: いいね・コメントの操作
+5. **フレンド機能**: フレンドリクエストの送信
 
-#### コメント機能E2Eテスト
-```typescript
-describe('Comment Feature E2E', () => {
-  test('投稿へのコメント機能', async () => {
-    await device.launchApp();
-    
-    // 投稿詳細画面に移動
-    await element(by.id('story-detail-screen')).tap();
-    
-    // コメント入力
-    await element(by.id('comment-input')).typeText('素晴らしい投稿です！');
-    
-    // コメント投稿
-    await element(by.id('comment-submit')).tap();
-    
-    // コメントが表示されることを確認
-    await expect(element(by.text('素晴らしい投稿です！'))).toBeVisible();
-  });
-});
-```
+#### 既存ユーザーフロー
+1. **ログイン**: 既存ユーザーの認証
+2. **投稿閲覧**: 失敗談の閲覧・検索
+3. **エンゲージメント**: いいね・コメントの操作
+4. **フレンド管理**: フレンド関係の管理
+5. **プロフィール**: 自分の投稿・統計の確認
 
-#### シェア機能E2Eテスト
-```typescript
-describe('Share Feature E2E', () => {
-  test('Twitterシェア機能', async () => {
-    await device.launchApp();
-    
-    // 投稿詳細画面に移動
-    await element(by.id('story-detail-screen')).tap();
-    
-    // シェアボタンをタップ
-    await element(by.id('share-button')).tap();
-    
-    // Twitterシェアオプションを選択
-    await element(by.text('Twitter')).tap();
-    
-    // シェアURLが生成されることを確認
-    await expect(element(by.id('share-url'))).toBeVisible();
-  });
-});
-```
+### 画面遷移テスト 🔄 **設計中**
 
-### コミュニティE2Eテスト
+#### ナビゲーション
+- **画面遷移**: 各画面間の正常な遷移
+- **戻るボタン**: 戻るボタンの適切な動作
+- **ディープリンク**: 特定画面への直接アクセス
 
-#### フレンド機能E2Eテスト
-```typescript
-describe('Friend Feature E2E', () => {
-  test('フレンド追加機能', async () => {
-    await device.launchApp();
-    
-    // ユーザー検索画面に移動
-    await element(by.id('search-screen')).tap();
-    
-    // ユーザー検索
-    await element(by.id('search-input')).typeText('testuser');
-    
-    // 検索結果からユーザーを選択
-    await element(by.id('user-result-0')).tap();
-    
-    // フレンド追加ボタンをタップ
-    await element(by.id('add-friend-button')).tap();
-    
-    // フレンド追加成功メッセージを確認
-    await expect(element(by.text('フレンドに追加しました'))).toBeVisible();
-  });
-});
-```
-
-#### コミュニティ機能E2Eテスト
-```typescript
-describe('Community Feature E2E', () => {
-  test('コミュニティ作成・参加', async () => {
-    await device.launchApp();
-    
-    // コミュニティ画面に移動
-    await element(by.id('community-screen')).tap();
-    
-    // コミュニティ作成ボタンをタップ
-    await element(by.id('create-community-button')).tap();
-    
-    // コミュニティ情報入力
-    await element(by.id('community-name-input')).typeText('テストコミュニティ');
-    await element(by.id('community-description-input')).typeText('テスト用コミュニティです');
-    
-    // コミュニティ作成
-    await element(by.id('create-community-submit')).tap();
-    
-    // コミュニティ作成成功を確認
-    await expect(element(by.text('コミュニティを作成しました'))).toBeVisible();
-  });
-});
-```
+#### レスポンシブ対応
+- **画面サイズ**: 異なる画面サイズでの表示
+- **向き変更**: 縦横の向き変更対応
+- **デバイス対応**: 異なるデバイスでの動作
 
 ---
 
-## 🧪 テストデータ管理
+## 🚀 パフォーマンステスト
 
-### モックデータ
+### 負荷テスト 🔄 **設計中**
 
-#### エンゲージメントモックデータ
-```typescript
-// __mocks__/engagementData.ts
-export const mockLikes = [
-  { id: 'like1', storyId: 'story1', userId: 'user1', timestamp: new Date() },
-  { id: 'like2', storyId: 'story1', userId: 'user2', timestamp: new Date() }
-];
+#### データ量テスト
+- **大量投稿**: 1,000件の投稿での動作
+- **大量コメント**: 100件のコメントでの動作
+- **大量いいね**: 1,000件のいいねでの動作
+- **大量フレンド**: 100人のフレンドでの動作
 
-export const mockComments = [
-  {
-    id: 'comment1',
-    storyId: 'story1',
-    userId: 'user1',
-    content: '素晴らしい投稿です！',
-    timestamp: new Date()
-  }
-];
+#### 同時アクセステスト
+- **同時投稿**: 複数ユーザーによる同時投稿
+- **同時いいね**: 複数ユーザーによる同時いいね
+- **同時コメント**: 複数ユーザーによる同時コメント
 
-export const mockShares = [
-  { id: 'share1', storyId: 'story1', userId: 'user1', platform: 'twitter', timestamp: new Date() }
-];
-```
+### メモリ・CPUテスト 🔄 **設計中**
 
-#### コミュニティモックデータ
-```typescript
-// __mocks__/communityData.ts
-export const mockFriendships = [
-  { id: 'friendship1', userId: 'user1', friendId: 'user2', status: 'accepted', timestamp: new Date() }
-];
+#### メモリ使用量
+- **長時間使用**: 長時間使用時のメモリ使用量
+- **画面遷移**: 画面遷移時のメモリリーク
+- **データキャッシュ**: キャッシュによるメモリ使用量
 
-export const mockCommunities = [
-  {
-    id: 'community1',
-    name: 'テストコミュニティ',
-    description: 'テスト用コミュニティ',
-    creatorId: 'user1',
-    memberCount: 5,
-    createdAt: new Date()
-  }
-];
-
-export const mockMemberships = [
-  { id: 'membership1', communityId: 'community1', userId: 'user1', role: 'admin', joinedAt: new Date() }
-];
-```
-
-### テストヘルパー
-
-#### エンゲージメントテストヘルパー
-```typescript
-// e2e/helpers/engagementHelpers.ts
-export const createTestStory = async () => {
-  return await storyService.createStory({
-    title: 'テスト投稿',
-    content: 'テスト内容',
-    category: 'work',
-    authorId: 'test-user'
-  });
-};
-
-export const addLike = async (storyId: string, userId: string) => {
-  return await likeService.addLike(storyId, userId);
-};
-
-export const addComment = async (storyId: string, userId: string, content: string) => {
-  return await commentService.addComment(storyId, { content, authorId: userId });
-};
-
-export const shareStory = async (storyId: string, userId: string) => {
-  return await shareService.shareStory(storyId, userId, 'twitter');
-};
-```
-
-#### コミュニティテストヘルパー
-```typescript
-// e2e/helpers/communityHelpers.ts
-export const createTestCommunity = async (creatorId: string, name: string) => {
-  return await communityService.createCommunity({
-    name,
-    description: 'テスト用コミュニティ',
-    creatorId
-  });
-};
-
-export const addFriend = async (userId: string, friendId: string) => {
-  return await friendService.addFriend(userId, friendId);
-};
-
-export const joinCommunity = async (communityId: string, userId: string) => {
-  return await communityService.joinCommunity(communityId, userId);
-};
-```
+#### CPU使用量
+- **リアルタイム更新**: リアルタイム更新時のCPU使用量
+- **アニメーション**: アニメーション時のCPU使用量
+- **検索処理**: 検索処理時のCPU使用量
 
 ---
 
-## 📊 テストカバレッジ目標
+## 🔒 セキュリティテスト
 
-### 全体カバレッジ目標
-- **ユニットテスト**: 80%以上
-- **インテグレーションテスト**: 60%以上
-- **E2Eテスト**: 40%以上
+### 認証・認可テスト ✅ **実装済み**
 
-### 機能別カバレッジ目標
-- **エンゲージメント機能**: 90%以上
-- **コミュニティ機能**: 85%以上
-- **認証機能**: 95%以上
-- **投稿機能**: 90%以上
+#### 匿名認証
+- **認証状態**: 匿名認証の適切な状態管理
+- **権限チェック**: 認証状態に基づく権限制御
+- **セッション管理**: セッションの適切な管理
 
-### 品質指標
-- **テスト実行時間**: 5分以内
-- **テスト成功率**: 95%以上
-- **バグ検出率**: 80%以上
+#### データアクセス制御
+- **自分のデータ**: 自分のデータのみ編集可能
+- **他人のデータ**: 他人のデータの読み取り制限
+- **削除権限**: 適切な削除権限の制御
+
+### データ検証テスト ✅ **実装済み**
+
+#### 入力検証
+- **投稿データ**: 投稿データの妥当性検証
+- **コメントデータ**: コメントデータの妥当性検証
+- **ユーザーデータ**: ユーザーデータの妥当性検証
+
+#### 不正データ対策
+- **XSS対策**: クロスサイトスクリプティング対策
+- **SQLインジェクション**: NoSQLインジェクション対策
+- **データ改ざん**: データの改ざん防止
 
 ---
 
-## 🚀 継続的テスト戦略
+## 📱 モバイルテスト
 
-### CI/CD統合
-- **GitHub Actions**: プルリクエスト時の自動テスト実行
-- **テスト結果通知**: Slack/Discordへの通知
-- **カバレッジレポート**: 自動生成・共有
+### プラットフォームテスト 🔄 **設計中**
 
-### テスト保守
-- **定期的なテスト更新**: 機能変更時のテスト更新
-- **モックデータ管理**: 最新のデータ構造に合わせた更新
-- **パフォーマンス監視**: テスト実行時間の監視
+#### iOSテスト
+- **iOS 14+**: iOS 14以降での動作確認
+- **iPhone/iPad**: iPhone・iPadでの動作確認
+- **iOS固有機能**: iOS固有機能の動作確認
 
-### 品質向上
-- **テストレビュー**: コードレビューと並行したテストレビュー
-- **テスト改善**: 失敗テストの分析・改善
-- **ベストプラクティス**: チーム内でのテスト手法共有 
+#### Androidテスト
+- **Android 8+**: Android 8以降での動作確認
+- **各種デバイス**: 様々なAndroidデバイスでの動作確認
+- **Android固有機能**: Android固有機能の動作確認
+
+### ネットワークテスト 🔄 **設計中**
+
+#### 接続状態テスト
+- **オンライン**: オンライン状態での動作
+- **オフライン**: オフライン状態での動作
+- **接続復旧**: 接続復旧時の動作
+
+#### 通信速度テスト
+- **高速通信**: 高速通信環境での動作
+- **低速通信**: 低速通信環境での動作
+- **不安定通信**: 不安定な通信環境での動作
+
+---
+
+## 🧹 テストメンテナンス
+
+### テストデータ管理 ✅ **実装済み**
+
+#### 環境別データ
+- **開発環境**: 開発用のテストデータ
+- **ステージング環境**: ステージング用のテストデータ
+- **本番環境**: 本番用のテストデータ
+
+#### データクリーンアップ
+- **自動クリーンアップ**: 古いテストデータの自動削除
+- **手動クリーンアップ**: 手動によるデータクリーンアップ
+- **データ整合性**: テストデータの整合性確認
+
+### テスト実行管理 ✅ **実装済み**
+
+#### 自動実行
+- **CI/CD**: GitHub Actionsによる自動テスト実行
+- **プルリクエスト**: プルリクエスト時の自動テスト
+- **デプロイ前**: デプロイ前の自動テスト
+
+#### 手動実行
+- **開発時**: 開発時の手動テスト実行
+- **デバッグ時**: デバッグ時の手動テスト実行
+- **リグレッションテスト**: リグレッションテストの実行
+
+---
+
+## 📊 テストメトリクス
+
+### カバレッジ ✅ **実装済み**
+
+#### コードカバレッジ
+- **目標**: 70%以上のコードカバレッジ
+- **測定**: Jestによるカバレッジ測定
+- **報告**: カバレッジレポートの自動生成
+
+#### 機能カバレッジ
+- **コア機能**: コア機能の100%カバレッジ
+- **エッジケース**: エッジケースの適切なカバレッジ
+- **エラーハンドリング**: エラーハンドリングのカバレッジ
+
+### 品質メトリクス 🔄 **設計中**
+
+#### バグ検出率
+- **バグ密度**: コード行数あたりのバグ数
+- **バグ修正時間**: バグ検出から修正までの時間
+- **再発率**: 修正済みバグの再発率
+
+#### パフォーマンスメトリクス
+- **レスポンス時間**: 各機能のレスポンス時間
+- **メモリ使用量**: アプリのメモリ使用量
+- **CPU使用量**: アプリのCPU使用量
+
+---
+
+## 🔄 継続的改善
+
+### テスト戦略の見直し
+- **定期的レビュー**: 月次でのテスト戦略レビュー
+- **効果測定**: テストの効果測定
+- **改善提案**: テスト戦略の改善提案
+
+### 新技術の導入
+- **テストツール**: 新しいテストツールの評価・導入
+- **テスト手法**: 新しいテスト手法の評価・導入
+- **自動化**: テスト自動化の拡張
+
+---
+
+## 📋 テストチェックリスト
+
+### 開発時チェックリスト
+- [ ] ユニットテストの作成
+- [ ] インテグレーションテストの作成
+- [ ] 型チェックの実行
+- [ ] リンターの実行
+- [ ] テストの実行
+
+### デプロイ前チェックリスト
+- [ ] 全テストの実行
+- [ ] カバレッジの確認
+- [ ] パフォーマンステストの実行
+- [ ] セキュリティテストの実行
+- [ ] 最終確認
+
+### リリース後チェックリスト
+- [ ] 本番環境での動作確認
+- [ ] ユーザーフィードバックの収集
+- [ ] パフォーマンス監視
+- [ ] エラー監視
+- [ ] 改善点の特定
+
+---
+
+**最終更新**: 2025年1月
+**テスト状況**: ユニットテスト・インテグレーションテスト完了
+**次のステップ**: E2Eテスト・パフォーマンステストの実装 

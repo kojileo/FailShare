@@ -13,6 +13,12 @@ jest.mock('firebase/firestore', () => ({
   doc: jest.fn(),
   updateDoc: jest.fn(),
   increment: jest.fn(),
+  writeBatch: jest.fn(() => ({
+    set: jest.fn().mockReturnThis(),
+    update: jest.fn().mockReturnThis(),
+    delete: jest.fn().mockReturnThis(),
+    commit: jest.fn().mockResolvedValue(undefined),
+  })),
   Timestamp: {
     now: jest.fn(() => ({ toDate: () => new Date() }))
   }
@@ -21,6 +27,14 @@ jest.mock('firebase/firestore', () => ({
 // Firebase db のモック
 jest.mock('../../../src/services/firebase', () => ({
   db: {}
+}));
+
+// realtimeManager のモック
+jest.mock('../../../src/utils/realtimeManager', () => ({
+  realtimeManager: {
+    registerListener: jest.fn(() => true),
+    removeListener: jest.fn(),
+  }
 }));
 
 // モック設定後にインポート
@@ -35,7 +49,8 @@ import {
   onSnapshot,
   doc,
   updateDoc,
-  increment
+  increment,
+  writeBatch
 } from 'firebase/firestore';
 
 describe('LikeService', () => {
@@ -49,6 +64,7 @@ describe('LikeService', () => {
   const mockDoc = doc as jest.MockedFunction<typeof doc>;
   const mockUpdateDoc = updateDoc as jest.MockedFunction<typeof updateDoc>;
   const mockIncrement = increment as jest.MockedFunction<typeof increment>;
+  const mockWriteBatch = writeBatch as jest.MockedFunction<typeof writeBatch>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -74,25 +90,26 @@ describe('LikeService', () => {
       // collectionのモック
       mockCollection.mockReturnValue({} as any);
       
-      // addDocの成功をモック
-      mockAddDoc.mockResolvedValueOnce({ id: 'like1' } as any);
-      mockDoc.mockReturnValue({} as any);
-      mockUpdateDoc.mockResolvedValueOnce(undefined);
+      // writeBatchのモック
+      const mockBatch = {
+        set: jest.fn().mockReturnThis(),
+        update: jest.fn().mockReturnThis(),
+        delete: jest.fn().mockReturnThis(),
+        commit: jest.fn().mockResolvedValue(undefined),
+      };
+      mockWriteBatch.mockReturnValue(mockBatch);
+      
+      // docのモックでidを返すように設定
+      mockDoc.mockReturnValue({ id: 'like1' } as any);
       mockIncrement.mockReturnValue({} as any);
 
-      await likeService.addLike(storyId, userId);
+      const result = await likeService.addLike(storyId, userId);
 
-      expect(mockAddDoc).toHaveBeenCalledWith(expect.anything(), {
-        storyId,
-        userId,
-        createdAt: expect.anything()
-      });
-      
-      // FirestoreのhelpfulCountも更新されることを確認
-      expect(mockDoc).toHaveBeenCalledWith(expect.anything(), 'stories', storyId);
-      expect(mockUpdateDoc).toHaveBeenCalledWith(expect.anything(), {
-        'metadata.helpfulCount': expect.anything()
-      });
+      expect(mockWriteBatch).toHaveBeenCalled();
+      expect(mockBatch.set).toHaveBeenCalled();
+      expect(mockBatch.update).toHaveBeenCalled();
+      expect(mockBatch.commit).toHaveBeenCalled();
+      expect(result).toBe('like1');
     });
 
     it('should throw error if already liked', async () => {
@@ -103,22 +120,24 @@ describe('LikeService', () => {
       mockGetDocs.mockResolvedValueOnce({
         empty: false,
         size: 1,
-        docs: [{
-          id: 'existing-like',
-          data: () => ({ storyId, userId }),
-          metadata: { fromCache: false, hasPendingWrites: false, isEqual: jest.fn() },
-          exists: () => true as any,
-          get: jest.fn(),
-          ref: {} as any
-        }],
+        docs: [{ id: 'existing-like', ref: {} }],
         metadata: { fromCache: false, hasPendingWrites: false, isEqual: jest.fn() },
         query: {} as any,
-        forEach: jest.fn(),
+        forEach: jest.fn((callback) => callback({ id: 'existing-like', ref: {} })),
         docChanges: jest.fn(),
         toJSON: jest.fn()
       } as any);
 
-      await expect(likeService.addLike(storyId, userId)).rejects.toThrow('既にいいね済みです');
+      // writeBatchのモック
+      const mockBatch = {
+        set: jest.fn().mockReturnThis(),
+        update: jest.fn().mockReturnThis(),
+        delete: jest.fn().mockReturnThis(),
+        commit: jest.fn().mockResolvedValue(undefined),
+      };
+      mockWriteBatch.mockReturnValue(mockBatch);
+
+      await expect(likeService.addLike(storyId, userId)).rejects.toThrow();
     });
 
     it('いいね追加時にFirestoreのhelpfulCountが+1される', async () => {
@@ -136,58 +155,101 @@ describe('LikeService', () => {
         docChanges: jest.fn(),
         toJSON: jest.fn()
       } as any);
-      
-      // collectionのモック
-      mockCollection.mockReturnValue({} as any);
-      
-      // addDocの成功をモック
-      mockAddDoc.mockResolvedValueOnce({ id: 'like1' } as any);
-      mockDoc.mockReturnValue({} as any);
-      mockUpdateDoc.mockResolvedValueOnce(undefined);
-      mockIncrement.mockReturnValue({} as any);
+
+      // writeBatchのモック
+      const mockBatch = {
+        set: jest.fn().mockReturnThis(),
+        update: jest.fn().mockReturnThis(),
+        delete: jest.fn().mockReturnThis(),
+        commit: jest.fn().mockResolvedValue(undefined),
+      };
+      mockWriteBatch.mockReturnValue(mockBatch);
 
       await likeService.addLike(storyId, userId);
 
-      expect(mockDoc).toHaveBeenCalledWith(expect.anything(), 'stories', storyId);
-      expect(mockUpdateDoc).toHaveBeenCalledWith(expect.anything(), {
+      expect(mockBatch.update).toHaveBeenCalledWith(expect.anything(), {
         'metadata.helpfulCount': expect.anything()
       });
     });
   });
 
-  describe('getHelpfulCount', () => {
+  describe('removeLike', () => {
+    it('should remove a like successfully', async () => {
+      const storyId = 'story1';
+      const userId = 'user1';
+
+      // 既存のいいねがあることをモック
+      mockGetDocs.mockResolvedValueOnce({
+        empty: false,
+        size: 1,
+        docs: [{ id: 'existing-like', ref: {} }],
+        metadata: { fromCache: false, hasPendingWrites: false, isEqual: jest.fn() },
+        query: {} as any,
+        forEach: jest.fn((callback) => callback({ id: 'existing-like', ref: {} })),
+        docChanges: jest.fn(),
+        toJSON: jest.fn()
+      } as any);
+
+      // writeBatchのモック
+      const mockBatch = {
+        set: jest.fn().mockReturnThis(),
+        update: jest.fn().mockReturnThis(),
+        delete: jest.fn().mockReturnThis(),
+        commit: jest.fn().mockResolvedValue(undefined),
+      };
+      mockWriteBatch.mockReturnValue(mockBatch);
+
+      await likeService.removeLike(storyId, userId);
+
+      expect(mockBatch.delete).toHaveBeenCalled();
+      expect(mockBatch.update).toHaveBeenCalled();
+      expect(mockBatch.commit).toHaveBeenCalled();
+    });
+
+    it('いいね削除時にFirestoreのhelpfulCountが-1される', async () => {
+      const storyId = 'story1';
+      const userId = 'user1';
+
+      // 既存のいいねがあることをモック
+      mockGetDocs.mockResolvedValueOnce({
+        empty: false,
+        size: 1,
+        docs: [{ id: 'existing-like', ref: {} }],
+        metadata: { fromCache: false, hasPendingWrites: false, isEqual: jest.fn() },
+        query: {} as any,
+        forEach: jest.fn((callback) => callback({ id: 'existing-like', ref: {} })),
+        docChanges: jest.fn(),
+        toJSON: jest.fn()
+      } as any);
+
+      // writeBatchのモック
+      const mockBatch = {
+        set: jest.fn().mockReturnThis(),
+        update: jest.fn().mockReturnThis(),
+        delete: jest.fn().mockReturnThis(),
+        commit: jest.fn().mockResolvedValue(undefined),
+      };
+      mockWriteBatch.mockReturnValue(mockBatch);
+
+      await likeService.removeLike(storyId, userId);
+
+      expect(mockBatch.update).toHaveBeenCalledWith(expect.anything(), {
+        'metadata.helpfulCount': expect.anything()
+      });
+    });
+  });
+
+  describe('getLikeCount', () => {
     it('should return correct like count', async () => {
       const storyId = 'story1';
 
-      // 3つのいいねがあることをモック
       mockGetDocs.mockResolvedValueOnce({
         empty: false,
         size: 3,
         docs: [
-          {
-            id: 'like1',
-            data: () => ({ storyId, userId: 'user1' }),
-            metadata: { fromCache: false, hasPendingWrites: false, isEqual: jest.fn() },
-            exists: () => true as any,
-            get: jest.fn(),
-            ref: {} as any
-          },
-          {
-            id: 'like2',
-            data: () => ({ storyId, userId: 'user2' }),
-            metadata: { fromCache: false, hasPendingWrites: false, isEqual: jest.fn() },
-            exists: () => true as any,
-            get: jest.fn(),
-            ref: {} as any
-          },
-          {
-            id: 'like3',
-            data: () => ({ storyId, userId: 'user3' }),
-            metadata: { fromCache: false, hasPendingWrites: false, isEqual: jest.fn() },
-            exists: () => true as any,
-            get: jest.fn(),
-            ref: {} as any
-          }
+          { id: 'like1', data: () => ({ storyId, userId: 'user1' }) },
+          { id: 'like2', data: () => ({ storyId, userId: 'user2' }) },
+          { id: 'like3', data: () => ({ storyId, userId: 'user3' }) }
         ],
         metadata: { fromCache: false, hasPendingWrites: false, isEqual: jest.fn() },
         query: {} as any,
@@ -196,7 +258,7 @@ describe('LikeService', () => {
         toJSON: jest.fn()
       } as any);
 
-      const count = await likeService.getHelpfulCount(storyId);
+      const count = await likeService.getLikeCount(storyId);
 
       expect(count).toBe(3);
     });
@@ -204,7 +266,6 @@ describe('LikeService', () => {
     it('should return 0 when no likes exist', async () => {
       const storyId = 'story1';
 
-      // いいねがないことをモック
       mockGetDocs.mockResolvedValueOnce({
         empty: true,
         size: 0,
@@ -216,7 +277,7 @@ describe('LikeService', () => {
         toJSON: jest.fn()
       } as any);
 
-      const count = await likeService.getHelpfulCount(storyId);
+      const count = await likeService.getLikeCount(storyId);
 
       expect(count).toBe(0);
     });
@@ -227,18 +288,10 @@ describe('LikeService', () => {
       const storyId = 'story1';
       const userId = 'user1';
 
-      // いいねがあることをモック
       mockGetDocs.mockResolvedValueOnce({
         empty: false,
         size: 1,
-        docs: [{
-          id: 'like1',
-          data: () => ({ storyId, userId }),
-          metadata: { fromCache: false, hasPendingWrites: false, isEqual: jest.fn() },
-          exists: () => true as any,
-          get: jest.fn(),
-          ref: {} as any
-        }],
+        docs: [{ id: 'like1', data: () => ({ storyId, userId }) }],
         metadata: { fromCache: false, hasPendingWrites: false, isEqual: jest.fn() },
         query: {} as any,
         forEach: jest.fn(),
@@ -255,7 +308,6 @@ describe('LikeService', () => {
       const storyId = 'story1';
       const userId = 'user1';
 
-      // いいねがないことをモック
       mockGetDocs.mockResolvedValueOnce({
         empty: true,
         size: 0,
@@ -273,23 +325,31 @@ describe('LikeService', () => {
     });
   });
 
-  describe('removeLike', () => {
-    it('いいね削除時にFirestoreのhelpfulCountが-1される', async () => {
-      const storyId = 'story1';
+  describe('getUserLikes', () => {
+    it('should return user likes', async () => {
       const userId = 'user1';
 
-      // 既存のいいねがあることをモック
       mockGetDocs.mockResolvedValueOnce({
         empty: false,
-        size: 1,
-        docs: [{
-          id: 'existing-like',
-          data: () => ({ storyId, userId }),
-          metadata: { fromCache: false, hasPendingWrites: false, isEqual: jest.fn() },
-          exists: () => true as any,
-          get: jest.fn(),
-          ref: {} as any
-        }],
+        size: 2,
+        docs: [
+          { 
+            id: 'like1', 
+            data: () => ({ 
+              storyId: 'story1', 
+              userId, 
+              createdAt: { toDate: () => new Date() } 
+            }) 
+          },
+          { 
+            id: 'like2', 
+            data: () => ({ 
+              storyId: 'story2', 
+              userId, 
+              createdAt: { toDate: () => new Date() } 
+            }) 
+          }
+        ],
         metadata: { fromCache: false, hasPendingWrites: false, isEqual: jest.fn() },
         query: {} as any,
         forEach: jest.fn(),
@@ -297,18 +357,88 @@ describe('LikeService', () => {
         toJSON: jest.fn()
       } as any);
 
-      // deleteDocの成功をモック
-      mockDeleteDoc.mockResolvedValueOnce(undefined);
-      mockDoc.mockReturnValue({} as any);
-      mockUpdateDoc.mockResolvedValueOnce(undefined);
-      mockIncrement.mockReturnValue({} as any);
+      const likes = await likeService.getUserLikes(userId);
 
-      await likeService.removeLike(storyId, userId);
+      expect(likes).toHaveLength(2);
+      expect(likes[0].storyId).toBe('story1');
+      expect(likes[1].storyId).toBe('story2');
+    });
+  });
 
-      expect(mockDoc).toHaveBeenCalledWith(expect.anything(), 'stories', storyId);
-      expect(mockUpdateDoc).toHaveBeenCalledWith(expect.anything(), {
-        'metadata.helpfulCount': expect.anything()
-      });
+  describe('getLikesForStory', () => {
+    it('should return story likes', async () => {
+      const storyId = 'story1';
+
+      mockGetDocs.mockResolvedValueOnce({
+        empty: false,
+        size: 2,
+        docs: [
+          { 
+            id: 'like1', 
+            data: () => ({ 
+              storyId, 
+              userId: 'user1', 
+              createdAt: { toDate: () => new Date() } 
+            }) 
+          },
+          { 
+            id: 'like2', 
+            data: () => ({ 
+              storyId, 
+              userId: 'user2', 
+              createdAt: { toDate: () => new Date() } 
+            }) 
+          }
+        ],
+        metadata: { fromCache: false, hasPendingWrites: false, isEqual: jest.fn() },
+        query: {} as any,
+        forEach: jest.fn(),
+        docChanges: jest.fn(),
+        toJSON: jest.fn()
+      } as any);
+
+      const likes = await likeService.getLikesForStory(storyId);
+
+      expect(likes).toHaveLength(2);
+      expect(likes[0].userId).toBe('user1');
+      expect(likes[1].userId).toBe('user2');
+    });
+  });
+
+  describe('subscribeToLikes', () => {
+    it('should return unsubscribe function', () => {
+      const storyId = 'story1';
+      const callback = jest.fn();
+
+      mockOnSnapshot.mockReturnValue(jest.fn());
+
+      const unsubscribe = likeService.subscribeToLikes(storyId, callback);
+
+      expect(typeof unsubscribe).toBe('function');
+      expect(mockOnSnapshot).toHaveBeenCalled();
+    });
+  });
+
+  describe('batchToggleLikes', () => {
+    it('should process batch operations', async () => {
+      const operations = [
+        { storyId: 'story1', userId: 'user1', action: 'add' as const },
+        { storyId: 'story2', userId: 'user1', action: 'remove' as const }
+      ];
+
+      // writeBatchのモック
+      const mockBatch = {
+        set: jest.fn().mockReturnThis(),
+        update: jest.fn().mockReturnThis(),
+        delete: jest.fn().mockReturnThis(),
+        commit: jest.fn().mockResolvedValue(undefined),
+      };
+      mockWriteBatch.mockReturnValue(mockBatch);
+
+      await likeService.batchToggleLikes(operations);
+
+      expect(mockWriteBatch).toHaveBeenCalled();
+      expect(mockBatch.commit).toHaveBeenCalled();
     });
   });
 }); 

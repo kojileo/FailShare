@@ -56,7 +56,7 @@ const Header: React.FC<HeaderProps> = ({
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.headerNavButton} 
-              onPress={() => navigation.navigate('Chat', { friendId: '', friendName: 'チャット' })}
+              onPress={() => navigation.navigate('Friends')}
             >
               <IconButton icon="message-text" size={20} iconColor="#FFFFFF" />
             </TouchableOpacity>

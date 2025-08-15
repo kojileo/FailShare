@@ -48,6 +48,8 @@ FailShare/
 │   ├── assets/                   # 画像・アイコン等
 │   ├── scripts/                  # 管理者スクリプト
 │   ├── config/                   # 環境別設定ファイル
+│   ├── firestore.indexes.json    # 🔍 Firestoreインデックス設定
+│   ├── firestore.rules           # 🔒 Firestoreセキュリティルール
 │   ├── Dockerfile                # 🐳 Webデプロイ用コンテナ設定
 │   ├── server.js                 # 🌐 Express Webサーバー
 │   └── README.md                 # 開発者向けクイックスタート
@@ -75,12 +77,51 @@ FailShare/
 
 ## 🚀 セットアップ
 
+### 前提条件
+
+#### 必要なソフトウェア
+```bash
+# Node.js (v18以上推奨)
+node --version
+
+# npm (Node.jsに含まれています)
+npm --version
+
+# Git
+git --version
+
+# Firebase CLI (グローバルインストール)
+npm install -g firebase-tools
+
+# Expo CLI (グローバルインストール)
+npm install -g @expo/cli
+```
+
+#### Firebaseプロジェクトの準備
+1. **Firebase Console**でプロジェクトを作成
+2. **Authentication**で匿名認証を有効化
+3. **Firestore Database**を作成（本番モード）
+4. **Firebase Admin SDK**の秘密鍵をダウンロード
+
 ### 1. 基本セットアップ
 ```bash
-cd mobile
+# リポジトリをクローン
+git clone https://github.com/your-username/FailShare.git
+cd FailShare/mobile
+
+# 依存関係をインストール
 npm install
+
+# 環境変数ファイルをコピー
 cp .env.example .env
+
 # .envファイルにFirebase設定を追加
+# FIREBASE_API_KEY=your_api_key
+# FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+# FIREBASE_PROJECT_ID=your_project_id
+# FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+# FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+# FIREBASE_APP_ID=your_app_id
 ```
 
 ### 2. アプリ起動
@@ -89,14 +130,129 @@ npm start          # 開発サーバー起動
 npm run web        # Webブラウザで表示
 ```
 
-### 3. 管理者セットアップ（オプション）
+### 3. Firebase設定のデプロイ
 ```bash
-# Firebase Admin キーを取得・配置
-# mobile/config/firebase-admin-dev.json
+# Firebaseプロジェクトにログイン
+firebase login
+
+# プロジェクトを初期化（初回のみ）
+firebase init firestore
+
+# セキュリティルールをデプロイ
+firebase deploy --only firestore:rules
+
+# インデックスをデプロイ
+firebase deploy --only firestore:indexes
+```
+
+### 4. 管理者セットアップ（オプション）
+```bash
+# Firebase Admin キーを配置
+# mobile/config/firebase-admin-dev.json に配置
 
 # サンプルデータ投入
 npm run seed-data:dev -- --confirm
 ```
+
+## 🔍 Firestoreインデックス設定
+
+### 概要
+`firestore.indexes.json`は、Firestoreのクエリパフォーマンスを最適化するための複合インデックスを定義しています。
+
+### 主要インデックス
+
+#### 📝 ストーリー関連
+- **ユーザー別投稿**: `authorId` + `metadata.createdAt`（降順）
+- **カテゴリ別投稿**: `content.category.main` + `metadata.createdAt`（降順）
+- **感情別投稿**: `content.emotion` + `metadata.createdAt`（降順）
+
+#### 💬 コメント関連
+- **ストーリー別コメント**: `storyId` + `createdAt`（降順）
+
+#### 👥 フレンド機能
+- **フレンドリクエスト**: `status` + `toUserId` + `createdAt`（降順）
+- **フレンドシップ**: `userId` + `createdAt`（降順）
+
+#### 💬 チャット機能
+- **チャット一覧**: `participants`（配列） + `updatedAt`（降順）
+- **メッセージ**: `chatId` + `createdAt`（昇順・降順両方）
+- **未読メッセージ**: `chatId` + `senderId` + `isRead`
+
+### デプロイ方法
+```bash
+# Firebase CLIでインデックスをデプロイ
+firebase deploy --only firestore:indexes
+
+# または、Firebase Consoleから手動でインデックスを作成
+# Firebase Console > Firestore Database > インデックス タブ
+```
+
+## 🔒 Firestoreセキュリティルール
+
+### 概要
+`firestore.rules`は、データベースへのアクセス制御とデータ検証を定義しています。
+
+### 主要セキュリティポリシー
+
+#### 👤 ユーザー認証
+- **匿名認証**: 認証済みユーザーのみアクセス可能
+- **自己データ**: 自分のデータのみ読み書き可能
+
+#### 📝 ストーリー投稿
+```javascript
+// 作成: 認証済みユーザーのみ、自分の投稿のみ
+allow create: if request.auth != null 
+              && request.auth.uid == request.resource.data.authorId
+              && validateStoryData(request.resource.data);
+
+// 更新: 投稿者のみ、データ検証も実行
+allow update: if request.auth != null
+              && request.auth.uid == resource.data.authorId
+              && validateStoryUpdate(request.resource.data, resource.data);
+```
+
+#### 👍 いいね機能
+```javascript
+// 作成: 認証済みユーザーのみ、自分のいいねのみ
+allow create: if request.auth != null 
+              && request.auth.uid == request.resource.data.userId
+              && validateLikeData(request.resource.data);
+
+// 削除: 自分のいいねのみ
+allow delete: if request.auth != null 
+              && request.auth.uid == resource.data.userId;
+```
+
+#### 💬 コメント・チャット
+- **コメント**: 認証済みユーザーのみ、自分のコメントのみ編集可能
+- **チャット**: 参加者のみアクセス可能
+- **メッセージ**: 送信者のみ編集・削除可能
+
+#### 👥 フレンド機能
+- **フレンドリクエスト**: 送信者・受信者のみアクセス可能
+- **フレンドシップ**: 関係者のみアクセス可能
+
+### データ検証関数
+- `validateStoryData()`: 投稿データの完全性チェック
+- `validateCommentData()`: コメントデータの検証
+- `validateLikeData()`: いいねデータの検証
+- `validateChatData()`: チャットデータの検証
+
+### デプロイ方法
+```bash
+# Firebase CLIでセキュリティルールをデプロイ
+firebase deploy --only firestore:rules
+
+# または、Firebase Consoleから手動でルールを更新
+# Firebase Console > Firestore Database > ルール タブ
+```
+
+### 開発時の注意点
+1. **ローカルテスト**: `firebase emulators:start`でローカル環境でテスト
+2. **段階的デプロイ**: 開発→ステージング→本番の順で適用
+3. **ルールテスト**: Firebase Consoleのルールテスト機能を活用
+4. **環境変数**: `.env`ファイルはGitにコミットしない（`.gitignore`に追加済み）
+5. **Firebase Admin キー**: 秘密鍵ファイルは絶対にGitにコミットしない
 
 ## 📚 管理者システム
 
@@ -129,6 +285,8 @@ npm run seed-data:prod -- --confirm
 - 編集・削除機能実装
 - Docker化・依存関係安定化
 - 3段階環境構成（Development/Staging/Production）
+- 🔍 Firestoreインデックス最適化
+- 🔒 包括的セキュリティルール実装
 
 ### 🔄 次期予定
 - ユーザーテスト実施

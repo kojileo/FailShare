@@ -33,7 +33,7 @@ export const CommentList: React.FC<CommentListProps> = ({ storyId, onCommentCoun
       loadComments(storyId);
       setIsInitialized(true);
       
-      // リアルタイム監視を開始
+      // リアルタイム監視を開始（管理システムで自動管理）
       const unsubscribe = subscribeToComments(storyId);
       
       return () => {
