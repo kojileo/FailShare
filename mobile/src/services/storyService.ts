@@ -14,7 +14,8 @@ import {
   DocumentData,
   QueryDocumentSnapshot,
   Timestamp,
-  Firestore
+  Firestore,
+  orderBy
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { FailureStory, StoryCategory, EmotionType, CategoryHierarchy } from '../types';
@@ -88,39 +89,47 @@ class StoryService {
     lastDoc?: QueryDocumentSnapshot<DocumentData>
   ): Promise<{ stories: FailureStory[], lastDocument?: QueryDocumentSnapshot<DocumentData>, lastVisible?: QueryDocumentSnapshot<DocumentData> | null }> {
     try {
-      // 引数の型判定
+      console.log('📖 ストーリー取得開始');
+      
       let limitCount = 20;
-      let filters: StoryFilters = {};
-      
-      if (typeof arg1 === 'number') {
-        // 新API: getStories(limitCount, lastDoc)
-        limitCount = arg1;
-        console.log('📖 ストーリー取得開始 (新API):', { limitCount, hasLastDoc: !!lastDoc });
-      } else if (arg1) {
-        // 旧API: getStories(filters)
-        filters = arg1;
-        limitCount = filters.limit || 20;
-        lastDoc = filters.lastVisible;
-        console.log('📖 ストーリー取得開始 (旧API):', filters);
-      } else {
-        // 引数なし: getStories()
-        console.log('📖 ストーリー取得開始 (デフォルト)');
-      }
-      
-      // インデックスエラーを回避するため、orderByを削除してクライアントサイドでソート
-      let q = query(collection(this.db, this.COLLECTION_NAME));
+      let filters: StoryFilters = {
+        category: null,
+        emotion: null,
+        searchText: null
+      };
 
-      // フィルタリング
-      if (filters.category) {
-        q = query(q, where('content.category', '==', filters.category));
+      if (typeof arg1 === 'number') {
+        limitCount = arg1;
+      } else if (arg1) {
+        filters = arg1;
       }
+
+      let q = query(collection(this.db, 'stories'));
+
+      // カテゴリフィルター
+      if (filters.category) {
+        q = query(q, where('content.category.main', '==', filters.category));
+      }
+
+      // 感情フィルター
       if (filters.emotion) {
         q = query(q, where('content.emotion', '==', filters.emotion));
       }
 
-      // テキスト検索がある場合は、より多くのデータを取得してクライアントサイドでフィルタリング
-      const pageLimit = filters.searchText ? limitCount * 3 : limitCount;
-      q = query(q, limit(pageLimit));
+      // 🔧 最適化: テキスト検索時の効率化
+      if (filters.searchText) {
+        // 検索テキストが短い場合は、より効率的なクエリを使用
+        if (filters.searchText.length <= 3) {
+          // 短い検索テキストの場合は、より少ないデータを取得
+          limitCount = Math.min(limitCount, 10);
+        } else {
+          // 長い検索テキストの場合は、より多くのデータを取得してクライアントサイドでフィルタリング
+          limitCount = Math.min(limitCount * 2, 50); // 最大50件に制限
+        }
+      }
+
+      // 作成日時順でソート
+      q = query(q, orderBy('metadata.createdAt', 'desc'), limit(limitCount));
 
       if (lastDoc) {
         q = query(q, startAfter(lastDoc));
@@ -154,14 +163,12 @@ class StoryService {
         });
       });
 
-      // クライアントサイドで作成日時順にソート
-      stories.sort((a, b) => b.metadata.createdAt.getTime() - a.metadata.createdAt.getTime());
-
-      // テキスト検索フィルタリング
+      // 🔧 最適化: テキスト検索フィルタリングの改善
       if (filters.searchText) {
         stories = this.filterStoriesByText(stories, filters.searchText);
         // テキスト検索後は元のlimit数に調整
-        stories = stories.slice(0, limitCount);
+        const originalLimit = typeof arg1 === 'number' ? arg1 : 20;
+        stories = stories.slice(0, originalLimit);
       }
 
       const lastDocument = querySnapshot.docs[querySnapshot.docs.length - 1];

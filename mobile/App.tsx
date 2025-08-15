@@ -1,4 +1,5 @@
 import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
 import { Provider as PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { View, StyleSheet } from 'react-native';
@@ -7,7 +8,6 @@ import AppNavigator from './src/navigation/AppNavigator';
 import AuthScreen from './src/screens/AuthScreen';
 import OnboardingScreen from './src/screens/OnboardingScreen';
 import { useAuthStore } from './src/stores/authStore';
-import { storyService } from './src/services/storyService';
 import { realtimeManager } from './src/utils/realtimeManager';
 
 export default function App() {
@@ -30,14 +30,6 @@ export default function App() {
       realtimeManager.removeAllListeners();
     };
   }, []);
-
-  // サンプルデータ処理はスクリプトで実行するため無効化
-  // React.useEffect(() => {
-  //   if (isSignedIn) {
-  //     // サンプルデータは scripts/seed-data.js で管理
-  //     console.log('✅ 認証完了。サンプルデータは管理スクリプトで投入してください。');
-  //   }
-  // }, [isSignedIn]);
 
   // ローディング中の表示
   if (isLoading) {
