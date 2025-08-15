@@ -71,13 +71,14 @@ export interface LikeStats {
 }
 
 export interface LikeService {
-  addLike(storyId: string, userId: string): Promise<void>;
+  addLike(storyId: string, userId: string): Promise<string>;
   removeLike(storyId: string, userId: string): Promise<void>;
-  getHelpfulCount(storyId: string): Promise<number>; // getLikeCountからgetHelpfulCountに変更
-  isLikedByUser(storyId: string, userId: string): Promise<boolean>;
-  getLikesByUser(userId: string): Promise<Like[]>;
   getLikesForStory(storyId: string): Promise<Like[]>;
+  getUserLikes(userId: string): Promise<Like[]>;
   subscribeToLikes(storyId: string, callback: (likes: Like[]) => void): () => void;
+  getLikeCount(storyId: string): Promise<number>;
+  // 🔧 新機能: バッチ処理による複数いいね操作
+  batchToggleLikes(operations: { storyId: string; userId: string; action: 'add' | 'remove' }[]): Promise<void>;
 }
 
 export interface LikeStore {

@@ -20,6 +20,7 @@ import {
   User, 
   FriendService 
 } from '../types';
+import { realtimeManager } from '../utils/realtimeManager';
 
 export class FriendServiceImpl implements FriendService {
   
@@ -524,7 +525,6 @@ export class FriendServiceImpl implements FriendService {
     });
     
     // リスナーを管理システムに登録
-    const { realtimeManager } = require('../utils/realtimeManager');
     const success = realtimeManager.registerListener(listenerKey, unsubscribe, 'friends');
     
     // カスタムアンサブスクライブ関数を返す
@@ -558,7 +558,6 @@ export class FriendServiceImpl implements FriendService {
     });
     
     // リスナーを管理システムに登録
-    const { realtimeManager } = require('../utils/realtimeManager');
     const success = realtimeManager.registerListener(listenerKey, unsubscribe, 'friendRequests');
     
     // カスタムアンサブスクライブ関数を返す

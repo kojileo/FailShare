@@ -1,8 +1,6 @@
 import { db } from './firebase';
 import { 
   collection, 
-  addDoc, 
-  deleteDoc, 
   getDocs, 
   query, 
   where, 
@@ -11,9 +9,10 @@ import {
   Timestamp, 
   writeBatch,
   increment,
-  getDoc
+  Firestore
 } from 'firebase/firestore';
-import { Like, LikeStats, LikeService as ILikeService } from '../types';
+import { Like, LikeStats } from '../types';
+import { realtimeManager } from '../utils/realtimeManager';
 
 export interface LikeService {
   addLike(storyId: string, userId: string): Promise<string>;
@@ -103,7 +102,7 @@ class LikeServiceImpl implements LikeService {
     }
   }
 
-  async getHelpfulCount(storyId: string): Promise<number> {
+  async getLikeCount(storyId: string): Promise<number> {
     try {
       console.log('📊 いいね数取得開始:', storyId);
       const likesQuery = query(
@@ -120,25 +119,7 @@ class LikeServiceImpl implements LikeService {
     }
   }
 
-  async isLikedByUser(storyId: string, userId: string): Promise<boolean> {
-    try {
-      console.log('🔍 いいね状態確認開始:', { storyId, userId });
-      const likesQuery = query(
-        collection(this.db, this.COLLECTION_NAME),
-        where('storyId', '==', storyId),
-        where('userId', '==', userId)
-      );
-      const querySnapshot = await getDocs(likesQuery);
-      const isLiked = !querySnapshot.empty;
-      console.log('✅ いいね状態確認成功:', isLiked);
-      return isLiked;
-    } catch (error) {
-      console.error('❌ いいね状態確認エラー:', error);
-      throw error;
-    }
-  }
-
-  async getLikesByUser(userId: string): Promise<Like[]> {
+  async getUserLikes(userId: string): Promise<Like[]> {
     try {
       console.log('👤 ユーザーのいいね取得開始:', userId);
       const likesQuery = query(
@@ -206,7 +187,6 @@ class LikeServiceImpl implements LikeService {
     });
     
     // リスナーを管理システムに登録
-    const { realtimeManager } = require('../utils/realtimeManager');
     const success = realtimeManager.registerListener(listenerKey, unsubscribe, 'likes');
     
     // カスタムアンサブスクライブ関数を返す
@@ -254,12 +234,6 @@ class LikeServiceImpl implements LikeService {
             });
           } else {
             // いいね削除
-            const likesQuery = query(
-              collection(db, this.COLLECTION_NAME),
-              where('storyId', '==', storyId),
-              where('userId', '==', userId)
-            );
-            
             // 注意: バッチ内でのクエリは制限があるため、事前にドキュメントIDを取得する必要があります
             // この実装では簡略化していますが、実際の使用では事前にドキュメントIDを取得する必要があります
           }
@@ -280,6 +254,33 @@ class LikeServiceImpl implements LikeService {
     }
   }
 
+  // 既存のメソッド（後方互換性のため）
+  async getHelpfulCount(storyId: string): Promise<number> {
+    return this.getLikeCount(storyId);
+  }
+
+  async isLikedByUser(storyId: string, userId: string): Promise<boolean> {
+    try {
+      console.log('🔍 いいね状態確認開始:', { storyId, userId });
+      const likesQuery = query(
+        collection(this.db, this.COLLECTION_NAME),
+        where('storyId', '==', storyId),
+        where('userId', '==', userId)
+      );
+      const querySnapshot = await getDocs(likesQuery);
+      const isLiked = !querySnapshot.empty;
+      console.log('✅ いいね状態確認成功:', isLiked);
+      return isLiked;
+    } catch (error) {
+      console.error('❌ いいね状態確認エラー:', error);
+      throw error;
+    }
+  }
+
+  async getLikesByUser(userId: string): Promise<Like[]> {
+    return this.getUserLikes(userId);
+  }
+
   async getLikeStatsForStories(storyIds: string[], userId: string): Promise<{ [storyId: string]: LikeStats }> {
     try {
       console.log('📊 複数ストーリーのいいね統計取得開始:', { storyIds, userId });
@@ -287,7 +288,7 @@ class LikeServiceImpl implements LikeService {
       
       // 各ストーリーのいいね数を並行取得
       const helpfulCountPromises = storyIds.map(async (storyId) => {
-        const count = await this.getHelpfulCount(storyId);
+        const count = await this.getLikeCount(storyId);
         return { storyId, count };
       });
       

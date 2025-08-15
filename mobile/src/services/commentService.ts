@@ -18,6 +18,7 @@ import {
   Firestore
 } from 'firebase/firestore';
 import { Comment } from '../types';
+import { realtimeManager } from '../utils/realtimeManager';
 
 export interface CommentService {
   addComment(storyId: string, authorId: string, content: string): Promise<string>;
@@ -269,7 +270,6 @@ class CommentServiceImpl implements CommentService {
     });
     
     // リスナーを管理システムに登録
-    const { realtimeManager } = require('../utils/realtimeManager');
     const success = realtimeManager.registerListener(listenerKey, unsubscribe, 'comments');
     
     // カスタムアンサブスクライブ関数を返す

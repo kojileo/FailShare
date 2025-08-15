@@ -19,7 +19,7 @@ export class CacheManager {
   private static instance: CacheManager;
   private cache: Map<string, CacheItem<any>> = new Map();
   private config: CacheConfig;
-  private cleanupTimer: NodeJS.Timeout | null = null;
+  private cleanupTimer: ReturnType<typeof setTimeout> | null = null;
 
   private constructor(config?: Partial<CacheConfig>) {
     this.config = {

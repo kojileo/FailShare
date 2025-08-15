@@ -16,6 +16,7 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { ChatService, Chat, ChatMessage, ChatPreview } from '../types';
+import { realtimeManager } from '../utils/realtimeManager';
 
 class ChatServiceImpl implements ChatService {
   // チャット管理
@@ -397,7 +398,6 @@ class ChatServiceImpl implements ChatService {
     });
 
     // リスナーを管理システムに登録
-    const { realtimeManager } = require('../utils/realtimeManager');
     const success = realtimeManager.registerListener(listenerKey, unsubscribe, 'chat');
     
     // カスタムアンサブスクライブ関数を返す
@@ -438,7 +438,6 @@ class ChatServiceImpl implements ChatService {
     });
 
     // リスナーを管理システムに登録
-    const { realtimeManager } = require('../utils/realtimeManager');
     const success = realtimeManager.registerListener(listenerKey, unsubscribe, 'chatMessages');
     
     // カスタムアンサブスクライブ関数を返す
@@ -477,7 +476,6 @@ class ChatServiceImpl implements ChatService {
     });
 
     // リスナーを管理システムに登録
-    const { realtimeManager } = require('../utils/realtimeManager');
     const success = realtimeManager.registerListener(listenerKey, unsubscribe, 'userChats');
     
     // カスタムアンサブスクライブ関数を返す
