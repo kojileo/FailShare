@@ -119,7 +119,29 @@ const FriendsScreen: React.FC = () => {
   };
 
   const renderFriendItem = ({ item }: { item: User }) => (
-    <View style={styles.friendItem}>
+    <TouchableOpacity
+      style={styles.friendItem}
+      onPress={() => navigation.navigate('Chat', {
+        friendId: item.id,
+        friendName: item.displayName,
+      })}
+      onLongPress={() => {
+        Alert.alert(
+          'フレンドオプション',
+          `${item.displayName}に対する操作を選択してください`,
+          [
+            { text: 'キャンセル', style: 'cancel' },
+            { text: 'チャット', onPress: () => navigation.navigate('Chat', {
+              friendId: item.id,
+              friendName: item.displayName,
+            })},
+            { text: 'フレンド削除', style: 'destructive', onPress: () => handleRemoveFriend(item) },
+            { text: 'ブロック', style: 'destructive', onPress: () => handleBlockUser(item) },
+          ]
+        );
+      }}
+      activeOpacity={0.7}
+    >
       <View style={styles.friendInfo}>
         <View style={styles.avatarContainer}>
           <Text style={styles.avatarText}>
@@ -134,40 +156,26 @@ const FriendsScreen: React.FC = () => {
         </View>
       </View>
       <View style={styles.actionButtons}>
-                 <TouchableOpacity
-           style={styles.actionButton}
-           onPress={() => navigation.navigate('Chat', {
-             friendId: item.id,
-             friendName: item.displayName,
-           })}
-           testID="chat-friend-button"
-         >
-           <MaterialIcons name="chat" size={20} color="#6366F1" />
-         </TouchableOpacity>
         <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => handleRemoveFriend(item)}
-          testID="remove-friend-button"
+          style={styles.chatButton}
+          onPress={() => navigation.navigate('Chat', {
+            friendId: item.id,
+            friendName: item.displayName,
+          })}
+          testID="chat-friend-button"
         >
-          <MaterialIcons name="person-remove" size={20} color="#666" />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => handleBlockUser(item)}
-          testID="block-friend-button"
-        >
-          <MaterialIcons name="block" size={20} color="#666" />
+          <MaterialIcons name="chat" size={24} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
-      <MaterialIcons name="people-outline" size={64} color="#ccc" />
-      <Text style={styles.emptyStateTitle}>フレンドがいません</Text>
+      <MaterialIcons name="chat-bubble-outline" size={64} color="#ccc" />
+      <Text style={styles.emptyStateTitle}>チャットできるフレンドがいません</Text>
       <Text style={styles.emptyStateText}>
-        失敗談を通じて新しいフレンドを見つけてみましょう
+        フレンドを追加してチャットを始めてみましょう
       </Text>
       <TouchableOpacity
         style={styles.addFriendButton}
@@ -184,7 +192,7 @@ const FriendsScreen: React.FC = () => {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#007AFF" />
-        <Text style={styles.loadingText}>フレンドを読み込み中...</Text>
+        <Text style={styles.loadingText}>チャット一覧を読み込み中...</Text>
       </View>
     );
   }
@@ -192,7 +200,7 @@ const FriendsScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#1DA1F2" />
-      <Header navigation={navigation} />
+      <Header navigation={navigation} title="チャット" />
 
       {/* アクションボタン */}
       <View style={styles.actionHeader}>
@@ -367,6 +375,19 @@ const styles = StyleSheet.create({
   actionButton: {
     padding: 8,
     marginLeft: 8,
+  },
+  chatButton: {
+    backgroundColor: '#6366F1',
+    padding: 12,
+    borderRadius: 24,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   emptyState: {
     flex: 1,

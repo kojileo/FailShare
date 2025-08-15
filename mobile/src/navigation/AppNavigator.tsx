@@ -12,7 +12,6 @@ import FriendRequestsScreen from '../screens/FriendRequestsScreen';
 import FriendSearchScreen from '../screens/FriendSearchScreen';
 import BlockedUsersScreen from '../screens/BlockedUsersScreen';
 import ChatScreen from '../screens/ChatScreen';
-import ChatListScreen from '../screens/ChatListScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -65,10 +64,6 @@ const AppNavigator: React.FC = () => {
         <Stack.Screen
           name="Chat"
           component={ChatScreen}
-        />
-        <Stack.Screen
-          name="ChatList"
-          component={ChatListScreen}
         />
       </Stack.Navigator>
     </NavigationContainer>
