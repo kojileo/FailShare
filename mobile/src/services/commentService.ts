@@ -244,6 +244,10 @@ class CommentServiceImpl implements CommentService {
 
   subscribeToComments(storyId: string, callback: (comments: Comment[]) => void): () => void {
     console.log('👂 コメントリアルタイム監視開始:', storyId);
+    
+    // リスナーキーを生成
+    const listenerKey = `comments:${storyId}`;
+    
     const commentsQuery = query(
       collection(this.db, this.COLLECTION_NAME),
       where('storyId', '==', storyId),
@@ -264,7 +268,16 @@ class CommentServiceImpl implements CommentService {
       console.error('❌ コメントリアルタイム監視エラー:', error);
     });
     
-    return unsubscribe;
+    // リスナーを管理システムに登録
+    const { realtimeManager } = require('../utils/realtimeManager');
+    const success = realtimeManager.registerListener(listenerKey, unsubscribe, 'comments');
+    
+    // カスタムアンサブスクライブ関数を返す
+    return () => {
+      if (success) {
+        realtimeManager.removeListener(listenerKey);
+      }
+    };
   }
 
   async getCommentCount(storyId: string): Promise<number> {

@@ -8,6 +8,7 @@ import AuthScreen from './src/screens/AuthScreen';
 import OnboardingScreen from './src/screens/OnboardingScreen';
 import { useAuthStore } from './src/stores/authStore';
 import { storyService } from './src/services/storyService';
+import { realtimeManager } from './src/utils/realtimeManager';
 
 export default function App() {
   const { isSignedIn, isLoading, isOnboardingCompleted, initializeAuth, completeOnboarding } = useAuthStore();
@@ -21,6 +22,14 @@ export default function App() {
       unsubscribe();
     };
   }, [initializeAuth]);
+
+  // リアルタイムリスナーの管理
+  React.useEffect(() => {
+    // アプリ終了時に全リスナーを停止
+    return () => {
+      realtimeManager.removeAllListeners();
+    };
+  }, []);
 
   // サンプルデータ処理はスクリプトで実行するため無効化
   // React.useEffect(() => {

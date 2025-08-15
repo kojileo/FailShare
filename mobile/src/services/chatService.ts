@@ -375,6 +375,9 @@ class ChatServiceImpl implements ChatService {
 
   // リアルタイム更新
   subscribeToChat(chatId: string, callback: (chat: Chat) => void): () => void {
+    // リスナーキーを生成
+    const listenerKey = `chat:${chatId}`;
+    
     const chatRef = doc(db, 'chats', chatId);
     
     const unsubscribe = onSnapshot(chatRef, (doc) => {
@@ -393,10 +396,22 @@ class ChatServiceImpl implements ChatService {
       }
     });
 
-    return unsubscribe;
+    // リスナーを管理システムに登録
+    const { realtimeManager } = require('../utils/realtimeManager');
+    const success = realtimeManager.registerListener(listenerKey, unsubscribe, 'chat');
+    
+    // カスタムアンサブスクライブ関数を返す
+    return () => {
+      if (success) {
+        realtimeManager.removeListener(listenerKey);
+      }
+    };
   }
 
   subscribeToChatMessages(chatId: string, callback: (messages: ChatMessage[]) => void): () => void {
+    // リスナーキーを生成
+    const listenerKey = `chatMessages:${chatId}`;
+    
     const messagesQuery = query(
       collection(db, 'messages'),
       where('chatId', '==', chatId),
@@ -422,10 +437,22 @@ class ChatServiceImpl implements ChatService {
       callback(messages);
     });
 
-    return unsubscribe;
+    // リスナーを管理システムに登録
+    const { realtimeManager } = require('../utils/realtimeManager');
+    const success = realtimeManager.registerListener(listenerKey, unsubscribe, 'chatMessages');
+    
+    // カスタムアンサブスクライブ関数を返す
+    return () => {
+      if (success) {
+        realtimeManager.removeListener(listenerKey);
+      }
+    };
   }
 
   subscribeToUserChats(userId: string, callback: (chats: Chat[]) => void): () => void {
+    // リスナーキーを生成
+    const listenerKey = `userChats:${userId}`;
+    
     const chatsQuery = query(
       collection(db, 'chats'),
       where('participants', 'array-contains', userId),
@@ -449,7 +476,16 @@ class ChatServiceImpl implements ChatService {
       callback(chats);
     });
 
-    return unsubscribe;
+    // リスナーを管理システムに登録
+    const { realtimeManager } = require('../utils/realtimeManager');
+    const success = realtimeManager.registerListener(listenerKey, unsubscribe, 'userChats');
+    
+    // カスタムアンサブスクライブ関数を返す
+    return () => {
+      if (success) {
+        realtimeManager.removeListener(listenerKey);
+      }
+    };
   }
 
   // ヘルパーメソッド

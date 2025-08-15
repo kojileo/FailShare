@@ -472,13 +472,16 @@ export class FriendServiceImpl implements FriendService {
 
   // リアルタイム更新
   subscribeToFriends(userId: string, callback: (friends: User[]) => void): () => void {
+    // リスナーキーを生成
+    const listenerKey = `friends:${userId}`;
+    
     const friendshipsQuery = query(
       collection(db, 'friendships'),
       where('userId', '==', userId),
       where('status', '==', 'accepted')
     );
     
-    return onSnapshot(friendshipsQuery, async (snapshot) => {
+    const unsubscribe = onSnapshot(friendshipsQuery, async (snapshot) => {
       try {
         const friendIds = snapshot.docs.map(doc => doc.data().friendId);
         
@@ -519,16 +522,30 @@ export class FriendServiceImpl implements FriendService {
         callback([]);
       }
     });
+    
+    // リスナーを管理システムに登録
+    const { realtimeManager } = require('../utils/realtimeManager');
+    const success = realtimeManager.registerListener(listenerKey, unsubscribe, 'friends');
+    
+    // カスタムアンサブスクライブ関数を返す
+    return () => {
+      if (success) {
+        realtimeManager.removeListener(listenerKey);
+      }
+    };
   }
 
   subscribeToFriendRequests(userId: string, callback: (requests: FriendRequest[]) => void): () => void {
+    // リスナーキーを生成
+    const listenerKey = `friendRequests:${userId}`;
+    
     const requestsQuery = query(
       collection(db, 'friendRequests'),
       where('toUserId', '==', userId),
       where('status', '==', 'pending')
     );
     
-    return onSnapshot(requestsQuery, (snapshot) => {
+    const unsubscribe = onSnapshot(requestsQuery, (snapshot) => {
       const requests = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
@@ -539,6 +556,17 @@ export class FriendServiceImpl implements FriendService {
       const sortedRequests = requests.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
       callback(sortedRequests);
     });
+    
+    // リスナーを管理システムに登録
+    const { realtimeManager } = require('../utils/realtimeManager');
+    const success = realtimeManager.registerListener(listenerKey, unsubscribe, 'friendRequests');
+    
+    // カスタムアンサブスクライブ関数を返す
+    return () => {
+      if (success) {
+        realtimeManager.removeListener(listenerKey);
+      }
+    };
   }
 }
 

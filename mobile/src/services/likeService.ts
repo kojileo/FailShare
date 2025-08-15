@@ -147,6 +147,10 @@ class LikeService implements ILikeService {
 
   subscribeToLikes(storyId: string, callback: (likes: Like[]) => void): () => void {
     console.log('👂 いいねリアルタイム監視開始:', storyId);
+    
+    // リスナーキーを生成
+    const listenerKey = `likes:${storyId}`;
+    
     const likesQuery = query(
       collection(this.db, this.COLLECTION_NAME),
       where('storyId', '==', storyId)
@@ -164,7 +168,16 @@ class LikeService implements ILikeService {
       console.error('❌ いいねリアルタイム監視エラー:', error);
     });
     
-    return unsubscribe;
+    // リスナーを管理システムに登録
+    const { realtimeManager } = require('../utils/realtimeManager');
+    const success = realtimeManager.registerListener(listenerKey, unsubscribe, 'likes');
+    
+    // カスタムアンサブスクライブ関数を返す
+    return () => {
+      if (success) {
+        realtimeManager.removeListener(listenerKey);
+      }
+    };
   }
 
   async getLikeStatsForStories(storyIds: string[], userId: string): Promise<{ [storyId: string]: LikeStats }> {
