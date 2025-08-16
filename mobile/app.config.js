@@ -32,7 +32,23 @@ const getConfig = () => {
         package: getPackageName(environment)
       },
       web: {
-        favicon: "./assets/favicon.png"
+        favicon: "./assets/favicon.png",
+        title: "FailShare - 失敗を成長の糧に変える学び合いコミュニティ",
+        description: "失敗談を共有し、みんなで学び合うコミュニティ。失敗を恥ずかしい秘密ではなく、価値ある学習リソースとして捉え直し、支え合うことで成長を促進します。",
+        keywords: "失敗談,失敗体験,学習,成長,コミュニティ,振り返り,経験談,アドバイス",
+        author: "FailShare",
+        meta: {
+          "og:type": "website",
+          "og:url": "https://fail-share.com/",
+          "og:title": "FailShare - 失敗を成長の糧に変える学び合いコミュニティ",
+          "og:description": "失敗談を共有し、みんなで学び合うコミュニティ。失敗を恥ずかしい秘密ではなく、価値ある学習リソースとして捉え直し、支え合うことで成長を促進します。",
+          "og:image": "https://fail-share.com/og-image.jpg",
+          "twitter:card": "summary_large_image",
+          "twitter:url": "https://fail-share.com/",
+          "twitter:title": "FailShare - 失敗を成長の糧に変える学び合いコミュニティ",
+          "twitter:description": "失敗談を共有し、みんなで学び合うコミュニティ。失敗を恥ずかしい秘密ではなく、価値ある学習リソースとして捉え直し、支え合うことで成長を促進します。",
+          "twitter:image": "https://fail-share.com/og-image.jpg"
+        }
       },
       extra: {
         environment: environment,
