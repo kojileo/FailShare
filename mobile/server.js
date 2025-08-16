@@ -14,19 +14,42 @@ app.get('/robots.txt', (req, res) => {
   const robots = `User-agent: *
 Allow: /
 
-Sitemap: https://fail-share.com/sitemap.xml`;
+# クロール間隔（秒）
+Crawl-delay: 1
+
+# サイトマップ
+Sitemap: https://fail-share.com/sitemap.xml
+
+# 特定のパスの制御
+Disallow: /api/
+Disallow: /admin/
+Disallow: /private/`;
   res.send(robots);
 });
 
 app.get('/sitemap.xml', (req, res) => {
   res.setHeader('Content-Type', 'application/xml');
+  const currentDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD形式
+  
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://fail-share.com/</loc>
-    <lastmod>2024-01-15</lastmod>
-    <changefreq>weekly</changefreq>
+    <lastmod>${currentDate}</lastmod>
+    <changefreq>daily</changefreq>
     <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://fail-share.com/stories</loc>
+    <lastmod>${currentDate}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://fail-share.com/profile</loc>
+    <lastmod>${currentDate}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
   </url>
 </urlset>`;
   res.send(sitemap);
