@@ -18,7 +18,7 @@ import {
   orderBy
 } from 'firebase/firestore';
 import { db } from './firebase';
-import { FailureStory, StoryCategory, EmotionType, CategoryHierarchy } from '../types';
+import { FailureStory, StoryCategory, EmotionType, CategoryHierarchy, PostType } from '../types';
 import { getCategoryNames } from '../utils/categories';
 import { likeService } from './likeService';
 
@@ -28,13 +28,15 @@ export interface CreateStoryData {
   situation: string;
   action: string;
   result: string;
-  learning: string;
+  learning: string; // 愚痴投稿では任意
   emotion: EmotionType;
+  postType: PostType; // 'failure' | 'complaint'
 }
 
 export interface StoryFilters {
   category?: StoryCategory;
   emotion?: EmotionType;
+  postType?: PostType;
   searchText?: string;
   limit?: number;
   lastVisible?: QueryDocumentSnapshot<DocumentData>;
@@ -95,6 +97,7 @@ class StoryService {
       let filters: StoryFilters = {
         category: null,
         emotion: null,
+        postType: null,
         searchText: null
       };
 
@@ -114,6 +117,11 @@ class StoryService {
       // 感情フィルター
       if (filters.emotion) {
         q = query(q, where('content.emotion', '==', filters.emotion));
+      }
+
+      // 投稿タイプフィルター
+      if (filters.postType) {
+        q = query(q, where('content.postType', '==', filters.postType));
       }
 
       // 🔧 最適化: テキスト検索時の効率化
@@ -283,7 +291,8 @@ class StoryService {
     if (!data.result?.trim()) {
       throw new Error('結果の説明は必須です');
     }
-    if (!data.learning?.trim()) {
+    // 学びの内容は愚痴投稿では任意
+    if (data.postType === 'failure' && !data.learning?.trim()) {
       throw new Error('学びの内容は必須です');
     }
     if (!data.emotion) {

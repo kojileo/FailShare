@@ -12,7 +12,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types';
-import { FailureStory, MainCategory, SubCategory } from '../types';
+import { FailureStory, MainCategory, SubCategory, PostType } from '../types';
 import { storyService } from '../services/storyService';
 import { useAuthStore } from '../stores/authStore';
 import { useStoryStore } from '../stores/storyStore';
@@ -37,6 +37,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMainCategory, setSelectedMainCategory] = useState<MainCategory | null>(null);
   const [selectedSubCategory, setSelectedSubCategory] = useState<SubCategory | null>(null);
+  const [selectedPostType, setSelectedPostType] = useState<PostType | null>(null);
   const [filteredStories, setFilteredStories] = useState<FailureStory[]>([]);
 
 
@@ -97,8 +98,15 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       );
     }
 
+    // 投稿タイプフィルター
+    if (selectedPostType) {
+      filtered = filtered.filter(story => 
+        story.content.postType === selectedPostType
+      );
+    }
+
     setFilteredStories(filtered);
-  }, [stories, searchQuery, selectedMainCategory, selectedSubCategory]);
+  }, [stories, searchQuery, selectedMainCategory, selectedSubCategory, selectedPostType]);
 
   // 画面フォーカス時に自動リフレッシュ
   useFocusEffect(
@@ -219,10 +227,51 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                   {selectedSubCategory}
                 </Chip>
               )}
+              {selectedPostType && (
+                <Chip
+                  onClose={() => setSelectedPostType(null)}
+                  style={styles.activeFilterChip}
+                  textStyle={styles.activeFilterText}
+                >
+                  {selectedPostType === 'failure' ? '💔 失敗談' : '😤 愚痴'}
+                </Chip>
+              )}
             </View>
           </View>
         )}
       </View>
+
+      {/* 投稿タイプフィルター */}
+      {!searchQuery && (
+        <View style={styles.categorySection}>
+          <View style={styles.categoryScrollContent}>
+            <TouchableOpacity
+              style={[styles.categoryFilterButton, selectedPostType === null && styles.categoryFilterButtonActive]}
+              onPress={() => setSelectedPostType(null)}
+            >
+              <Text style={[styles.categoryFilterText, selectedPostType === null && styles.categoryFilterTextActive]}>
+                すべて
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.categoryFilterButton, selectedPostType === 'failure' && styles.categoryFilterButtonActive]}
+              onPress={() => setSelectedPostType('failure')}
+            >
+              <Text style={[styles.categoryFilterText, selectedPostType === 'failure' && styles.categoryFilterTextActive]}>
+                💔 失敗談
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.categoryFilterButton, selectedPostType === 'complaint' && styles.categoryFilterButtonActive]}
+              onPress={() => setSelectedPostType('complaint')}
+            >
+              <Text style={[styles.categoryFilterText, selectedPostType === 'complaint' && styles.categoryFilterTextActive]}>
+                😤 愚痴
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
 
       {/* カテゴリフィルター */}
       {!searchQuery && (
@@ -260,16 +309,16 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         {displayStories.length === 0 && !isLoading ? (
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyIcon}>
-              {searchQuery || selectedMainCategory || selectedSubCategory ? '🔍' : '📱'}
+              {searchQuery || selectedMainCategory || selectedSubCategory || selectedPostType ? '🔍' : '📱'}
             </Text>
             <Text style={styles.emptyTitle}>
-              {searchQuery || selectedMainCategory || selectedSubCategory 
-                ? '該当する失敗談が見つかりませんでした' 
-                : '最初の失敗談を投稿してみましょう'
+              {searchQuery || selectedMainCategory || selectedSubCategory || selectedPostType
+                ? '該当する投稿が見つかりませんでした' 
+                : '最初の投稿をしてみましょう'
               }
             </Text>
             <Text style={styles.emptyText}>
-              {searchQuery || selectedMainCategory || selectedSubCategory
+              {searchQuery || selectedMainCategory || selectedSubCategory || selectedPostType
                 ? '検索条件を変更してお試しください'
                 : 'あなたの経験が誰かの学びになります'
               }

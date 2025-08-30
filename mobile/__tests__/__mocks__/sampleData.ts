@@ -1,4 +1,4 @@
-import { FailureStory, CategoryHierarchy, EmotionType, Like, LikeStats, User, FriendRequest, FriendRecommendation, Friendship } from '../../src/types';
+import { FailureStory, CategoryHierarchy, EmotionType, PostType, Like, LikeStats, User, FriendRequest, FriendRecommendation, Friendship } from '../../src/types';
 
 export const mockCategory: CategoryHierarchy = {
   main: '恋愛',
@@ -16,7 +16,8 @@ export const mockStory: FailureStory = {
     action: '無理に話題を振ろうとして、相手の趣味について知ったかぶりをした。',
     result: '相手に見抜かれて気まずい雰囲気になり、デートが早めに終わってしまった。',
     learning: '素直に自分らしくいることの大切さを学んだ。背伸びをせず、正直に接することが信頼関係の基盤。',
-    emotion: '後悔' as EmotionType
+    emotion: '後悔' as EmotionType,
+    postType: 'failure' as PostType
   },
   authorId: 'test-user-id',
   metadata: {
@@ -39,7 +40,8 @@ export const mockStories: FailureStory[] = [
       action: '次の機会を待とうと思い、何もアクションを起こさなかった。',
       result: '相手が他の人と付き合ってしまった。',
       learning: 'チャンスは待っていても来ない。勇気を出して行動することの重要性。',
-      emotion: '後悔' as EmotionType
+      emotion: '後悔' as EmotionType,
+      postType: 'failure' as PostType
     },
     authorId: 'test-user-id-2',
     metadata: {
@@ -47,6 +49,27 @@ export const mockStories: FailureStory[] = [
       viewCount: 5,
       helpfulCount: 2,
       commentCount: 1,
+      tags: []
+    }
+  },
+  {
+    id: 'test-story-3',
+    content: {
+      title: '上司の愚痴',
+      category: { main: '仕事', sub: '職場人間関係' },
+      situation: '上司がいつも理不尽な要求をしてくる。',
+      action: '我慢して従っているが、ストレスが溜まっている。',
+      result: '仕事へのモチベーションが下がってしまった。',
+      learning: '', // 愚痴投稿では学びは任意
+      emotion: '怒り' as EmotionType,
+      postType: 'complaint' as PostType
+    },
+    authorId: 'test-user-id-3',
+    metadata: {
+      createdAt: new Date(Date.now() - 172800000),
+      viewCount: 3,
+      helpfulCount: 1,
+      commentCount: 0,
       tags: []
     }
   }

@@ -9,7 +9,7 @@ import {
   Surface
 } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { EmotionType, FailureStory, MainCategory, SubCategory, CategoryHierarchy } from '../types';
+import { EmotionType, FailureStory, MainCategory, SubCategory, CategoryHierarchy, PostType } from '../types';
 import { storyService } from '../services/storyService';
 import { useAuthStore } from '../stores/authStore';
 import { useStoryStore } from '../stores/storyStore';
@@ -43,7 +43,8 @@ const CreateStoryScreen: React.FC<CreateStoryScreenProps> = ({ navigation, route
     action: storyToEdit?.content.action || '',
     result: storyToEdit?.content.result || '',
     learning: storyToEdit?.content.learning || '',
-    emotion: storyToEdit?.content.emotion || '' as EmotionType
+    emotion: storyToEdit?.content.emotion || '' as EmotionType,
+    postType: storyToEdit?.content.postType || 'failure' as PostType
   });
 
   const [loading, setLoading] = useState(false);
@@ -102,7 +103,8 @@ const CreateStoryScreen: React.FC<CreateStoryScreenProps> = ({ navigation, route
         action: formData.action,
         result: formData.result,
         learning: formData.learning,
-        emotion: formData.emotion
+        emotion: formData.emotion,
+        postType: formData.postType
       };
 
       if (isEditMode && storyToEdit) {
@@ -163,7 +165,8 @@ const CreateStoryScreen: React.FC<CreateStoryScreenProps> = ({ navigation, route
           action: '',
           result: '',
           learning: '',
-          emotion: '' as EmotionType
+          emotion: '' as EmotionType,
+          postType: 'failure' as PostType
         });
         setCurrentStep(1);
         console.log('🔄 フォームリセット完了');
@@ -226,9 +229,16 @@ const CreateStoryScreen: React.FC<CreateStoryScreenProps> = ({ navigation, route
 
   const isStepValid = () => {
     switch (currentStep) {
-      case 1: return formData.title.trim() && formData.category.main && formData.category.sub;
+      case 1: return formData.title.trim() && formData.category.main && formData.category.sub && formData.postType;
       case 2: return formData.situation.trim() && formData.action.trim();
-      case 3: return formData.result.trim() && formData.learning.trim() && formData.emotion;
+      case 3: {
+        const baseValid = formData.result.trim() && formData.emotion;
+        // 愚痴投稿では学びは任意
+        if (formData.postType === 'complaint') {
+          return baseValid;
+        }
+        return baseValid && formData.learning.trim();
+      }
       default: return false;
     }
   };
@@ -261,10 +271,60 @@ const CreateStoryScreen: React.FC<CreateStoryScreenProps> = ({ navigation, route
 
   const renderStep1 = () => (
     <View style={styles.stepContent}>
+      {/* 投稿タイプ選択 */}
+      <Surface style={styles.inputSection} elevation={1}>
+        <Text style={styles.sectionTitle}>📝 投稿タイプ</Text>
+        <Text style={styles.sectionDesc}>どのような投稿をしますか？</Text>
+        
+        <View style={styles.chipGrid}>
+          <Chip
+            selected={formData.postType === 'failure'}
+            onPress={() => {
+              setFormData(prev => ({ ...prev, postType: 'failure' }));
+              if (errors.postType) setErrors(prev => ({ ...prev, postType: '' }));
+            }}
+            style={[
+              styles.chip,
+              formData.postType === 'failure' && styles.chipSelected
+            ]}
+            textStyle={[
+              styles.chipText,
+              formData.postType === 'failure' && styles.chipTextSelected
+            ]}
+          >
+            💔 失敗談
+          </Chip>
+          <Chip
+            selected={formData.postType === 'complaint'}
+            onPress={() => {
+              setFormData(prev => ({ ...prev, postType: 'complaint' }));
+              if (errors.postType) setErrors(prev => ({ ...prev, postType: '' }));
+            }}
+            style={[
+              styles.chip,
+              formData.postType === 'complaint' && styles.chipSelected
+            ]}
+            textStyle={[
+              styles.chipText,
+              formData.postType === 'complaint' && styles.chipTextSelected
+            ]}
+          >
+            😤 愚痴
+          </Chip>
+        </View>
+        <HelperText type="error" visible={!!errors.postType}>
+          {errors.postType}
+        </HelperText>
+      </Surface>
+
       {/* タイトル */}
       <Surface style={styles.inputSection} elevation={1}>
-        <Text style={styles.sectionTitle}>📝 失敗談のタイトル</Text>
-        <Text style={styles.sectionDesc}>何についての失敗でしたか？</Text>
+        <Text style={styles.sectionTitle}>
+          {formData.postType === 'failure' ? '📝 失敗談のタイトル' : '📝 愚痴のタイトル'}
+        </Text>
+        <Text style={styles.sectionDesc}>
+          {formData.postType === 'failure' ? '何についての失敗でしたか？' : '何についての愚痴ですか？'}
+        </Text>
         <TextInput
           mode="outlined"
           placeholder="例: 初デートで大失敗..."
@@ -447,8 +507,14 @@ const CreateStoryScreen: React.FC<CreateStoryScreenProps> = ({ navigation, route
 
       {/* 学び */}
       <Surface style={styles.inputSection} elevation={1}>
-        <Text style={styles.sectionTitle}>💡 学び</Text>
-        <Text style={styles.sectionDesc}>何を学びましたか？</Text>
+        <Text style={styles.sectionTitle}>
+          {formData.postType === 'failure' ? '💡 学び' : '💡 学び（任意）'}
+        </Text>
+        <Text style={styles.sectionDesc}>
+          {formData.postType === 'failure' 
+            ? '何を学びましたか？' 
+            : '何か学びがあれば教えてください（任意）'}
+        </Text>
         <TextInput
           mode="outlined"
           placeholder="この経験から何を学びましたか？"
@@ -680,6 +746,25 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     marginBottom: 8,
   },
+  chip: {
+    marginRight: 8,
+    marginBottom: 8,
+    backgroundColor: '#F1F5F9',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  chipSelected: {
+    backgroundColor: '#1DA1F2',
+    borderColor: '#1DA1F2',
+  },
+  chipText: {
+    color: '#64748B',
+    fontSize: 14,
+  },
+  chipTextSelected: {
+    color: '#FFFFFF',
+    fontSize: 14,
+  },
   categoryChip: {
     marginRight: 8,
     marginBottom: 8,
@@ -704,11 +789,7 @@ const styles = StyleSheet.create({
   selectedEmotionChip: {
     backgroundColor: '#E0245E',
   },
-  chipText: {
-    fontSize: 14,
-    color: '#64748B',
-    fontWeight: '500',
-  },
+
   selectedChipText: {
     color: '#FFFFFF',
     fontWeight: '600',

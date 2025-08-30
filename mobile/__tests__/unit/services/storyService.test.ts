@@ -3,7 +3,7 @@ import '../../../__tests__/__mocks__/firebase';
 import { mockStory, mockStories } from '../../__mocks__/sampleData';
 import { storyService } from '../../../src/services/storyService';
 import { likeService } from '../../../src/services/likeService';
-import { MainCategory, SubCategory, EmotionType } from '../../../src/types';
+import { MainCategory, SubCategory, EmotionType, PostType } from '../../../src/types';
 
 // Jest の型を手動でインポート
 /// <reference types="jest" />
@@ -227,7 +227,8 @@ describe('StoryService', () => {
         action: '新しい行動',
         result: '新しい結果',
         learning: '新しい学び',
-        emotion: '後悔' as EmotionType
+        emotion: '後悔' as EmotionType,
+        postType: 'failure' as PostType
       };
 
       const result = await storyService.createStory('user1', storyData);
@@ -347,7 +348,8 @@ describe('StoryService', () => {
         action: 'テスト行動',
         result: 'テスト結果',
         learning: 'テスト学び',
-        emotion: '後悔' as EmotionType
+        emotion: '後悔' as EmotionType,
+        postType: 'failure' as PostType
       };
 
       await expect(storyService.createStory('user1', storyData)).rejects.toThrow('Create story error');
@@ -363,7 +365,8 @@ describe('StoryService', () => {
         action: 'テスト行動',
         result: 'テスト結果',
         learning: 'テスト学び',
-        emotion: '後悔' as EmotionType
+        emotion: '後悔' as EmotionType,
+        postType: 'failure' as PostType
       };
 
       await expect(storyService.createStory('user1', invalidStoryData)).rejects.toThrow('タイトルは必須です');
@@ -378,7 +381,8 @@ describe('StoryService', () => {
         action: 'テスト行動',
         result: 'テスト結果',
         learning: 'テスト学び',
-        emotion: '後悔' as EmotionType
+        emotion: '後悔' as EmotionType,
+        postType: 'failure' as PostType
       };
 
       await expect(storyService.createStory('user1', invalidStoryData)).rejects.toThrow('タイトルは100文字以内で入力してください');
