@@ -80,6 +80,7 @@ interface UserProfile {
 
 #### 3. データ保持期間
 - **投稿データ**: ユーザーが削除するまで
+
 - **ログデータ**: 30日間
 - **セッションデータ**: 24時間
 
@@ -122,7 +123,9 @@ const prohibitedData = [
   'address',
   'realName',
   'birthDate',
-  'socialMedia'
+  'socialMedia',
+
+  'mentalHealthData'  // メンタルヘルスデータ
 ];
 ```
 
@@ -203,6 +206,8 @@ const logSecurityEvent = (event: SecurityEvent) => {
 - [ ] セキュリティルールの見直し
 - [ ] 依存関係の脆弱性チェック
 - [ ] データ暗号化の確認
+
+- [ ] ネガティブコメント防止システムの動作確認
 
 #### 2. 脆弱性スキャン
 ```bash
@@ -299,6 +304,7 @@ const handleSecurityIncident = (incident: SecurityIncident) => {
 - **データ移植権**: データのエクスポート
 - **同意撤回権**: データ収集の停止
 
+
 ---
 
 ## 🔄 継続的改善
@@ -318,13 +324,17 @@ const threatModel = {
     'データ漏洩',
     '不正アクセス',
     'サービス拒否攻撃',
-    'マルウェア感染'
+    'マルウェア感染',
+
+    'ネガティブコメントの拡散'
   ],
   mitigations: [
     '暗号化',
     'アクセス制御',
     'レート制限',
-    'セキュリティスキャン'
+    'セキュリティスキャン',
+
+    'ネガティブコメント防止システム'
   ]
 };
 ```

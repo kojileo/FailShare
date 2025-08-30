@@ -112,6 +112,8 @@ npm run build:web:staging
 npm run build:web:prod
 ```
 
+
+
 #### 2. Firebase Hosting デプロイ
 ```bash
 # 開発環境
@@ -221,6 +223,8 @@ Google Cloud Console → Billing → 予算とアラート
 - コスト予測
 - 予算アラート
 
+
+
 ---
 
 ## 🔒 セキュリティ設定
@@ -296,7 +300,8 @@ export const cacheConfigs = {
   stories: { defaultTTL: 5 * 60 * 1000, maxSize: 200 },    // 5分
   comments: { defaultTTL: 3 * 60 * 1000, maxSize: 500 },   // 3分
   likes: { defaultTTL: 2 * 60 * 1000, maxSize: 300 },      // 2分
-  users: { defaultTTL: 10 * 60 * 1000, maxSize: 100 }      // 10分
+  users: { defaultTTL: 10 * 60 * 1000, maxSize: 100 },     // 10分
+  sentiment: { defaultTTL: 30 * 60 * 1000, maxSize: 1000 } // 30分（感情分析結果）
 };
 ```
 
@@ -326,7 +331,9 @@ npm install
 npm start -- --clear
 ```
 
-#### 3. デプロイエラー
+
+
+#### 4. デプロイエラー
 ```bash
 # デプロイ前の確認
 firebase deploy --dry-run
