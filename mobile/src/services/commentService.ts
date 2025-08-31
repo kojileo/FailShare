@@ -19,6 +19,7 @@ import {
 } from 'firebase/firestore';
 import { Comment } from '../types';
 import { realtimeManager } from '../utils/realtimeManager';
+import { keywordFilterService } from './keywordFilterService';
 
 export interface CommentService {
   addComment(storyId: string, authorId: string, content: string): Promise<string>;
@@ -53,6 +54,12 @@ class CommentServiceImpl implements CommentService {
       // コメント内容の検証
       if (content.length > 500) {
         throw new Error('コメントは500文字以内で入力してください');
+      }
+
+      // キーワードフィルタチェック
+      const filterResult = keywordFilterService.filterComment(content);
+      if (filterResult.isBlocked) {
+        throw new Error(filterResult.warningMessage || '不適切な表現が含まれています');
       }
       
       // commentsコレクションにコメントを追加
@@ -214,6 +221,12 @@ class CommentServiceImpl implements CommentService {
       // コメント内容の検証
       if (content.length > 500) {
         throw new Error('コメントは500文字以内で入力してください');
+      }
+
+      // キーワードフィルタチェック
+      const filterResult = keywordFilterService.filterComment(content);
+      if (filterResult.isBlocked) {
+        throw new Error(filterResult.warningMessage || '不適切な表現が含まれています');
       }
       
       // コメントの存在確認と権限チェック

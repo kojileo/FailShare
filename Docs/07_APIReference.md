@@ -97,7 +97,7 @@ interface UserStats {
 ## 📝 ストーリーサービス (storyService)
 
 ### 概要
-失敗談の投稿・編集・削除・検索を管理するサービス
+失敗談・愚痴投稿の投稿・編集・削除・検索を管理するサービス
 
 ### 主要メソッド
 
@@ -132,6 +132,11 @@ export const searchStories = async (keyword: string): Promise<FailureStory[]>
 
 // 感情別フィルタ
 export const getStoriesByEmotion = async (emotion: EmotionType): Promise<FailureStory[]>
+
+// 投稿タイプ別検索
+export const getStoriesByType = async (postType: PostType): Promise<FailureStory[]>
+
+
 ```
 
 ### データ型
@@ -151,6 +156,8 @@ interface StoryContent {
   result: string;
   learning: string;
   emotion: EmotionType;
+  postType: PostType;        // 'failure' | 'complaint'
+
 }
 
 interface StoryMetadata {
@@ -159,6 +166,7 @@ interface StoryMetadata {
   helpfulCount: number;
   commentCount: number;
   tags: string[];
+
 }
 
 interface StoryFilters {
@@ -222,6 +230,7 @@ interface Comment {
   content: string;
   createdAt: Date;
   isHelpful: boolean;
+
 }
 ```
 
@@ -517,6 +526,10 @@ export class CacheManager {
 
 ---
 
+
+
+---
+
 ## 📊 エラーハンドリング
 
 ### エラー型定義
@@ -544,7 +557,9 @@ enum ErrorCode {
   
   // リアルタイムエラー
   LISTENER_ERROR = 'LISTENER_ERROR',
-  CONNECTION_ERROR = 'CONNECTION_ERROR'
+  CONNECTION_ERROR = 'CONNECTION_ERROR',
+  
+
 }
 ```
 
