@@ -39,6 +39,9 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const [selectedSubCategory, setSelectedSubCategory] = useState<SubCategory | null>(null);
   const [selectedPostType, setSelectedPostType] = useState<PostType | null>(null);
   const [filteredStories, setFilteredStories] = useState<FailureStory[]>([]);
+  
+  // ウェルカムメッセージの表示制御
+  const [showWelcomeMessage, setShowWelcomeMessage] = useState(true);
 
 
   const mainCategories = getMainCategories();
@@ -175,6 +178,32 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         showBackButton={false}
       />
 
+      {/* ウェルカムメッセージ */}
+      {showWelcomeMessage && !searchQuery && (
+        <View style={styles.welcomeSection}>
+          <View style={styles.welcomeCard}>
+            <View style={styles.welcomeHeader}>
+              <Text style={styles.welcomeTitle}>🎉 FailShareへようこそ！</Text>
+              <TouchableOpacity 
+                onPress={() => setShowWelcomeMessage(false)}
+                style={styles.closeButton}
+              >
+                <IconButton icon="close" size={20} iconColor="#8E9AAF" />
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.welcomeDescription}>
+              失敗談と愚痴を匿名で共有し、同じ経験を持つ人たちと支え合うコミュニティです。
+            </Text>
+            <TouchableOpacity 
+              style={styles.getStartedButton}
+              onPress={() => navigation?.navigate('CreateStory')}
+            >
+              <Text style={styles.getStartedText}>最初の投稿をしてみる</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
       {/* 検索セクション */}
       <View style={styles.searchSection}>
         <View style={styles.searchRow}>
@@ -309,20 +338,28 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         {displayStories.length === 0 && !isLoading ? (
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyIcon}>
-              {searchQuery || selectedMainCategory || selectedSubCategory || selectedPostType ? '🔍' : '📱'}
+              {searchQuery || selectedMainCategory || selectedSubCategory || selectedPostType ? '🔍' : '💭'}
             </Text>
             <Text style={styles.emptyTitle}>
               {searchQuery || selectedMainCategory || selectedSubCategory || selectedPostType
                 ? '該当する投稿が見つかりませんでした' 
-                : '最初の投稿をしてみましょう'
+                : '失敗談と愚痴を共有しましょう'
               }
             </Text>
             <Text style={styles.emptyText}>
               {searchQuery || selectedMainCategory || selectedSubCategory || selectedPostType
                 ? '検索条件を変更してお試しください'
-                : 'あなたの経験が誰かの学びになります'
+                : 'あなたの経験や感情を匿名で共有し、同じような経験を持つ人たちと支え合いましょう。失敗から学び、愚痴を吐き出して心を軽くすることができます。'
               }
             </Text>
+            {!searchQuery && !selectedMainCategory && !selectedSubCategory && !selectedPostType && (
+              <TouchableOpacity 
+                style={styles.emptyActionButton}
+                onPress={() => navigation?.navigate('CreateStory')}
+              >
+                <Text style={styles.emptyActionText}>投稿を始める</Text>
+              </TouchableOpacity>
+            )}
           </View>
         ) : (
           displayStories.map((story, _index) => (
@@ -696,6 +733,87 @@ const styles = StyleSheet.create({
   },
   bottomSpace: {
     height: 40,
+  },
+  // ウェルカムメッセージのスタイル
+  welcomeSection: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+  },
+  welcomeCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 20,
+    elevation: 4,
+    borderLeftWidth: 4,
+    borderLeftColor: '#1DA1F2',
+  },
+  welcomeHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  welcomeTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1E293B',
+    flex: 1,
+    marginRight: 8,
+  },
+  closeButton: {
+    margin: 0,
+    padding: 0,
+  },
+  welcomeDescription: {
+    fontSize: 15,
+    color: '#475569',
+    lineHeight: 22,
+    marginBottom: 16,
+  },
+  welcomeFeatures: {
+    marginBottom: 20,
+  },
+  featureItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  featureIcon: {
+    fontSize: 18,
+    marginRight: 12,
+    width: 24,
+    textAlign: 'center',
+  },
+  featureText: {
+    fontSize: 14,
+    color: '#475569',
+    flex: 1,
+  },
+  getStartedButton: {
+    backgroundColor: '#1DA1F2',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+  },
+  getStartedText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  // 空の状態のアクションボタン
+  emptyActionButton: {
+    backgroundColor: '#1DA1F2',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  emptyActionText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 
