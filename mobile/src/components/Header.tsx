@@ -56,6 +56,12 @@ const Header: React.FC<HeaderProps> = ({
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.headerNavButton} 
+              onPress={() => navigation.navigate('AiAvatar')}
+            >
+              <IconButton icon="robot" size={20} iconColor="#FFFFFF" />
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.headerNavButton} 
               onPress={() => navigation.navigate('Friends')}
             >
               <IconButton icon="message-text" size={20} iconColor="#FFFFFF" />

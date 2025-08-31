@@ -13,6 +13,7 @@ import FriendSearchScreen from '../screens/FriendSearchScreen';
 import BlockedUsersScreen from '../screens/BlockedUsersScreen';
 import ChatScreen from '../screens/ChatScreen';
 import ChatListScreen from '../screens/ChatListScreen';
+import AiAvatarScreen from '../screens/AiAvatarScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -69,6 +70,10 @@ const AppNavigator: React.FC = () => {
         <Stack.Screen
           name="ChatList"
           component={ChatListScreen}
+        />
+        <Stack.Screen
+          name="AiAvatar"
+          component={AiAvatarScreen}
         />
       </Stack.Navigator>
     </NavigationContainer>

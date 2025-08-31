@@ -432,6 +432,105 @@ export interface CommentFilterResult {
   suggestions?: string[];
 }
 
+// AIアバター機能の型定義
+export interface AIResponse {
+  id: string;
+  conversationId: string;
+  message: string;
+  emotion: EmotionType;
+  advice?: string;
+  timestamp: Date;
+  isTyping: boolean;
+}
+
+export interface ConversationMessage {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  senderType: 'user' | 'ai';
+  content: string;
+  emotion?: EmotionType;
+  timestamp: Date;
+  metadata?: MessageMetadata;
+}
+
+export interface EmotionAnalysis {
+  primary: EmotionType;
+  confidence: number;
+  secondary?: EmotionType;
+  intensity: number;
+  keywords: string[];
+}
+
+export interface ConversationState {
+  id: string;
+  userId: string;
+  status: 'active' | 'paused' | 'ended';
+  lastActivity: Date;
+  messageCount: number;
+  averageEmotion: EmotionType;
+  topics: string[];
+}
+
+export interface MessageMetadata {
+  advice?: string;
+  category?: string;
+  sentiment: 'positive' | 'neutral' | 'negative';
+  keywords: string[];
+}
+
+export interface AIUserProfile {
+  userId: string;
+  preferredTopics: string[];
+  communicationStyle: 'formal' | 'casual' | 'friendly';
+  emotionalTendencies: EmotionType[];
+  conversationHistory: string[];
+  lastUpdated: Date;
+}
+
+// AIアバターサービスインターフェース
+export interface AIAvatarService {
+  // AI対話管理
+  startConversation(userId: string): Promise<string>;
+  sendMessage(conversationId: string, userId: string, message: string): Promise<AIResponse>;
+  getConversationHistory(conversationId: string): Promise<ConversationMessage[]>;
+  endConversation(conversationId: string): Promise<void>;
+  
+  // 感情分析・パーソナライゼーション
+  analyzeEmotion(text: string): Promise<EmotionAnalysis>;
+  updateUserProfile(userId: string, profile: AIUserProfile): Promise<void>;
+  generatePersonalizedResponse(conversationId: string, userMessage: string, emotion: EmotionType): Promise<string>;
+  
+  // リアルタイム対話
+  subscribeToConversation(conversationId: string, callback: (message: ConversationMessage) => void): () => void;
+  subscribeToConversationState(conversationId: string, callback: (state: ConversationState) => void): () => void;
+}
+
+// AIアバターストアインターフェース
+export interface AIAvatarStore {
+  currentConversation: ConversationState | null;
+  conversationMessages: ConversationMessage[];
+  userProfile: AIUserProfile | null;
+  isLoading: boolean;
+  isTyping: boolean;
+  error: string | null;
+  
+  // Actions
+  startConversation(userId: string): Promise<void>;
+  sendMessage(conversationId: string, userId: string, message: string): Promise<void>;
+  endConversation(): Promise<void>;
+  loadConversationHistory(conversationId: string): Promise<void>;
+  updateUserProfile(profile: AIUserProfile): Promise<void>;
+  
+  setLoading(loading: boolean): void;
+  setTyping(typing: boolean): void;
+  setError(error: string | null): void;
+  reset(): void;
+  
+  // リアルタイム更新
+  subscribeToConversation(conversationId: string): () => void;
+}
+
 // Navigation型定義を更新
 export type RootStackParamList = {
   Home: undefined;
@@ -448,4 +547,5 @@ export type RootStackParamList = {
   CreateCommunity: undefined;
   Chat: { friendId: string; friendName: string } | undefined;
   ChatList: undefined;
+  AiAvatar: undefined;
 }; 

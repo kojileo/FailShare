@@ -162,6 +162,60 @@ service cloud.firestore {
     }
     
     // 他のドキュメントへのアクセスを拒否
+    // AIアバター対話機能
+    match /aiConversations/{conversationId} {
+      // 読み取り：認証済みユーザーのみ、自分の対話のみ
+      allow read: if request.auth != null 
+                    && request.auth.uid == resource.data.userId;
+      
+      // 作成：認証済みユーザーのみ、自分の対話のみ
+      allow create: if request.auth != null 
+                     && request.auth.uid == request.resource.data.userId;
+      
+      // 更新：認証済みユーザーのみ、自分の対話のみ
+      allow update: if request.auth != null 
+                     && request.auth.uid == resource.data.userId;
+      
+      // 削除：認証済みユーザーのみ、自分の対話のみ
+      allow delete: if request.auth != null 
+                     && request.auth.uid == resource.data.userId;
+    }
+    
+    // AIアバターメッセージ
+    match /aiMessages/{messageId} {
+      // 読み取り：認証済みユーザーのみ、自分の対話のメッセージのみ
+      allow read: if request.auth != null 
+                    && request.auth.uid == resource.data.senderId;
+      
+      // 作成：認証済みユーザーのみ、自分のメッセージのみ
+      allow create: if request.auth != null 
+                     && (request.auth.uid == request.resource.data.senderId 
+                         || request.resource.data.senderId == 'ai');
+      
+      // 更新・削除：認証済みユーザーのみ、自分のメッセージのみ
+      allow update, delete: if request.auth != null 
+                             && request.auth.uid == resource.data.senderId;
+    }
+    
+    // AIユーザープロファイル
+    match /aiUserProfiles/{profileId} {
+      // 読み取り：認証済みユーザーのみ、自分のプロファイルのみ
+      allow read: if request.auth != null 
+                    && request.auth.uid == resource.data.userId;
+      
+      // 作成：認証済みユーザーのみ、自分のプロファイルのみ
+      allow create: if request.auth != null 
+                     && request.auth.uid == request.resource.data.userId;
+      
+      // 更新：認証済みユーザーのみ、自分のプロファイルのみ
+      allow update: if request.auth != null 
+                     && request.auth.uid == resource.data.userId;
+      
+      // 削除：認証済みユーザーのみ、自分のプロファイルのみ
+      allow delete: if request.auth != null 
+                     && request.auth.uid == resource.data.userId;
+    }
+    
     match /{document=**} {
       allow read, write: if false;
     }
@@ -357,5 +411,3 @@ function validateMessageUpdate(newData, oldData) {
          newData.content.size() >= 1 && newData.content.size() <= 1000 &&
          newData.messageType in ['text', 'image', 'file'];
 }
-
- 
