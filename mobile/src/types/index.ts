@@ -26,8 +26,9 @@ export interface FailureStory {
     situation: string;
     action: string;
     result: string;
-    learning: string;
+    learning: string; // 愚痴投稿では任意
     emotion: EmotionType;
+    postType: PostType; // 'failure' | 'complaint'
   };
   metadata: {
     createdAt: Date;
@@ -140,6 +141,8 @@ export type StoryCategory =
   | '別れ'
   | '仕事'
   | 'その他';
+
+export type PostType = 'failure' | 'complaint';
 
 export type EmotionType = 
   | '後悔' 
@@ -414,6 +417,19 @@ export interface ChatStore {
   // リアルタイム更新
   subscribeToChat(chatId: string): () => void;
   subscribeToUserChats(userId: string): () => void;
+}
+
+// キーワードフィルタ機能の型定義
+export interface KeywordFilter {
+  bannedWords: string[];
+  warningWords: string[];
+  isEnabled: boolean;
+}
+
+export interface CommentFilterResult {
+  isBlocked: boolean;
+  warningMessage?: string;
+  suggestions?: string[];
 }
 
 // Navigation型定義を更新

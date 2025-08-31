@@ -2,6 +2,9 @@ const express = require('express');
 const path = require('path');
 const app = express();
 
+// X-Powered-Byヘッダーを無効化（セキュリティ対策）
+app.disable('x-powered-by');
+
 // 環境変数からポートを取得（Cloud Runが自動設定）
 const PORT = process.env.PORT || 8080;
 
