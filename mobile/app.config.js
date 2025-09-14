@@ -50,6 +50,9 @@ const getConfig = () => {
           "twitter:image": "https://fail-share.com/og-image.jpg"
         }
       },
+      plugins: [
+        "expo-font"
+      ],
       extra: {
         environment: environment,
         eas: {

@@ -185,9 +185,10 @@ service cloud.firestore {
     match /aiMessages/{messageId} {
       // 読み取り：認証済みユーザーのみ、自分の対話のメッセージのみ
       allow read: if request.auth != null 
-                    && request.auth.uid == resource.data.senderId;
+                    && (request.auth.uid == resource.data.senderId 
+                        || resource.data.senderId == 'ai');
       
-      // 作成：認証済みユーザーのみ、自分のメッセージのみ
+      // 作成：認証済みユーザーのみ、自分のメッセージまたはAIメッセージ
       allow create: if request.auth != null 
                      && (request.auth.uid == request.resource.data.senderId 
                          || request.resource.data.senderId == 'ai');
@@ -214,6 +215,30 @@ service cloud.firestore {
       // 削除：認証済みユーザーのみ、自分のプロファイルのみ
       allow delete: if request.auth != null 
                      && request.auth.uid == resource.data.userId;
+    }
+
+    // 管理者サポート機能 - サポートリクエスト
+    match /adminSupportRequests/{requestId} {
+      // 開発環境では認証済みユーザーは全てアクセス可能
+      allow read, write: if request.auth != null;
+    }
+
+    // 管理者サポート機能 - サポートセッション
+    match /adminSupportSessions/{sessionId} {
+      // 開発環境では認証済みユーザーは全てアクセス可能
+      allow read, write: if request.auth != null;
+    }
+
+    // 管理者サポート機能 - サポートメッセージ
+    match /adminSupportMessages/{messageId} {
+      // 開発環境では認証済みユーザーは全てアクセス可能
+      allow read, write: if request.auth != null;
+    }
+
+    // 管理者プロファイル
+    match /adminProfiles/{adminId} {
+      // 開発環境では認証済みユーザーは全てアクセス可能
+      allow read, write: if request.auth != null;
     }
     
     match /{document=**} {
@@ -410,4 +435,90 @@ function validateMessageUpdate(newData, oldData) {
          newData.content is string &&
          newData.content.size() >= 1 && newData.content.size() <= 1000 &&
          newData.messageType in ['text', 'image', 'file'];
+}
+
+// 管理者権限チェック関数（開発環境では全ユーザーを管理者として扱う）
+function isAdmin() {
+  // 開発・テスト環境では全認証済みユーザーを管理者として扱う
+  return request.auth != null;
+}
+
+// 管理者サポートリクエストデータの検証関数
+function validateAdminSupportRequestData(data) {
+  return data.keys().hasAll(['userId', 'message', 'emotion', 'priority', 'status', 'createdAt', 'updatedAt']) &&
+         data.userId is string &&
+         data.userId == request.auth.uid &&
+         data.message is string &&
+         data.message.size() >= 1 && data.message.size() <= 1000 &&
+         data.emotion is string &&
+         data.emotion in ['後悔', '恥ずかしい', '悲しい', '不安', '怒り', '混乱', 'その他'] &&
+         data.priority in ['low', 'normal', 'high', 'urgent'] &&
+         data.status in ['pending', 'assigned', 'in_progress', 'resolved', 'closed'] &&
+         data.createdAt is timestamp &&
+         data.updatedAt is timestamp;
+}
+
+// 管理者サポートリクエスト更新の検証関数
+function validateAdminSupportRequestUpdate(newData, oldData) {
+  return newData.userId == oldData.userId &&
+         newData.message == oldData.message &&
+         newData.emotion == oldData.emotion &&
+         newData.createdAt == oldData.createdAt &&
+         newData.status in ['pending', 'assigned', 'in_progress', 'resolved', 'closed'];
+}
+
+// 管理者サポートセッションデータの検証関数
+function validateAdminSupportSessionData(data) {
+  return data.keys().hasAll(['userId', 'adminId', 'status', 'startedAt']) &&
+         data.userId is string &&
+         data.adminId is string &&
+         data.status in ['active', 'paused', 'completed'] &&
+         data.startedAt is timestamp;
+}
+
+// 管理者サポートセッション更新の検証関数
+function validateAdminSupportSessionUpdate(newData, oldData) {
+  return newData.userId == oldData.userId &&
+         newData.adminId == oldData.adminId &&
+         newData.startedAt == oldData.startedAt &&
+         newData.status in ['active', 'paused', 'completed'];
+}
+
+// 管理者サポートメッセージデータの検証関数
+function validateAdminSupportMessageData(data) {
+  return data.keys().hasAll(['supportRequestId', 'senderId', 'senderType', 'content', 'messageType', 'timestamp']) &&
+         data.supportRequestId is string &&
+         data.senderId is string &&
+         data.senderId == request.auth.uid &&
+         data.senderType in ['user', 'admin'] &&
+         data.content is string &&
+         data.content.size() >= 1 && data.content.size() <= 2000 &&
+         data.messageType in ['text', 'system', 'note'] &&
+         data.timestamp is timestamp;
+}
+
+// ユーザーメッセージアクセス権限チェック
+function canAccessUserMessage(supportRequestId) {
+  // 実際の実装では、サポートリクエストの関係者かどうかをチェック
+  return true; // 開発環境では簡易化
+}
+
+// メッセージ更新権限チェック
+function canUpdateMessage(newData, oldData) {
+  // 既読状態の更新のみ許可
+  return newData.supportRequestId == oldData.supportRequestId &&
+         newData.senderId == oldData.senderId &&
+         newData.content == oldData.content &&
+         newData.timestamp == oldData.timestamp;
+}
+
+// 管理者プロファイルデータの検証関数
+function validateAdminProfileData(data) {
+  return data.keys().hasAll(['displayName', 'status', 'isOnline', 'activeChats', 'maxConcurrentChats']) &&
+         data.displayName is string &&
+         data.displayName.size() >= 1 && data.displayName.size() <= 50 &&
+         data.status in ['available', 'busy', 'away', 'offline'] &&
+         data.isOnline is bool &&
+         data.activeChats is int && data.activeChats >= 0 &&
+         data.maxConcurrentChats is int && data.maxConcurrentChats > 0;
 }
