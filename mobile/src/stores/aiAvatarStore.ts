@@ -67,8 +67,10 @@ export const useAIAvatarStore = create<AIAvatarStore>((set, get) => ({
         content: message,
         timestamp: new Date(),
         metadata: {
+          advice: null,
           sentiment: 'neutral',
-          keywords: []
+          keywords: [],
+          avatarExpression: null
         }
       };
 
@@ -89,9 +91,10 @@ export const useAIAvatarStore = create<AIAvatarStore>((set, get) => ({
         emotion: aiResponse.emotion,
         timestamp: aiResponse.timestamp,
         metadata: {
-          advice: aiResponse.advice,
+          advice: aiResponse.advice || null,
           sentiment: 'positive',
-          keywords: []
+          keywords: [],
+          avatarExpression: null
         }
       };
 

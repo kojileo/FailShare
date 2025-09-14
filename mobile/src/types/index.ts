@@ -473,10 +473,11 @@ export interface ConversationState {
 }
 
 export interface MessageMetadata {
-  advice?: string;
+  advice?: string | null;
   category?: string;
   sentiment: 'positive' | 'neutral' | 'negative';
   keywords: string[];
+  avatarExpression?: string | null; // アバターの表情を追加
 }
 
 export interface AIUserProfile {
@@ -506,7 +507,65 @@ export interface AIAvatarService {
   subscribeToConversationState(conversationId: string, callback: (state: ConversationState) => void): () => void;
 }
 
-// AIアバターストアインターフェース
+// 管理者サポート機能の型定義
+export interface AdminSupportRequest {
+  id: string;
+  userId: string;
+  message: string;
+  emotion: EmotionType;
+  priority: 'low' | 'normal' | 'high' | 'urgent';
+  status: 'pending' | 'assigned' | 'in_progress' | 'resolved' | 'closed';
+  assignedAdminId?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  tags: string[];
+}
+
+export interface AdminProfile {
+  id: string;
+  displayName: string;
+  avatar: string;
+  isOnline: boolean;
+  status: 'available' | 'busy' | 'away' | 'offline';
+  specialties: string[]; // 専門分野
+  responseTimeAvg: number; // 平均応答時間（分）
+  satisfactionScore: number; // ユーザー満足度スコア
+  activeChats: number; // 現在対応中のチャット数
+  maxConcurrentChats: number; // 最大同時対応数
+  lastActiveAt: Date;
+}
+
+export interface AdminSupportMessage {
+  id: string;
+  supportRequestId: string;
+  senderId: string;
+  senderType: 'user' | 'admin';
+  content: string;
+  messageType: 'text' | 'system' | 'note';
+  isPrivate?: boolean; // 管理者のみ見える内部メモ
+  timestamp: Date;
+  readBy: string[]; // 既読者のID配列
+  metadata?: {
+    emotion?: EmotionType;
+    avatarExpression?: string;
+    systemAction?: string;
+  };
+}
+
+export interface AdminSupportSession {
+  id: string;
+  userId: string;
+  adminId: string;
+  status: 'active' | 'paused' | 'completed';
+  startedAt: Date;
+  endedAt?: Date;
+  messages: AdminSupportMessage[];
+  userSatisfactionRating?: number;
+  adminNotes?: string;
+  tags: string[];
+}
+
+// AIアバターストアインターフェース（管理者サポートストアに変更予定）
 export interface AIAvatarStore {
   currentConversation: ConversationState | null;
   conversationMessages: ConversationMessage[];
@@ -521,6 +580,7 @@ export interface AIAvatarStore {
   endConversation(): Promise<void>;
   loadConversationHistory(conversationId: string): Promise<void>;
   updateUserProfile(profile: AIUserProfile): Promise<void>;
+  updateUserProfileFromConversation(userId: string, message: string, emotion: string): Promise<void>;
   
   setLoading(loading: boolean): void;
   setTyping(typing: boolean): void;
@@ -531,10 +591,67 @@ export interface AIAvatarStore {
   subscribeToConversation(conversationId: string): () => void;
 }
 
+// 管理者サポートストアインターフェース
+export interface AdminSupportStore {
+  // 状態
+  currentSession: AdminSupportSession | null;
+  supportMessages: AdminSupportMessage[];
+  availableAdmins: AdminProfile[];
+  userRequests: AdminSupportRequest[];
+  isLoading: boolean;
+  isWaitingForAdmin: boolean;
+  error: string | null;
+  
+  // ユーザー向けActions
+  requestSupport(userId: string, message: string, emotion: EmotionType): Promise<void>;
+  sendMessage(sessionId: string, userId: string, message: string): Promise<void>;
+  endSession(sessionId: string): Promise<void>;
+  rateSession(sessionId: string, rating: number): Promise<void>;
+  
+  // 管理者向けActions
+  getAvailableAdmins(): Promise<void>;
+  assignRequest(requestId: string, adminId: string): Promise<void>;
+  startSession(requestId: string, adminId: string): Promise<void>;
+  sendAdminMessage(sessionId: string, adminId: string, message: string, isPrivate?: boolean): Promise<void>;
+  addAdminNote(sessionId: string, adminId: string, note: string): Promise<void>;
+  updateAdminStatus(adminId: string, status: AdminProfile['status']): Promise<void>;
+  
+  // 共通Actions
+  loadSession(sessionId: string): Promise<void>;
+  subscribeToSession(sessionId: string): () => void;
+  subscribeToRequests(userId?: string): () => void;
+  
+  setLoading(loading: boolean): void;
+  setWaitingForAdmin(waiting: boolean): void;
+  setError(error: string | null): void;
+  reset(): void;
+}
+
+// 管理者認証関連の型定義
+export interface AdminAuth {
+  adminId: string;
+  password: string;
+  role: 'admin' | 'super-admin';
+  permissions: string[];
+}
+
+export interface AdminAuthState {
+  admin: AdminProfile | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  error: string | null;
+  
+  signIn: (adminId: string, password: string) => Promise<void>;
+  signOut: () => Promise<void>;
+  setError: (error: string | null) => void;
+}
+
 // Navigation型定義を更新
 export type RootStackParamList = {
   Home: undefined;
   Profile: undefined;
+  AdminLogin: undefined;
+  AdminDashboard: undefined;
   CreateStory: { editMode?: boolean; storyData?: FailureStory } | undefined;
   StoryDetail: { storyId: string };
   MyStories: undefined;

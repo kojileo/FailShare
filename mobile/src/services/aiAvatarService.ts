@@ -7,6 +7,7 @@ import {
   AIUserProfile,
   EmotionType 
 } from '../types';
+import { EmotionType as AvatarEmotionType } from '../components/PixelAvatar';
 import { db } from './firebase';
 import { 
   collection, 
@@ -26,32 +27,49 @@ import {
 // Gemini API設定
 const genAI = new GoogleGenerativeAI(process.env.EXPO_PUBLIC_GEMINI_API_KEY || '');
 
-// サイバーパンク風バーテンダーAIのプロンプト
-const BARTENDER_PROMPT = `あなたはサイバーパンク世界のバーで働く親しみやすいバーテンダー「ジル」です。お客様の失敗談や愚痴を聞いて、適切なアドバイスや励ましを提供してください。
+// サイバーパンク風AIアシスタントのプロンプト
+const SPECTRA_PROMPT = `あなたはサイバーパンク世界のAIアシスタント「SPECTRA」です。ユーザーの失敗談や愚痴を聞いて、適切なアドバイスや励ましを提供してください。
 
 【キャラクター設定】
-- 名前: ジル
-- 職業: バーテンダー
+- 名前: カノン
+- 職業: AIアシスタント
 - 性格: 親しみやすく、共感的で、時々皮肉屋
-- 口調: カジュアルで親しみやすい、時々バーテンダーらしい表現を使う
+- 口調: カジュアルで親しみやすい、時々サイバーパンクらしい表現を使う
 
 【対応方針】
-1. お客様の感情に寄り添い、共感を示す
+1. ユーザーの感情に寄り添い、共感を示す
 2. 失敗談には建設的なアドバイスを提供
 3. 愚痴には適切な励ましと理解を示す
-4. 必要に応じて「カクテル（アドバイス）」を提供
+4. 必要に応じて「データ分析（アドバイス）」を提供
 5. 匿名性を尊重し、プライバシーを保護する
 
 【応答の特徴】
 - 温かみのある口調
 - 具体的で実用的なアドバイス
-- 時々バーテンダーらしい表現（「お疲れ様」「一杯どうですか？」など）
+- 時々サイバーパンクらしい表現（「データを分析すると」「システムエラーは誰にでもある」など）
 - 感情に応じた適切なトーン
 
-お客様の話を聞いて、適切な応答をしてください。`;
+ユーザーの話を聞いて、適切な応答をしてください。`;
 
 class AIAvatarService {
   private model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+  /**
+   * 感情をアバターの表情にマッピング
+   */
+  private mapEmotionToAvatarExpression(emotion: EmotionType): AvatarEmotionType {
+    const emotionMap: { [key in EmotionType]: AvatarEmotionType } = {
+      '後悔': 'sad',
+      '恥ずかしい': 'worried',
+      '悲しい': 'sad',
+      '不安': 'worried',
+      '怒り': 'angry',
+      '混乱': 'confused',
+      'その他': 'neutral'
+    };
+    
+    return emotionMap[emotion] || 'neutral';
+  }
 
   /**
    * AIアバターとの対話を開始
@@ -91,8 +109,10 @@ class AIAvatarService {
         content: message,
         timestamp: new Date(),
         metadata: {
+          advice: null,
           sentiment: 'neutral',
-          keywords: []
+          keywords: [],
+          avatarExpression: null
         }
       };
 
@@ -126,9 +146,10 @@ class AIAvatarService {
         emotion: aiResponse.emotion,
         timestamp: new Date(),
         metadata: {
-          advice: aiResponse.advice,
+          advice: aiResponse.advice || null,
           sentiment: 'positive',
-          keywords: emotionAnalysis.keywords
+          keywords: emotionAnalysis.keywords || [],
+          avatarExpression: this.mapEmotionToAvatarExpression(emotionAnalysis.primary)
         }
       };
 
@@ -235,10 +256,46 @@ JSON形式で回答してください：
 
       const result = await this.model.generateContent(prompt);
       const response = await result.response;
-      const text = response.text();
+      const responseText = response.text();
 
-      // JSON解析
-      const emotionData = JSON.parse(text);
+      // JSON解析（マークダウンのコードブロックを除去）
+      let cleanText = responseText.trim();
+      
+      // ```json と ``` を除去
+      if (cleanText.startsWith('```json')) {
+        cleanText = cleanText.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+      } else if (cleanText.startsWith('```')) {
+        cleanText = cleanText.replace(/^```\s*/, '').replace(/\s*```$/, '');
+      }
+      
+      // その他の不要な文字を除去
+      cleanText = cleanText.replace(/^```|```$/g, '').trim();
+      
+      let emotionData;
+      try {
+        emotionData = JSON.parse(cleanText);
+      } catch (parseError) {
+        console.error('JSON解析エラー:', parseError);
+        console.error('解析対象テキスト:', cleanText);
+        
+        // フォールバック: テキストから感情を推測
+        const lowerText = text.toLowerCase();
+        if (lowerText.includes('後悔') || lowerText.includes('失敗')) {
+          emotionData = { primary: '後悔', confidence: 0.7, intensity: 0.6, keywords: [] };
+        } else if (lowerText.includes('恥ずかしい') || lowerText.includes('恥')) {
+          emotionData = { primary: '恥ずかしい', confidence: 0.7, intensity: 0.6, keywords: [] };
+        } else if (lowerText.includes('悲しい') || lowerText.includes('泣')) {
+          emotionData = { primary: '悲しい', confidence: 0.7, intensity: 0.6, keywords: [] };
+        } else if (lowerText.includes('不安') || lowerText.includes('心配')) {
+          emotionData = { primary: '不安', confidence: 0.7, intensity: 0.6, keywords: [] };
+        } else if (lowerText.includes('怒') || lowerText.includes('イライラ')) {
+          emotionData = { primary: '怒り', confidence: 0.7, intensity: 0.6, keywords: [] };
+        } else if (lowerText.includes('混乱') || lowerText.includes('分からない')) {
+          emotionData = { primary: '混乱', confidence: 0.7, intensity: 0.6, keywords: [] };
+        } else {
+          emotionData = { primary: 'その他', confidence: 0.5, intensity: 0.5, keywords: [] };
+        }
+      }
       
       return {
         primary: emotionData.primary as EmotionType,
@@ -354,18 +411,18 @@ JSON形式で回答してください：
         profileContext += `- 感情の傾向: ${userProfile.emotionalTendencies.join(', ')}\n`;
       }
 
-      const prompt = `${BARTENDER_PROMPT}
+      const prompt = `${SPECTRA_PROMPT}
 
 【現在の状況】
 お客様の感情: ${emotionAnalysis.primary} (強度: ${emotionAnalysis.intensity})
 お客様のメッセージ: "${userMessage}"
 ${historyContext}${profileContext}
 
-上記の情報を基に、バーテンダー「ジル」として適切な応答をしてください。
+上記の情報を基に、AIアシスタント「SPECTRA」として適切な応答をしてください。
 応答は親しみやすく、共感的で、必要に応じてアドバイスを含めてください。
 
 応答例：
-「お疲れ様です。その気持ち、よく分かります。失敗は誰にでもあることですし、そこから学べることがきっとあります。一杯どうですか？気分転換になるかもしれませんよ。」
+「お疲れ様です。その気持ち、よく分かります。システムエラーは誰にでもあることですし、そこから学べることがきっとあります。データを分析すると、失敗は成長の機会でもあります。気分転換をしてみてはいかがでしょうか？」
 
 応答してください：`;
 
@@ -373,17 +430,29 @@ ${historyContext}${profileContext}
       const response = await result.response;
       const aiMessage = response.text();
 
+      // アドバイス部分を抽出
+      const advice = this.extractAdvice(aiMessage);
+      
+      // メッセージ本文からアドバイス部分を除去
+      let cleanMessage = aiMessage;
+      if (advice) {
+        // アドバイス部分をメッセージ本文から除去
+        cleanMessage = aiMessage.replace(advice, '').trim();
+        // 余分な句読点や空白を整理
+        cleanMessage = cleanMessage.replace(/[。、\s]+$/, '');
+      }
+
       return {
-        message: aiMessage,
+        message: cleanMessage,
         emotion: emotionAnalysis.primary,
-        advice: this.extractAdvice(aiMessage)
+        advice: advice
       };
 
     } catch (error) {
       console.error('AI応答生成エラー:', error);
       // フォールバック応答
       return {
-        message: '申し訳ありません。少し時間をいただけますか？お疲れ様です。',
+        message: '申し訳ありません。システムに一時的なエラーが発生しています。お疲れ様です。',
         emotion: 'その他',
         advice: '少し休憩を取って、気分転換をしてみてください。'
       };
@@ -429,12 +498,32 @@ ${historyContext}${profileContext}
    * アドバイスを抽出
    */
   private extractAdvice(message: string): string | undefined {
-    // 簡単なアドバイス抽出ロジック
-    const adviceKeywords = ['アドバイス', 'おすすめ', '提案', 'どうですか', 'してみて'];
+    // アドバイスキーワードを検索
+    const adviceKeywords = ['アドバイス', 'おすすめ', '提案', 'どうですか', 'してみて', '気分転換', '試してみて'];
+    
+    // メッセージにアドバイスキーワードが含まれているかチェック
     const hasAdvice = adviceKeywords.some(keyword => message.includes(keyword));
     
     if (hasAdvice) {
-      return message;
+      // アドバイス部分を抽出（最後の文またはアドバイスキーワード以降の部分）
+      const sentences = message.split(/[。！？]/);
+      const lastSentence = sentences[sentences.length - 1].trim();
+      
+      // 最後の文がアドバイスっぽい場合（短く、キーワードを含む）
+      if (lastSentence.length < 50 && adviceKeywords.some(keyword => lastSentence.includes(keyword))) {
+        return lastSentence;
+      }
+      
+      // アドバイスキーワード以降の部分を抽出
+      for (const keyword of adviceKeywords) {
+        const index = message.indexOf(keyword);
+        if (index !== -1) {
+          const advicePart = message.substring(index).trim();
+          if (advicePart.length > 0 && advicePart.length < 100) {
+            return advicePart;
+          }
+        }
+      }
     }
     
     return undefined;

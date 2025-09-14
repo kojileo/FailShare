@@ -22,51 +22,67 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../types';
-import { useAIAvatarStore } from '../stores/aiAvatarStore';
+import type { RootStackParamList, EmotionType } from '../types';
+import { useAdminSupportStore } from '../stores/adminSupportStore';
 import { useAuthStore } from '../stores/authStore';
 import Header from '../components/Header';
+import PixelAvatar, { EmotionType as AvatarEmotionType, AvatarColorType } from '../components/PixelAvatar';
 
-interface AiAvatarScreenProps {
+interface AdminSupportScreenProps {
   navigation?: NativeStackNavigationProp<RootStackParamList, 'AiAvatar'>;
 }
 
-const AiAvatarScreen: React.FC<AiAvatarScreenProps> = ({ navigation }) => {
+const AdminSupportScreen: React.FC<AdminSupportScreenProps> = ({ navigation }) => {
   const { user } = useAuthStore();
   const {
-    currentConversation,
-    conversationMessages,
-    userProfile,
+    currentSession,
+    supportMessages,
+    availableAdmins,
     isLoading,
-    isTyping,
+    isWaitingForAdmin,
     error,
-    startConversation,
+    requestSupport,
     sendMessage,
-    endConversation,
-    loadConversationHistory,
+    endSession,
+    loadSession,
+    subscribeToSession,
     setError
-  } = useAIAvatarStore();
+  } = useAdminSupportStore();
 
   const [inputMessage, setInputMessage] = useState('');
   const [isInitialized, setIsInitialized] = useState(false);
+  const [currentAvatarEmotion, setCurrentAvatarEmotion] = useState<AvatarEmotionType>('neutral');
+  const [currentAvatarColor, setCurrentAvatarColor] = useState<AvatarColorType>('green');
+  const [selectedEmotion, setSelectedEmotion] = useState<EmotionType>('その他');
   const scrollViewRef = useRef<ScrollView>(null);
 
   // 初期化
   useEffect(() => {
     if (user && !isInitialized) {
-      initializeConversation();
+      // 管理者サポートの初期化は必要に応じて実行
       setIsInitialized(true);
     }
   }, [user, isInitialized]);
 
   // メッセージが追加されたらスクロール
   useEffect(() => {
-    if (conversationMessages.length > 0) {
+    if (supportMessages.length > 0) {
       setTimeout(() => {
         scrollViewRef.current?.scrollToEnd({ animated: true });
       }, 100);
     }
-  }, [conversationMessages]);
+  }, [supportMessages]);
+
+  // 最新の管理者メッセージの感情に基づいてアバターの表情を更新
+  useEffect(() => {
+    const latestAdminMessage = supportMessages
+      .filter(msg => msg.senderType === 'admin')
+      .slice(-1)[0];
+    
+    if (latestAdminMessage?.metadata && 'avatarExpression' in latestAdminMessage.metadata) {
+      setCurrentAvatarEmotion((latestAdminMessage.metadata as any).avatarExpression as AvatarEmotionType);
+    }
+  }, [supportMessages]);
 
   // エラー表示
   useEffect(() => {
@@ -77,33 +93,38 @@ const AiAvatarScreen: React.FC<AiAvatarScreenProps> = ({ navigation }) => {
     }
   }, [error, setError]);
 
-  const initializeConversation = async () => {
-    if (!user) return;
-
-    try {
-      await startConversation(user.id);
-    } catch (error) {
-      console.error('対話初期化エラー:', error);
-    }
-  };
-
-  const handleSendMessage = async () => {
-    if (!inputMessage.trim() || !currentConversation || !user) return;
+  const handleRequestSupport = async () => {
+    if (!inputMessage.trim() || !user) return;
 
     const message = inputMessage.trim();
     setInputMessage('');
 
     try {
-      await sendMessage(currentConversation.id, user.id, message);
+      await requestSupport(user.id, message, selectedEmotion);
+    } catch (error) {
+      console.error('サポートリクエストエラー:', error);
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!inputMessage.trim() || !currentSession || !user) return;
+
+    const message = inputMessage.trim();
+    setInputMessage('');
+
+    try {
+      await sendMessage(currentSession.id, user.id, message);
     } catch (error) {
       console.error('メッセージ送信エラー:', error);
     }
   };
 
-  const handleEndConversation = () => {
+  const handleEndSession = () => {
+    if (!currentSession) return;
+
     Alert.alert(
-      '対話を終了しますか？',
-      '現在の対話を終了して、新しい対話を開始できます。',
+      'サポートセッションを終了しますか？',
+      '現在のサポートセッションを終了します。',
       [
         { text: 'キャンセル', style: 'cancel' },
         {
@@ -111,10 +132,9 @@ const AiAvatarScreen: React.FC<AiAvatarScreenProps> = ({ navigation }) => {
           style: 'destructive',
           onPress: async () => {
             try {
-              await endConversation();
-              await initializeConversation();
+              await endSession(currentSession.id);
             } catch (error) {
-              console.error('対話終了エラー:', error);
+              console.error('セッション終了エラー:', error);
             }
           }
         }
@@ -153,38 +173,69 @@ const AiAvatarScreen: React.FC<AiAvatarScreenProps> = ({ navigation }) => {
       >
         <View style={styles.welcomeHeader}>
           <View style={styles.avatarContainer}>
-            <Avatar.Image
-              size={80}
-              source={{ uri: 'https://robohash.org/jill-cyberpunk-bartender?set=set4&bgset=bg1' }}
+            <PixelAvatar
+              size={120}
+              emotion={currentAvatarEmotion}
+              color={currentAvatarColor}
+              isTyping={isWaitingForAdmin}
               style={styles.avatar}
             />
             <View style={styles.avatarGlow} />
           </View>
           <View style={styles.welcomeText}>
-            <Text style={styles.welcomeTitle}>こんにちは！ジルです</Text>
-            <Text style={styles.welcomeSubtitle}>バーテンダー</Text>
+            <Text style={styles.welcomeTitle}>こんにちは！カノンです</Text>
+            <Text style={styles.welcomeSubtitle}>サポート管理者</Text>
             <View style={styles.statusIndicator}>
               <View style={styles.statusDot} />
-              <Text style={styles.statusText}>ONLINE</Text>
+              <Text style={styles.statusText}>
+                {availableAdmins.length > 0 ? 'ONLINE' : 'BUSY'}
+              </Text>
             </View>
           </View>
         </View>
         <Text style={styles.welcomeMessage}>
-          失敗談や愚痴を聞かせてください。あなたの気持ちに寄り添い、適切なアドバイスを提供します。
-          匿名で安心して話すことができます。
+          失敗談や愚痴を聞かせてください。私たち管理者があなたの気持ちに寄り添い、
+          人間ならではの温かいサポートを提供します。匿名で安心して話すことができます。
         </Text>
         <View style={styles.welcomeFeatures}>
           <View style={styles.featureItem}>
-            <Text style={styles.featureIcon}>💬</Text>
-            <Text style={styles.featureText}>感情に寄り添う対話</Text>
+            <Text style={styles.featureIcon}>👥</Text>
+            <Text style={styles.featureText}>人間による直接サポート</Text>
           </View>
           <View style={styles.featureItem}>
-            <Text style={styles.featureIcon}>🍸</Text>
-            <Text style={styles.featureText}>状況に応じたアドバイス</Text>
+            <Text style={styles.featureIcon}>💝</Text>
+            <Text style={styles.featureText}>真の共感と理解</Text>
           </View>
           <View style={styles.featureItem}>
             <Text style={styles.featureIcon}>🔒</Text>
             <Text style={styles.featureText}>完全匿名・プライベート</Text>
+          </View>
+        </View>
+        
+        {/* 表情テスト用ボタン */}
+        <View style={styles.emotionTestContainer}>
+          <Text style={styles.emotionTestTitle}>表情テスト</Text>
+          <View style={styles.emotionButtons}>
+            {(['neutral', 'happy', 'sad', 'angry', 'surprised', 'thinking', 'confused'] as AvatarEmotionType[]).map((emotion) => (
+              <TouchableOpacity
+                key={emotion}
+                style={[
+                  styles.emotionButton,
+                  currentAvatarEmotion === emotion && styles.emotionButtonActive
+                ]}
+                onPress={() => setCurrentAvatarEmotion(emotion)}
+              >
+                <Text style={styles.emotionButtonText}>
+                  {emotion === 'neutral' ? '😐' : 
+                   emotion === 'happy' ? '😊' :
+                   emotion === 'sad' ? '😢' :
+                   emotion === 'angry' ? '😠' :
+                   emotion === 'surprised' ? '😲' :
+                   emotion === 'thinking' ? '🤔' :
+                   emotion === 'confused' ? '😉' : '😐'}
+                </Text>
+              </TouchableOpacity>
+            ))}
           </View>
         </View>
       </LinearGradient>
@@ -193,7 +244,7 @@ const AiAvatarScreen: React.FC<AiAvatarScreenProps> = ({ navigation }) => {
 
   const renderMessage = (message: any, index: number) => {
     const isUser = message.senderType === 'user';
-    const isAI = message.senderType === 'ai';
+    const isAdmin = message.senderType === 'admin';
 
     return (
       <View key={message.id || index} style={styles.messageContainer}>
@@ -204,17 +255,18 @@ const AiAvatarScreen: React.FC<AiAvatarScreenProps> = ({ navigation }) => {
             isUser ? styles.userMessage : styles.aiMessage
           ]}
         >
-          {isAI && (
+          {isAdmin && (
             <View style={styles.aiMessageHeader}>
               <View style={styles.avatarContainer}>
-                <Avatar.Image
+                <PixelAvatar
                   size={32}
-                  source={{ uri: 'https://robohash.org/jill-cyberpunk-bartender?set=set4&bgset=bg1' }}
+                  emotion={(message.metadata as any)?.avatarExpression as AvatarEmotionType || 'neutral'}
+                  color={currentAvatarColor}
+                  isTyping={false}
                   style={styles.messageAvatar}
                 />
                 <View style={styles.avatarGlow} />
               </View>
-              <Text style={styles.aiName}>ジル</Text>
               {message.emotion && (
                 <View style={[styles.emotionChip, { backgroundColor: getEmotionColor(message.emotion) + '20' }]}>
                   <Text style={[styles.emotionText, { color: getEmotionColor(message.emotion) }]}>
@@ -253,7 +305,7 @@ const AiAvatarScreen: React.FC<AiAvatarScreenProps> = ({ navigation }) => {
     );
   };
 
-  const renderTypingIndicator = () => (
+  const renderWaitingIndicator = () => (
     <View style={styles.messageContainer}>
       <LinearGradient
         colors={['#1A0A2E', '#16213E']}
@@ -261,18 +313,20 @@ const AiAvatarScreen: React.FC<AiAvatarScreenProps> = ({ navigation }) => {
       >
         <View style={styles.aiMessageHeader}>
           <View style={styles.avatarContainer}>
-            <Avatar.Image
+            <PixelAvatar
               size={32}
-              source={{ uri: 'https://robohash.org/jill-cyberpunk-bartender?set=set4&bgset=bg1' }}
+              emotion="thinking"
+              color={currentAvatarColor}
+              isTyping={true}
               style={styles.messageAvatar}
             />
             <View style={styles.avatarGlow} />
           </View>
-          <Text style={styles.aiName}>ジル</Text>
+          <Text style={styles.aiName}>カノン</Text>
         </View>
         <View style={styles.typingContainer}>
           <ActivityIndicator size="small" color="#00FF88" />
-          <Text style={styles.typingText}>入力中...</Text>
+          <Text style={styles.typingText}>管理者を探しています...</Text>
         </View>
       </LinearGradient>
     </View>
@@ -293,13 +347,24 @@ const AiAvatarScreen: React.FC<AiAvatarScreenProps> = ({ navigation }) => {
           </TouchableOpacity>
           
           <View style={styles.headerTitleContainer}>
-            <Text style={styles.headerSubtitle}>CYBERPUNK BARTENDER ACTION</Text>
-            <Text style={styles.headerTitle}>AI Avatar</Text>
+            <Text style={styles.headerTitle}>未来人カノン</Text>
           </View>
           
-          <TouchableOpacity onPress={handleEndConversation} style={styles.refreshButton}>
-            <IconButton icon="refresh" size={20} iconColor="#00FF88" />
-          </TouchableOpacity>
+          <View style={styles.headerActions}>
+            <TouchableOpacity 
+              onPress={() => setCurrentAvatarColor(currentAvatarColor === 'green' ? 'blue' : 'green')} 
+              style={styles.colorButton}
+            >
+              <IconButton 
+                icon="palette" 
+                size={18} 
+                iconColor={currentAvatarColor === 'green' ? '#00FF88' : '#00AAFF'} 
+              />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleEndSession} style={styles.refreshButton}>
+              <IconButton icon="refresh" size={20} iconColor="#00FF88" />
+            </TouchableOpacity>
+          </View>
         </View>
       </LinearGradient>
 
@@ -320,11 +385,11 @@ const AiAvatarScreen: React.FC<AiAvatarScreenProps> = ({ navigation }) => {
           contentContainerStyle={styles.messagesContent}
           showsVerticalScrollIndicator={false}
         >
-          {conversationMessages.length === 0 && !isLoading && renderWelcomeMessage()}
+          {supportMessages.length === 0 && !isLoading && renderWelcomeMessage()}
           
-          {conversationMessages.map((message, index) => renderMessage(message, index))}
+          {supportMessages.map((message, index) => renderMessage(message, index))}
           
-          {isTyping && renderTypingIndicator()}
+          {isWaitingForAdmin && renderWaitingIndicator()}
         </ScrollView>
 
         {/* ヴァルハラ風入力エリア */}
@@ -336,21 +401,21 @@ const AiAvatarScreen: React.FC<AiAvatarScreenProps> = ({ navigation }) => {
             <View style={styles.inputSurface}>
               <TextInput
                 style={styles.textInput}
-                placeholder="失敗談や愚痴を聞かせてください..."
+                placeholder={currentSession ? "メッセージを入力..." : "サポートをリクエストしてください..."}
                 value={inputMessage}
                 onChangeText={setInputMessage}
                 multiline
                 maxLength={500}
-                disabled={isLoading || isTyping}
+                disabled={isLoading || isWaitingForAdmin}
                 placeholderTextColor="#00FF88"
               />
               <TouchableOpacity
                 style={[
                   styles.sendButton,
-                  (!inputMessage.trim() || isLoading || isTyping) && styles.sendButtonDisabled
+                  (!inputMessage.trim() || isLoading || isWaitingForAdmin) && styles.sendButtonDisabled
                 ]}
-                onPress={handleSendMessage}
-                disabled={!inputMessage.trim() || isLoading || isTyping}
+                onPress={currentSession ? handleSendMessage : handleRequestSupport}
+                disabled={!inputMessage.trim() || isLoading || isWaitingForAdmin}
               >
                 <IconButton
                   icon="send"
@@ -415,8 +480,29 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     letterSpacing: 2,
   },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: 80,
+    justifyContent: 'space-between',
+  },
+  colorButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#00FF88',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   refreshButton: {
-    width: 40,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#00FF88',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   // サイバーパンク背景
@@ -460,7 +546,7 @@ const styles = StyleSheet.create({
   },
   welcomeCard: {
     borderRadius: 16,
-    padding: 20,
+    padding: 24,
     borderWidth: 2,
     borderColor: '#00FF88',
     shadowColor: '#00FF88',
@@ -468,15 +554,17 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.5,
     shadowRadius: 10,
     elevation: 8,
+    minHeight: 300,
   },
   welcomeHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
+    alignItems: 'flex-start',
+    marginBottom: 20,
   },
   avatarContainer: {
     position: 'relative',
-    marginRight: 12,
+    marginRight: 16,
+    alignSelf: 'flex-start',
   },
   avatar: {
     borderWidth: 2,
@@ -500,24 +588,29 @@ const styles = StyleSheet.create({
   },
   welcomeText: {
     flex: 1,
+    paddingTop: 4,
+    justifyContent: 'space-between',
   },
   welcomeTitle: {
     fontSize: 18,
     fontWeight: '700',
     color: '#00FF88',
-    marginBottom: 4,
+    marginBottom: 20,
     textShadowColor: '#00FF88',
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 5,
+    lineHeight: 24,
   },
   welcomeSubtitle: {
     fontSize: 14,
     color: '#FFFFFF',
-    marginBottom: 8,
+    marginBottom: 10,
+    lineHeight: 18,
   },
   statusIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginTop: 4,
   },
   statusDot: {
     width: 8,
@@ -537,13 +630,15 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   welcomeMessage: {
-    fontSize: 15,
+    fontSize: 14,
     color: '#FFFFFF',
-    lineHeight: 22,
-    marginBottom: 16,
+    lineHeight: 20,
+    marginBottom: 20,
+    paddingHorizontal: 4,
   },
   welcomeFeatures: {
-    gap: 8,
+    gap: 12,
+    marginBottom: 16,
   },
   featureItem: {
     flexDirection: 'row',
@@ -559,6 +654,45 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#FFFFFF',
     flex: 1,
+  },
+
+  // 表情テスト
+  emotionTestContainer: {
+    marginTop: 8,
+    padding: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#00FF88',
+    backgroundColor: 'rgba(0, 255, 136, 0.1)',
+  },
+  emotionTestTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#00FF88',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  emotionButtons: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  emotionButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#00FF88',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0, 255, 136, 0.1)',
+  },
+  emotionButtonActive: {
+    backgroundColor: '#00FF88',
+  },
+  emotionButtonText: {
+    fontSize: 18,
   },
 
   // メッセージ
@@ -730,4 +864,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default AiAvatarScreen;
+export default AdminSupportScreen;
