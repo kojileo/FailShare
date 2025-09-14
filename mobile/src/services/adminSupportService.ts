@@ -64,6 +64,101 @@ class AdminSupportService {
   }
 
   /**
+   * ユーザーのアクティブなセッションを取得
+   */
+  async getActiveSession(userId: string): Promise<AdminSupportSession | null> {
+    try {
+      const q = query(
+        collection(db, this.SESSIONS_COLLECTION),
+        where('userId', '==', userId),
+        where('status', '==', 'active'),
+        orderBy('startedAt', 'desc'),
+        limit(1)
+      );
+
+      const querySnapshot = await getDocs(q);
+      
+      if (querySnapshot.empty) {
+        return null;
+      }
+
+      const doc = querySnapshot.docs[0];
+      const data = doc.data();
+      
+      return {
+        id: doc.id,
+        userId: data.userId,
+        adminId: data.adminId,
+        status: data.status,
+        startedAt: data.startedAt?.toDate() || new Date(),
+        endedAt: data.endedAt?.toDate(),
+        messages: data.messages || [],
+        tags: data.tags || []
+      };
+    } catch (error) {
+      console.error('❌ アクティブセッション取得エラー:', error);
+      return null;
+    }
+  }
+
+  /**
+   * 待機中のサポートリクエストを取得
+   */
+  async getPendingRequests(): Promise<AdminSupportRequest[]> {
+    try {
+      const q = query(
+        collection(db, this.REQUESTS_COLLECTION),
+        where('status', 'in', ['pending', 'assigned', 'in_progress']),
+        orderBy('createdAt', 'desc')
+      );
+
+      const querySnapshot = await getDocs(q);
+      const requests: AdminSupportRequest[] = [];
+
+      for (const doc of querySnapshot.docs) {
+        const data = doc.data();
+        
+        // セッションIDを取得
+        let sessionId = null;
+        if (data.status === 'in_progress' && data.assignedAdminId) {
+          const sessionQuery = query(
+            collection(db, this.SESSIONS_COLLECTION),
+            where('userId', '==', data.userId),
+            where('adminId', '==', data.assignedAdminId),
+            where('status', '==', 'active'),
+            orderBy('startedAt', 'desc'),
+            limit(1)
+          );
+          const sessionSnapshot = await getDocs(sessionQuery);
+          if (!sessionSnapshot.empty) {
+            sessionId = sessionSnapshot.docs[0].id;
+          }
+        }
+
+        requests.push({
+          id: doc.id,
+          userId: data.userId,
+          message: data.message,
+          emotion: data.emotion,
+          priority: data.priority,
+          status: data.status,
+          assignedAdminId: data.assignedAdminId,
+          sessionId: sessionId,
+          createdAt: data.createdAt?.toDate() || new Date(),
+          updatedAt: data.updatedAt?.toDate() || new Date(),
+          tags: data.tags || []
+        });
+      }
+
+      console.log('📋 サポートリクエスト取得:', requests.length);
+      return requests;
+    } catch (error) {
+      console.error('❌ サポートリクエスト取得エラー:', error);
+      throw error;
+    }
+  }
+
+  /**
    * 利用可能な管理者を取得
    */
   async getAvailableAdmins(): Promise<AdminProfile[]> {

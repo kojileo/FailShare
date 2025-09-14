@@ -15,6 +15,7 @@ import ChatListScreen from '../screens/ChatListScreen';
 import AdminSupportScreen from '../screens/AiAvatarScreen';
 import AdminDashboardScreen from '../screens/AdminDashboardScreen';
 import AdminLoginScreen from '../screens/AdminLoginScreen';
+import AdminChatScreen from '../screens/AdminChatScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -82,6 +83,10 @@ const AppNavigator: React.FC = () => {
         <Stack.Screen
           name="AdminDashboard"
           component={AdminDashboardScreen}
+        />
+        <Stack.Screen
+          name="AdminChat"
+          component={AdminChatScreen}
         />
       </Stack.Navigator>
   );

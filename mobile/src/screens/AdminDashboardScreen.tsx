@@ -5,7 +5,8 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
-  Alert
+  Alert,
+  Modal
 } from 'react-native';
 import {
   Text,
@@ -37,6 +38,7 @@ const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({ navigation 
     availableAdmins,
     isLoading,
     error,
+    getPendingRequests,
     getAvailableAdmins,
     assignRequest,
     startSession,
@@ -46,6 +48,8 @@ const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({ navigation 
 
   const [refreshing, setRefreshing] = useState(false);
   const [currentAdminId, setCurrentAdminId] = useState(admin?.id || '');
+  const [selectedRequest, setSelectedRequest] = useState<AdminSupportRequest | null>(null);
+  const [showRequestDetail, setShowRequestDetail] = useState(false);
 
   // 管理者認証チェック
   useEffect(() => {
@@ -79,7 +83,10 @@ const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({ navigation 
 
   const loadInitialData = async () => {
     try {
-      await getAvailableAdmins();
+      await Promise.all([
+        getAvailableAdmins(),
+        getPendingRequests()
+      ]);
     } catch (error) {
       console.error('初期データ読み込みエラー:', error);
     }
@@ -87,16 +94,38 @@ const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({ navigation 
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await loadInitialData();
+    try {
+      await Promise.all([
+        getAvailableAdmins(),
+        getPendingRequests()
+      ]);
+    } catch (error) {
+      console.error('リフレッシュエラー:', error);
+    }
     setRefreshing(false);
   };
 
   const handleAssignRequest = async (request: AdminSupportRequest) => {
     try {
       await assignRequest(request.id, currentAdminId);
-      await startSession(request.id, currentAdminId);
+      const sessionId = await startSession(request.id, currentAdminId);
       
-      Alert.alert('成功', 'リクエストを受け付けました');
+      Alert.alert(
+        '成功', 
+        'リクエストを受け付けました。チャットを開始します。',
+        [
+          {
+            text: 'チャットを開く',
+            onPress: () => {
+              navigation?.navigate('AdminChat', {
+                sessionId: sessionId,
+                userId: request.userId
+              });
+            }
+          },
+          { text: 'OK' }
+        ]
+      );
     } catch (error) {
       console.error('リクエスト受付エラー:', error);
       Alert.alert('エラー', 'リクエストの受付に失敗しました');
@@ -109,6 +138,34 @@ const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({ navigation 
     } catch (error) {
       console.error('ステータス更新エラー:', error);
       Alert.alert('エラー', 'ステータスの更新に失敗しました');
+    }
+  };
+
+  const handleOpenChat = async (request: AdminSupportRequest) => {
+    try {
+      console.log('💬 チャットを開く:', request.id);
+      
+      // セッションが開始されていない場合は開始
+      if (request.status === 'assigned') {
+        const sessionId = await startSession(request.id, currentAdminId);
+        navigation?.navigate('AdminChat', {
+          sessionId: sessionId,
+          userId: request.userId
+        });
+      } else if (request.status === 'in_progress') {
+        // 既にセッションが開始されている場合は、セッションIDを使用
+        if (request.sessionId) {
+          navigation?.navigate('AdminChat', {
+            sessionId: request.sessionId,
+            userId: request.userId
+          });
+        } else {
+          Alert.alert('エラー', 'セッションIDが見つかりません');
+        }
+      }
+    } catch (error) {
+      console.error('チャット開始エラー:', error);
+      Alert.alert('エラー', 'チャットを開始できませんでした');
     }
   };
 
@@ -156,12 +213,22 @@ const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({ navigation 
     }
   };
 
+  const handleRequestPress = (request: AdminSupportRequest) => {
+    setSelectedRequest(request);
+    setShowRequestDetail(true);
+  };
+
   const renderRequestCard = (request: AdminSupportRequest) => (
-    <Card key={request.id} style={styles.requestCard}>
-      <LinearGradient
-        colors={['#1A0A2E', '#16213E']}
-        style={styles.cardGradient}
-      >
+    <TouchableOpacity 
+      key={request.id} 
+      onPress={() => handleRequestPress(request)}
+      style={styles.requestCardContainer}
+    >
+      <Card style={styles.requestCard}>
+        <LinearGradient
+          colors={['#1A0A2E', '#16213E']}
+          style={styles.cardGradient}
+        >
         <View style={styles.requestHeader}>
           <View style={styles.requestInfo}>
             <Text style={styles.requestId}>#{request.id.slice(-6)}</Text>
@@ -198,19 +265,33 @@ const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({ navigation 
             {request.emotion}
           </Chip>
           
-          {request.status === 'pending' && (
-            <Button
-              mode="contained"
-              style={styles.assignButton}
-              labelStyle={styles.assignButtonText}
-              onPress={() => handleAssignRequest(request)}
-            >
-              受け付ける
-            </Button>
-          )}
+          <View style={styles.requestActions}>
+            {request.status === 'pending' && (
+              <Button
+                mode="contained"
+                style={styles.assignButton}
+                labelStyle={styles.assignButtonText}
+                onPress={() => handleAssignRequest(request)}
+              >
+                受け付ける
+              </Button>
+            )}
+            
+            {(request.status === 'assigned' || request.status === 'in_progress') && (
+              <Button
+                mode="outlined"
+                style={styles.chatButton}
+                labelStyle={styles.chatButtonText}
+                onPress={() => handleOpenChat(request)}
+              >
+                チャットを開く
+              </Button>
+            )}
+          </View>
         </View>
       </LinearGradient>
     </Card>
+    </TouchableOpacity>
   );
 
   const renderAdminStatus = () => {
@@ -343,13 +424,13 @@ const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({ navigation 
             </Surface>
           </View>
           
-          {/* 待機中のリクエスト */}
+          {/* AIアバターからのサポートリクエスト */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>待機中のリクエスト</Text>
-            {pendingRequests.length === 0 ? (
-              <Text style={styles.emptyText}>現在待機中のリクエストはありません</Text>
+            <Text style={styles.sectionTitle}>🤖 AIアバターからのサポートリクエスト</Text>
+            {userRequests.length === 0 ? (
+              <Text style={styles.emptyText}>現在サポートリクエストはありません</Text>
             ) : (
-              pendingRequests.map(renderRequestCard)
+              userRequests.map(renderRequestCard)
             )}
           </View>
           
@@ -368,6 +449,106 @@ const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({ navigation 
           <View style={styles.loadingOverlay}>
             <ActivityIndicator size="large" color="#00FF88" />
           </View>
+        )}
+
+        {/* リクエスト詳細モーダル */}
+        {showRequestDetail && selectedRequest && (
+          <Modal
+            visible={showRequestDetail}
+            animationType="slide"
+            transparent={true}
+            onRequestClose={() => setShowRequestDetail(false)}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContent}>
+                <View style={styles.modalHeader}>
+                  <Text style={styles.modalTitle}>サポートリクエスト詳細</Text>
+                  <TouchableOpacity
+                    style={styles.closeButton}
+                    onPress={() => setShowRequestDetail(false)}
+                  >
+                    <Text style={styles.closeButtonText}>×</Text>
+                  </TouchableOpacity>
+                </View>
+                
+                <ScrollView style={styles.modalBody}>
+                  <View style={styles.detailSection}>
+                    <Text style={styles.detailLabel}>リクエストID</Text>
+                    <Text style={styles.detailValue}>#{selectedRequest.id.slice(-6)}</Text>
+                  </View>
+                  
+                  <View style={styles.detailSection}>
+                    <Text style={styles.detailLabel}>ユーザーID</Text>
+                    <Text style={styles.detailValue}>{selectedRequest.userId}</Text>
+                  </View>
+                  
+                  <View style={styles.detailSection}>
+                    <Text style={styles.detailLabel}>感情</Text>
+                    <Chip style={styles.emotionChip}>
+                      <Text style={styles.emotionText}>{selectedRequest.emotion}</Text>
+                    </Chip>
+                  </View>
+                  
+                  <View style={styles.detailSection}>
+                    <Text style={styles.detailLabel}>優先度</Text>
+                    <Chip 
+                      style={[styles.priorityChip, { backgroundColor: getPriorityColor(selectedRequest.priority) + '20' }]}
+                    >
+                      <Text style={[styles.chipText, { color: getPriorityColor(selectedRequest.priority) }]}>
+                        {selectedRequest.priority.toUpperCase()}
+                      </Text>
+                    </Chip>
+                  </View>
+                  
+                  <View style={styles.detailSection}>
+                    <Text style={styles.detailLabel}>ステータス</Text>
+                    <Chip 
+                      style={[styles.statusChip, { backgroundColor: getStatusColor(selectedRequest.status) + '20' }]}
+                    >
+                      <Text style={[styles.chipText, { color: getStatusColor(selectedRequest.status) }]}>
+                        {selectedRequest.status.toUpperCase()}
+                      </Text>
+                    </Chip>
+                  </View>
+                  
+                  <View style={styles.detailSection}>
+                    <Text style={styles.detailLabel}>メッセージ</Text>
+                    <Text style={styles.messageText}>{selectedRequest.message}</Text>
+                  </View>
+                  
+                  <View style={styles.detailSection}>
+                    <Text style={styles.detailLabel}>作成日時</Text>
+                    <Text style={styles.detailValue}>
+                      {selectedRequest.createdAt.toLocaleString('ja-JP')}
+                    </Text>
+                  </View>
+                </ScrollView>
+                
+                <View style={styles.modalFooter}>
+                  <Button
+                    mode="outlined"
+                    style={styles.cancelButton}
+                    onPress={() => setShowRequestDetail(false)}
+                  >
+                    閉じる
+                  </Button>
+                  
+                  {selectedRequest.status === 'pending' && (
+                    <Button
+                      mode="contained"
+                      style={styles.acceptButton}
+                      onPress={() => {
+                        handleAssignRequest(selectedRequest);
+                        setShowRequestDetail(false);
+                      }}
+                    >
+                      受け付ける
+                    </Button>
+                  )}
+                </View>
+              </View>
+            </View>
+          </Modal>
         )}
       </LinearGradient>
     </SafeAreaView>
@@ -567,6 +748,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  requestActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
   emotionChip: {
     backgroundColor: 'rgba(0, 255, 136, 0.2)',
   },
@@ -581,6 +766,13 @@ const styles = StyleSheet.create({
     color: '#000000',
     fontWeight: '600',
   },
+  chatButton: {
+    borderColor: '#00FF88',
+  },
+  chatButtonText: {
+    color: '#00FF88',
+    fontWeight: '600',
+  },
   
   // ローディング
   loadingContainer: {
@@ -592,6 +784,94 @@ const styles = StyleSheet.create({
     color: '#00FF88',
     fontSize: 16,
     marginTop: 16,
+  },
+  
+  // リクエストカード
+  requestCardContainer: {
+    marginBottom: 12,
+  },
+  
+  // モーダル
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: '#1A0A2E',
+    borderRadius: 16,
+    width: '100%',
+    maxHeight: '80%',
+    elevation: 10,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#16213E',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  closeButton: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#FF4444',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  closeButtonText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  modalBody: {
+    padding: 20,
+    maxHeight: 400,
+  },
+  detailSection: {
+    marginBottom: 16,
+  },
+  detailLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#00FF88',
+    marginBottom: 4,
+  },
+  detailValue: {
+    fontSize: 16,
+    color: '#FFFFFF',
+  },
+  messageText: {
+    fontSize: 16,
+    color: '#FFFFFF',
+    lineHeight: 24,
+    backgroundColor: '#16213E',
+    padding: 12,
+    borderRadius: 8,
+  },
+  modalFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#16213E',
+    gap: 12,
+  },
+  cancelButton: {
+    flex: 1,
+    borderColor: '#666666',
+  },
+  acceptButton: {
+    flex: 1,
+    backgroundColor: '#00FF88',
   },
   loadingOverlay: {
     position: 'absolute',

@@ -21,31 +21,45 @@ export const useAdminSupportStore = create<AdminSupportStore>((set, get) => ({
   error: null,
 
   // ユーザー向けActions
+  getActiveSession: async (userId: string) => {
+    try {
+      set({ isLoading: true, error: null });
+      
+      const session = await adminSupportService.getActiveSession(userId);
+      
+      if (session) {
+        set({ currentSession: session, isLoading: false });
+        console.log('✅ アクティブセッション取得完了:', session.id);
+        
+        // セッションのメッセージを監視開始
+        get().subscribeToSession(session.id);
+      } else {
+        set({ currentSession: null, isLoading: false });
+        console.log('ℹ️ アクティブセッションなし');
+      }
+    } catch (error) {
+      console.error('❌ アクティブセッション取得エラー:', error);
+      set({ 
+        error: 'セッション情報の取得に失敗しました',
+        isLoading: false
+      });
+    }
+  },
+
   requestSupport: async (userId: string, message: string, emotion: EmotionType) => {
     try {
       set({ isLoading: true, error: null, isWaitingForAdmin: true });
 
-      // サポートリクエストを作成
+      // サポートリクエストを作成（pending状態で保存）
       const requestId = await adminSupportService.requestSupport(userId, message, emotion);
       
-      // 最適な管理者を自動選択して割り当て
-      const assignedAdminId = await adminSupportService.assignBestAdmin(requestId);
-      
-      if (assignedAdminId) {
-        // セッションを開始
-        const sessionId = await adminSupportService.startSession(requestId, assignedAdminId);
-        
-        // セッション情報を取得してストアを更新
-        await get().loadSession(sessionId);
-        
-        set({ isWaitingForAdmin: false });
-        console.log('🆘 サポートリクエスト完了、セッション開始:', sessionId);
-      } else {
-        // 管理者が見つからない場合は待機状態を維持
-        console.log('⏳ 管理者待機中...');
-      }
+      console.log('🆘 サポートリクエスト作成完了:', requestId);
+      console.log('⏳ 管理者の対応を待機中...');
 
-      set({ isLoading: false });
+      set({ 
+        isLoading: false, 
+        isWaitingForAdmin: true 
+      });
     } catch (error) {
       console.error('❌ サポートリクエストエラー:', error);
       set({ 
@@ -123,6 +137,23 @@ export const useAdminSupportStore = create<AdminSupportStore>((set, get) => ({
   },
 
   // 管理者向けActions
+  getPendingRequests: async () => {
+    try {
+      set({ isLoading: true, error: null });
+      
+      const requests = await adminSupportService.getPendingRequests();
+      set({ userRequests: requests, isLoading: false });
+      
+      console.log('📋 待機中リクエスト取得完了:', requests.length);
+    } catch (error) {
+      console.error('❌ 待機中リクエスト取得エラー:', error);
+      set({ 
+        error: '待機中リクエストの取得に失敗しました',
+        isLoading: false
+      });
+    }
+  },
+
   getAvailableAdmins: async () => {
     try {
       set({ isLoading: true, error: null });
@@ -156,9 +187,11 @@ export const useAdminSupportStore = create<AdminSupportStore>((set, get) => ({
       await get().loadSession(sessionId);
       
       console.log('✅ セッション開始完了:', sessionId);
+      return sessionId;
     } catch (error) {
       console.error('❌ セッション開始エラー:', error);
       set({ error: 'セッションの開始に失敗しました' });
+      throw error;
     }
   },
 

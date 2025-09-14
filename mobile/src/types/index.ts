@@ -516,6 +516,7 @@ export interface AdminSupportRequest {
   priority: 'low' | 'normal' | 'high' | 'urgent';
   status: 'pending' | 'assigned' | 'in_progress' | 'resolved' | 'closed';
   assignedAdminId?: string;
+  sessionId?: string;
   createdAt: Date;
   updatedAt: Date;
   tags: string[];
@@ -603,15 +604,17 @@ export interface AdminSupportStore {
   error: string | null;
   
   // ユーザー向けActions
+  getActiveSession(userId: string): Promise<void>;
   requestSupport(userId: string, message: string, emotion: EmotionType): Promise<void>;
   sendMessage(sessionId: string, userId: string, message: string): Promise<void>;
   endSession(sessionId: string): Promise<void>;
   rateSession(sessionId: string, rating: number): Promise<void>;
   
   // 管理者向けActions
+  getPendingRequests(): Promise<void>;
   getAvailableAdmins(): Promise<void>;
   assignRequest(requestId: string, adminId: string): Promise<void>;
-  startSession(requestId: string, adminId: string): Promise<void>;
+  startSession(requestId: string, adminId: string): Promise<string>;
   sendAdminMessage(sessionId: string, adminId: string, message: string, isPrivate?: boolean): Promise<void>;
   addAdminNote(sessionId: string, adminId: string, note: string): Promise<void>;
   updateAdminStatus(adminId: string, status: AdminProfile['status']): Promise<void>;
@@ -652,6 +655,7 @@ export type RootStackParamList = {
   Profile: undefined;
   AdminLogin: undefined;
   AdminDashboard: undefined;
+  AdminChat: { sessionId: string; userId: string };
   CreateStory: { editMode?: boolean; storyData?: FailureStory } | undefined;
   StoryDetail: { storyId: string };
   MyStories: undefined;

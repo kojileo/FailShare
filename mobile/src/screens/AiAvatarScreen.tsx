@@ -38,14 +38,17 @@ const AdminSupportScreen: React.FC<AdminSupportScreenProps> = ({ navigation }) =
     currentSession,
     supportMessages,
     availableAdmins,
+    userRequests,
     isLoading,
     isWaitingForAdmin,
     error,
+    getActiveSession,
     requestSupport,
     sendMessage,
     endSession,
     loadSession,
     subscribeToSession,
+    subscribeToRequests,
     setError
   } = useAdminSupportStore();
 
@@ -61,8 +64,15 @@ const AdminSupportScreen: React.FC<AdminSupportScreenProps> = ({ navigation }) =
     if (user && !isInitialized) {
       // 管理者サポートの初期化は必要に応じて実行
       setIsInitialized(true);
+      
+      // 既存のアクティブセッションを確認
+      getActiveSession(user.id);
+      
+      // ユーザーのリクエストを監視
+      const unsubscribe = subscribeToRequests(user.id);
+      return unsubscribe;
     }
-  }, [user, isInitialized]);
+  }, [user, isInitialized, getActiveSession, subscribeToRequests]);
 
   // メッセージが追加されたらスクロール
   useEffect(() => {
@@ -84,6 +94,36 @@ const AdminSupportScreen: React.FC<AdminSupportScreenProps> = ({ navigation }) =
     }
   }, [supportMessages]);
 
+  // ユーザーのリクエスト状態を監視
+  useEffect(() => {
+    if (userRequests.length > 0) {
+      const latestRequest = userRequests[0]; // 最新のリクエスト
+      
+      if (latestRequest.status === 'in_progress' && latestRequest.sessionId && !currentSession) {
+        // 管理者が対応開始した場合、セッションを開始
+        console.log('🔄 管理者が対応開始、セッションを開始:', latestRequest.sessionId);
+        loadSession(latestRequest.sessionId);
+      }
+    }
+  }, [userRequests, currentSession, loadSession]);
+
+  // セッションが開始されたらメッセージの監視を開始
+  useEffect(() => {
+    if (currentSession) {
+      console.log('💬 セッション開始、メッセージ監視を開始:', currentSession.id);
+      
+      // セッション開始の通知
+      Alert.alert(
+        '管理者が対応開始',
+        '管理者があなたのサポートリクエストに対応を開始しました。\nお気軽にメッセージをお送りください。',
+        [{ text: 'OK' }]
+      );
+      
+      const unsubscribe = subscribeToSession(currentSession.id);
+      return unsubscribe;
+    }
+  }, [currentSession, subscribeToSession]);
+
   // エラー表示
   useEffect(() => {
     if (error) {
@@ -97,25 +137,74 @@ const AdminSupportScreen: React.FC<AdminSupportScreenProps> = ({ navigation }) =
     if (!inputMessage.trim() || !user) return;
 
     const message = inputMessage.trim();
+    
+    // 既存のセッションがある場合は、新しいリクエストを作成せずにメッセージを送信
+    if (currentSession) {
+      console.log('💬 既存セッションにメッセージ送信:', {
+        sessionId: currentSession.id,
+        message: message.substring(0, 50) + '...'
+      });
+      
+      setInputMessage('');
+      
+      try {
+        await sendMessage(currentSession.id, user.id, message);
+        console.log('✅ メッセージ送信完了');
+      } catch (error) {
+        console.error('❌ メッセージ送信エラー:', error);
+        Alert.alert('エラー', 'メッセージの送信に失敗しました。');
+      }
+      return;
+    }
+
+    // 既存のセッションがない場合は、新しいサポートリクエストを作成
+    console.log('🆘 サポートリクエスト送信開始:', {
+      userId: user.id,
+      message: message.substring(0, 50) + '...',
+      emotion: selectedEmotion
+    });
+    
     setInputMessage('');
 
     try {
       await requestSupport(user.id, message, selectedEmotion);
+      console.log('✅ サポートリクエスト送信完了');
+      Alert.alert(
+        'サポートリクエスト送信完了',
+        '管理者があなたのリクエストを確認し、できるだけ早く対応いたします。',
+        [{ text: 'OK' }]
+      );
     } catch (error) {
-      console.error('サポートリクエストエラー:', error);
+      console.error('❌ サポートリクエストエラー:', error);
+      Alert.alert('エラー', 'サポートリクエストの送信に失敗しました。');
     }
   };
 
   const handleSendMessage = async () => {
-    if (!inputMessage.trim() || !currentSession || !user) return;
+    if (!inputMessage.trim() || !currentSession || !user) {
+      console.log('❌ メッセージ送信条件不足:', {
+        hasMessage: !!inputMessage.trim(),
+        hasSession: !!currentSession,
+        hasUser: !!user,
+        sessionId: currentSession?.id
+      });
+      return;
+    }
 
     const message = inputMessage.trim();
+    console.log('💬 ユーザーメッセージ送信開始:', {
+      sessionId: currentSession.id,
+      userId: user.id,
+      message: message.substring(0, 50) + '...'
+    });
+    
     setInputMessage('');
 
     try {
       await sendMessage(currentSession.id, user.id, message);
+      console.log('✅ ユーザーメッセージ送信完了');
     } catch (error) {
-      console.error('メッセージ送信エラー:', error);
+      console.error('❌ ユーザーメッセージ送信エラー:', error);
     }
   };
 
@@ -385,7 +474,33 @@ const AdminSupportScreen: React.FC<AdminSupportScreenProps> = ({ navigation }) =
           contentContainerStyle={styles.messagesContent}
           showsVerticalScrollIndicator={false}
         >
-          {supportMessages.length === 0 && !isLoading && renderWelcomeMessage()}
+          {supportMessages.length === 0 && !isLoading && !currentSession && renderWelcomeMessage()}
+          
+          {currentSession && supportMessages.length === 0 && (
+            <View style={styles.messageContainer}>
+              <LinearGradient
+                colors={['#1A0A2E', '#16213E']}
+                style={[styles.messageBubble, styles.aiMessage]}
+              >
+                <Text style={styles.aiMessageText}>
+                  管理者が対応を開始しました。お気軽にメッセージをお送りください。
+                </Text>
+              </LinearGradient>
+            </View>
+          )}
+          
+          {currentSession && supportMessages.length > 0 && (
+            <View style={styles.messageContainer}>
+              <LinearGradient
+                colors={['#0F3460', '#16213E']}
+                style={[styles.messageBubble, styles.aiMessage]}
+              >
+                <Text style={styles.aiMessageText}>
+                  💬 チャットセッションが継続中です
+                </Text>
+              </LinearGradient>
+            </View>
+          )}
           
           {supportMessages.map((message, index) => renderMessage(message, index))}
           

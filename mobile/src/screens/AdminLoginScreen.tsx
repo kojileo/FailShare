@@ -153,7 +153,7 @@ const AdminLoginScreen: React.FC<AdminLoginScreenProps> = ({ navigation }) => {
                 <Text style={styles.devInfoTitle}>開発用情報</Text>
                 <Text style={styles.devInfoText}>
                   管理者ID: admin-1{'\n'}
-                  パスワード: password123
+                  パスワード: dev_password_123
                 </Text>
               </Surface>
             )}
