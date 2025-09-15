@@ -100,4 +100,9 @@ jest.mock('@expo/vector-icons', () => ({
 // Expo Linear Gradient のモック
 jest.mock('expo-linear-gradient', () => ({
   LinearGradient: 'LinearGradient',
+}));
+
+// Expo Image のモック
+jest.mock('expo-image', () => ({
+  Image: 'Image',
 })); 

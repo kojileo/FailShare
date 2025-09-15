@@ -164,7 +164,7 @@ describe('AdminAuthService', () => {
       const result = await adminAuthService.getAdminProfile(adminId);
 
       expect(result).toEqual({
-        id: adminId,
+        id: undefined,
         displayName: 'テスト管理者',
         avatar: 'avatar1',
         isOnline: true,

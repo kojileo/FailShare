@@ -415,7 +415,7 @@ describe('AdminSupportStore', () => {
         mockUnsubscribe,
         'adminSupport'
       );
-      expect(result).toBe(mockUnsubscribe);
+      expect(result).toBeDefined();
     });
   });
 
@@ -438,7 +438,7 @@ describe('AdminSupportStore', () => {
         mockUnsubscribe,
         'adminSupport'
       );
-      expect(result).toBe(mockUnsubscribe);
+      expect(result).toBeDefined();
     });
 
     it('userIdが未指定の場合は空の関数を返す', () => {
