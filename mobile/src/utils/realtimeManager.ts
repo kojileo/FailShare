@@ -26,6 +26,14 @@ export class RealtimeManager {
   /**
    * リスナーを登録（重複チェック付き）
    */
+  public addListener(
+    key: string, 
+    unsubscribe: Unsubscribe, 
+    context: string = 'unknown'
+  ): boolean {
+    return this.registerListener(key, unsubscribe, context);
+  }
+
   public registerListener(
     key: string, 
     unsubscribe: Unsubscribe, 

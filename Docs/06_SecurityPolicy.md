@@ -37,19 +37,61 @@ const signInAnonymous = async () => {
 - デバイス固有の匿名IDを生成
 - セッション管理による一時的な認証
 
-#### 2. Firestoreセキュリティルール
+#### 2. 管理者認証システム（実装予定）
+```typescript
+// 管理者認証の実装例
+interface AdminAuth {
+  email: string;
+  password: string;
+  role: 'admin' | 'super-admin';
+  permissions: string[];
+}
+
+// Firebase Custom Claims を使用した管理者認証
+const adminAuth = {
+  signIn: async (email: string, password: string) => {
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const token = await userCredential.user.getIdTokenResult();
+    
+    if (token.claims.role !== 'admin') {
+      throw new Error('管理者権限がありません');
+    }
+    
+    return userCredential.user;
+  }
+};
+```
+
+**実装予定**:
+- 管理者ログイン画面
+- 管理者認証ストア
+- 管理者ダッシュボードへのアクセス制御
+- セッション管理とセキュリティ強化
+
+#### 3. Firestoreセキュリティルール
 ```javascript
 // firestore.rules
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // 認証必須
+    // ユーザー認証必須
     match /stories/{storyId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null 
                     && request.auth.uid == request.resource.data.authorId;
       allow update, delete: if request.auth != null 
                             && request.auth.uid == resource.data.authorId;
+    }
+    
+    // 管理者認証必須（実装予定）
+    match /adminSupportRequests/{requestId} {
+      allow read, write: if request.auth != null 
+                        && request.auth.token.role == 'admin';
+    }
+    
+    match /adminProfiles/{adminId} {
+      allow read, write: if request.auth != null 
+                        && request.auth.token.role == 'admin';
     }
   }
 }
@@ -58,6 +100,7 @@ service cloud.firestore {
 **保護内容**:
 - 認証済みユーザーのみアクセス可能
 - 自分のデータのみ編集・削除可能
+- 管理者専用データへのアクセス制御
 - 適切なデータ検証
 
 ### データ保護
@@ -148,10 +191,26 @@ enum UserRole {
   ADMIN = 'admin'
 }
 
+// 管理者権限の管理（実装予定）
+enum AdminRole {
+  ADMIN = 'admin',
+  SUPER_ADMIN = 'super-admin'
+}
+
 const checkPermission = (user: User, action: string): boolean => {
   // 権限チェックロジック
   return user.role === UserRole.ADMIN || 
          (user.role === UserRole.MODERATOR && action !== 'delete');
+};
+
+// 管理者権限チェック（実装予定）
+const checkAdminPermission = (admin: AdminProfile, action: string): boolean => {
+  const adminPermissions = {
+    'admin': ['read', 'write', 'support'],
+    'super-admin': ['read', 'write', 'support', 'manage', 'delete']
+  };
+  
+  return adminPermissions[admin.role]?.includes(action) || false;
 };
 ```
 

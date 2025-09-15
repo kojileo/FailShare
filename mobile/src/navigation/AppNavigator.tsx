@@ -1,5 +1,4 @@
 import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
 import HomeScreen from '../screens/HomeScreen';
@@ -13,19 +12,22 @@ import FriendSearchScreen from '../screens/FriendSearchScreen';
 import BlockedUsersScreen from '../screens/BlockedUsersScreen';
 import ChatScreen from '../screens/ChatScreen';
 import ChatListScreen from '../screens/ChatListScreen';
+import AdminSupportScreen from '../screens/AiAvatarScreen';
+import AdminDashboardScreen from '../screens/AdminDashboardScreen';
+import AdminLoginScreen from '../screens/AdminLoginScreen';
+import AdminChatScreen from '../screens/AdminChatScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const AppNavigator: React.FC = () => {
   return (
-    <NavigationContainer>
-      <Stack.Navigator
-        id={undefined}
-        initialRouteName="Home"
-        screenOptions={{
-          headerShown: false,
-        }}
-      >
+    <Stack.Navigator
+      id={undefined}
+      initialRouteName="Home"
+      screenOptions={{
+        headerShown: false,
+      }}
+    >
         <Stack.Screen
           name="Home"
           component={HomeScreen}
@@ -70,8 +72,23 @@ const AppNavigator: React.FC = () => {
           name="ChatList"
           component={ChatListScreen}
         />
+        <Stack.Screen
+          name="AiAvatar"
+          component={AdminSupportScreen}
+        />
+        <Stack.Screen
+          name="AdminLogin"
+          component={AdminLoginScreen}
+        />
+        <Stack.Screen
+          name="AdminDashboard"
+          component={AdminDashboardScreen}
+        />
+        <Stack.Screen
+          name="AdminChat"
+          component={AdminChatScreen}
+        />
       </Stack.Navigator>
-    </NavigationContainer>
   );
 };
 
