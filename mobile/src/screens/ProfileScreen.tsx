@@ -462,6 +462,28 @@ const styles = StyleSheet.create({
   bottomSpace: {
     height: 40,
   },
+  // 管理者用スタイル
+  adminSection: {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  adminButton: {
+    marginBottom: 8,
+    borderRadius: 12,
+    elevation: 2,
+  },
+  adminButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  adminNote: {
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.8)',
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
 });
 
 export default ProfileScreen; 

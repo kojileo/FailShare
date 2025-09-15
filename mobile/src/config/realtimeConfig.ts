@@ -49,6 +49,11 @@ export interface RealtimeConfig {
       maxListeners: number;
       autoStopTimeout: number;
     };
+    adminSupport: {
+      enabled: boolean;
+      maxListeners: number;
+      autoStopTimeout: number;
+    };
   };
 }
 
@@ -94,6 +99,11 @@ export const developmentConfig: RealtimeConfig = {
       maxListeners: 1,
       autoStopTimeout: 5 * 60 * 1000, // 5分
     },
+    adminSupport: {
+      enabled: true,
+      maxListeners: 3,
+      autoStopTimeout: 10 * 60 * 1000, // 10分
+    },
   },
 };
 
@@ -138,6 +148,11 @@ export const productionConfig: RealtimeConfig = {
       enabled: true,
       maxListeners: 2,
       autoStopTimeout: 10 * 60 * 1000, // 10分
+    },
+    adminSupport: {
+      enabled: true,
+      maxListeners: 5,
+      autoStopTimeout: 15 * 60 * 1000, // 15分
     },
   },
 };

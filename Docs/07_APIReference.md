@@ -22,6 +22,7 @@ src/services/
 ├── likeService.ts      # いいね管理サービス
 ├── friendService.ts    # フレンド管理サービス
 ├── chatService.ts      # チャット管理サービス
+├── aiAvatarService.ts  # AIアバター対話サービス 🆕
 └── firebase.ts         # Firebase設定
 ```
 
@@ -486,6 +487,132 @@ interface Message {
 
 ---
 
+## 🤖 AIアバターサービス (aiAvatarService) 🆕
+
+### 概要
+ヴァルハラ風バーテンダーAIとの対話機能を管理するサービス
+**技術**: Google Gemini API（完全無料）
+
+### 主要メソッド
+
+#### AI対話管理
+```typescript
+// Gemini API設定
+import { GoogleGenerativeAI } from '@google/generative-ai';
+
+// AIアバターとの対話開始
+export const startConversation = async (userId: string): Promise<string>
+
+// メッセージ送信（Gemini API使用）
+export const sendMessage = async (
+  conversationId: string, 
+  userId: string, 
+  message: string
+): Promise<AIResponse>
+
+// 対話履歴取得
+export const getConversationHistory = async (
+  conversationId: string
+): Promise<ConversationMessage[]>
+
+// 対話終了
+export const endConversation = async (conversationId: string): Promise<void>
+```
+
+#### 感情分析・パーソナライゼーション
+```typescript
+// 感情分析
+export const analyzeEmotion = async (text: string): Promise<EmotionAnalysis>
+
+// ユーザープロファイル更新
+export const updateUserProfile = async (
+  userId: string, 
+  profile: UserProfile
+): Promise<void>
+
+// パーソナライズされた応答生成
+export const generatePersonalizedResponse = async (
+  conversationId: string,
+  userMessage: string,
+  emotion: EmotionType
+): Promise<string>
+```
+
+#### リアルタイム対話
+```typescript
+// リアルタイム対話監視
+export const subscribeToConversation = async (
+  conversationId: string,
+  callback: (message: ConversationMessage) => void
+): Promise<() => void>
+
+// 対話状態監視
+export const subscribeToConversationState = async (
+  conversationId: string,
+  callback: (state: ConversationState) => void
+): Promise<() => void>
+```
+
+### データ型
+```typescript
+interface AIResponse {
+  id: string;
+  conversationId: string;
+  message: string;
+  emotion: EmotionType;
+  advice?: string;
+  timestamp: Date;
+  isTyping: boolean;
+}
+
+interface ConversationMessage {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  senderType: 'user' | 'ai';
+  content: string;
+  emotion?: EmotionType;
+  timestamp: Date;
+  metadata?: MessageMetadata;
+}
+
+interface EmotionAnalysis {
+  primary: EmotionType;
+  confidence: number;
+  secondary?: EmotionType;
+  intensity: number;
+  keywords: string[];
+}
+
+interface ConversationState {
+  id: string;
+  userId: string;
+  status: 'active' | 'paused' | 'ended';
+  lastActivity: Date;
+  messageCount: number;
+  averageEmotion: EmotionType;
+  topics: string[];
+}
+
+interface MessageMetadata {
+  advice?: string;
+  category?: string;
+  sentiment: 'positive' | 'neutral' | 'negative';
+  keywords: string[];
+}
+
+interface UserProfile {
+  userId: string;
+  preferredTopics: string[];
+  communicationStyle: 'formal' | 'casual' | 'friendly';
+  emotionalTendencies: EmotionType[];
+  conversationHistory: string[];
+  lastUpdated: Date;
+}
+```
+
+---
+
 ## 🔧 ユーティリティサービス
 
 ### リアルタイムリスナー管理
@@ -559,6 +686,11 @@ enum ErrorCode {
   LISTENER_ERROR = 'LISTENER_ERROR',
   CONNECTION_ERROR = 'CONNECTION_ERROR',
   
+  // AI機能エラー
+  AI_SERVICE_ERROR = 'AI_SERVICE_ERROR',
+  CONVERSATION_ERROR = 'CONVERSATION_ERROR',
+  EMOTION_ANALYSIS_ERROR = 'EMOTION_ANALYSIS_ERROR',
+  
 
 }
 ```
@@ -580,6 +712,26 @@ try {
     // その他のエラー
     console.error('ストーリー作成エラー:', error);
     throw new Error('投稿に失敗しました');
+  }
+}
+
+// AIアバター対話のエラーハンドリング例（Gemini API）
+try {
+  const response = await aiAvatarService.sendMessage(conversationId, userId, message);
+  return response;
+} catch (error) {
+  if (error.code === ErrorCode.AI_SERVICE_ERROR) {
+    // Gemini APIエラーの処理
+    console.error('Gemini APIエラー:', error);
+    throw new Error('AIアバターとの対話に失敗しました');
+  } else if (error.code === ErrorCode.CONVERSATION_ERROR) {
+    // 対話エラーの処理
+    console.error('対話エラー:', error);
+    throw new Error('対話を続けることができません');
+  } else {
+    // その他のエラー
+    console.error('AI対話エラー:', error);
+    throw new Error('予期しないエラーが発生しました');
   }
 }
 ```
