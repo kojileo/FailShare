@@ -19,7 +19,6 @@ import {
   orderBy, 
   limit, 
   updateDoc, 
-  deleteDoc,
   onSnapshot,
   serverTimestamp 
 } from 'firebase/firestore';

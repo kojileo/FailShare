@@ -12,8 +12,7 @@ import {
 import {
   Text,
   Button,
-  Surface,
-  ActivityIndicator
+  Surface
 } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';

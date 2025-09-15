@@ -13,11 +13,7 @@ import {
   Text,
   TextInput,
   IconButton,
-  Avatar,
-  Surface,
-  ActivityIndicator,
-  Chip,
-  Button
+  ActivityIndicator
 } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -25,7 +21,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList, EmotionType } from '../types';
 import { useAdminSupportStore } from '../stores/adminSupportStore';
 import { useAuthStore } from '../stores/authStore';
-import Header from '../components/Header';
+// import Header from '../components/Header';
 import PixelAvatar, { EmotionType as AvatarEmotionType, AvatarColorType } from '../components/PixelAvatar';
 
 interface AdminSupportScreenProps {
@@ -56,7 +52,7 @@ const AdminSupportScreen: React.FC<AdminSupportScreenProps> = ({ navigation }) =
   const [isInitialized, setIsInitialized] = useState(false);
   const [currentAvatarEmotion, setCurrentAvatarEmotion] = useState<AvatarEmotionType>('neutral');
   const [currentAvatarColor, setCurrentAvatarColor] = useState<AvatarColorType>('green');
-  const [selectedEmotion, setSelectedEmotion] = useState<EmotionType>('その他');
+  const [selectedEmotion, _setSelectedEmotion] = useState<EmotionType>('その他');
   const scrollViewRef = useRef<ScrollView>(null);
 
   // 初期化

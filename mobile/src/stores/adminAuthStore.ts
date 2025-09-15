@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { AdminAuthState, AdminProfile } from '../types';
+import { AdminAuthState } from '../types';
 import { adminAuthService } from '../services/adminAuthService';
 
 export const useAdminAuthStore = create<AdminAuthState>((set, get) => ({

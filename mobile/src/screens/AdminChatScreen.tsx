@@ -13,14 +13,12 @@ import {
   TextInput,
   IconButton,
   Card,
-  Surface,
-  ActivityIndicator,
-  Chip
+  ActivityIndicator
 } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { RootStackParamList, AdminSupportMessage, AdminSupportSession } from '../types';
+import type { RootStackParamList, AdminSupportMessage } from '../types';
 import { useAdminSupportStore } from '../stores/adminSupportStore';
 import { useAdminAuthStore } from '../stores/adminAuthStore';
 import Header from '../components/Header';
@@ -38,7 +36,7 @@ interface AdminChatScreenProps {
 const AdminChatScreen: React.FC<AdminChatScreenProps> = ({ navigation, route }) => {
   const { admin } = useAdminAuthStore();
   const {
-    currentSession,
+    currentSession: _currentSession,
     supportMessages,
     isLoading,
     error,
@@ -49,8 +47,8 @@ const AdminChatScreen: React.FC<AdminChatScreenProps> = ({ navigation, route }) 
   } = useAdminSupportStore();
 
   const [message, setMessage] = useState('');
-  const [sessionId, setSessionId] = useState(route?.params?.sessionId || '');
-  const [userId, setUserId] = useState(route?.params?.userId || '');
+  const [sessionId, _setSessionId] = useState(route?.params?.sessionId || '');
+  const [_userId, _setUserId] = useState(route?.params?.userId || '');
 
   useEffect(() => {
     if (sessionId) {
@@ -81,9 +79,9 @@ const AdminChatScreen: React.FC<AdminChatScreenProps> = ({ navigation, route }) 
     }
   };
 
-  const renderMessage = (msg: AdminSupportMessage, index: number) => {
+  const renderMessage = (msg: AdminSupportMessage, _index: number) => {
     const isAdmin = msg.senderType === 'admin';
-    const isCurrentAdmin = msg.senderId === admin?.id;
+    const _isCurrentAdmin = msg.senderId === admin?.id;
 
     return (
       <View

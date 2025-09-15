@@ -3,6 +3,7 @@ import { View, StyleSheet, Animated } from 'react-native';
 import { Text } from 'react-native-paper';
 import { Image } from 'expo-image';
 
+
 export type EmotionType = 'neutral' | 'happy' | 'sad' | 'worried' | 'angry' | 'confused' | 'surprised' | 'thinking';
 
 export type AvatarColorType = 'green' | 'blue';
@@ -12,7 +13,7 @@ interface PixelAvatarProps {
   emotion?: EmotionType;
   color?: AvatarColorType;
   isTyping?: boolean;
-  style?: any;
+  style?: object;
 }
 
 // 感情と画像ファイルのマッピング
@@ -27,11 +28,12 @@ const emotionImageMapping = {
   thinking: 'thinking'
 };
 
-// 画像アセットの動的require
+// 画像アセットのマッピング
+/* eslint-disable @typescript-eslint/no-require-imports */
 const getAvatarImage = (color: AvatarColorType, emotion: EmotionType) => {
   const mappedEmotion = emotionImageMapping[emotion];
   
-  // greenバリエーションは常に利用可能
+  // greenバリエーション
   const getGreenImage = (emotion: string) => {
     switch (emotion) {
       case 'neutral': return require('../../assets/avatars/spectra_green_neutral.png');
@@ -44,36 +46,26 @@ const getAvatarImage = (color: AvatarColorType, emotion: EmotionType) => {
     }
   };
 
-  // blueバリエーションを試行し、失敗した場合はgreenにフォールバック
+  // blueバリエーション
   const getBlueImage = (emotion: string) => {
-    try {
-      switch (emotion) {
-        case 'neutral': return require('../../assets/avatars/spectra_blue_neutral.png');
-        case 'happy': return require('../../assets/avatars/spectra_blue_happy.png');
-        case 'angry': return require('../../assets/avatars/spectra_blue_angry.png');
-        case 'surprised': return require('../../assets/avatars/spectra_blue_surprised.png');
-        case 'thinking': return require('../../assets/avatars/spectra_blue_thinking.png');
-        case 'wink': return require('../../assets/avatars/spectra_blue_wink.png');
-        default: return require('../../assets/avatars/spectra_blue_neutral.png');
-      }
-    } catch (error) {
-      console.warn(`Blue avatar image not found for ${emotion}, using green fallback`);
-      return getGreenImage(emotion);
+    switch (emotion) {
+      case 'neutral': return require('../../assets/avatars/spectra_blue_neutral.png');
+      case 'happy': return require('../../assets/avatars/spectra_blue_happy.png');
+      case 'angry': return require('../../assets/avatars/spectra_blue_angry.png');
+      case 'surprised': return require('../../assets/avatars/spectra_blue_surprised.png');
+      case 'thinking': return require('../../assets/avatars/spectra_blue_thinking.png');
+      case 'wink': return require('../../assets/avatars/spectra_blue_wink.png');
+      default: return require('../../assets/avatars/spectra_blue_neutral.png');
     }
   };
 
-  try {
-    if (color === 'green') {
-      return getGreenImage(mappedEmotion);
-    } else { // blue
-      return getBlueImage(mappedEmotion);
-    }
-  } catch (error) {
-    console.warn(`Avatar image not found: spectra_${color}_${mappedEmotion}.png, using fallback`);
-    // 最終フォールバック
-    return getGreenImage('neutral');
+  if (color === 'green') {
+    return getGreenImage(mappedEmotion);
+  } else { // blue
+    return getBlueImage(mappedEmotion);
   }
 };
+/* eslint-enable @typescript-eslint/no-require-imports */
 
 const PixelAvatar: React.FC<PixelAvatarProps> = ({ 
   size = 120, 
@@ -121,7 +113,7 @@ const PixelAvatar: React.FC<PixelAvatarProps> = ({
       
       setCurrentEmotion(emotion);
     }
-  }, [emotion]);
+  }, [emotion, currentEmotion, fadeAnim, pulseAnim]);
 
   // カラーが変わった時の処理
   useEffect(() => {
@@ -152,7 +144,7 @@ const PixelAvatar: React.FC<PixelAvatarProps> = ({
         useNativeDriver: false,
       }).start();
     }
-  }, [isTyping]);
+  }, [isTyping, glowAnim]);
 
   // 現在の画像ソースを取得
   const avatarImageSource = getAvatarImage(currentColor, currentEmotion);

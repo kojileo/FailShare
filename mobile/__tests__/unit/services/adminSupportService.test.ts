@@ -296,7 +296,7 @@ describe('AdminSupportService', () => {
 
       mockWriteBatch.mockReturnValue(mockBatch as any);
       mockDoc.mockReturnValue({} as any);
-      mockIncrement.mockReturnValue(1);
+      mockIncrement.mockReturnValue({} as any);
 
       // 関数が例外を投げないことを確認
       await expect(adminSupportService.assignRequest(requestId, adminId)).resolves.not.toThrow();
@@ -400,7 +400,7 @@ describe('AdminSupportService', () => {
 
       mockWriteBatch.mockReturnValue(mockBatch as any);
       mockDoc.mockReturnValue({} as any);
-      mockIncrement.mockReturnValue(-1);
+      mockIncrement.mockReturnValue({} as any);
 
       await adminSupportService.endSession(sessionId, adminId);
 

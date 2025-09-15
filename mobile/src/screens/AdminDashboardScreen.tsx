@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   StyleSheet,
@@ -13,7 +13,6 @@ import {
   Card,
   Button,
   Chip,
-  Badge,
   Surface,
   ActivityIndicator
 } from 'react-native-paper';
@@ -24,20 +23,20 @@ import type { RootStackParamList, AdminProfile, AdminSupportRequest } from '../t
 import { useAdminSupportStore } from '../stores/adminSupportStore';
 import { useAuthStore } from '../stores/authStore';
 import { useAdminAuthStore } from '../stores/adminAuthStore';
-import PixelAvatar, { EmotionType as AvatarEmotionType } from '../components/PixelAvatar';
+import PixelAvatar from '../components/PixelAvatar';
 
 interface AdminDashboardScreenProps {
   navigation?: NativeStackNavigationProp<RootStackParamList, 'AdminDashboard'>;
 }
 
 const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({ navigation }) => {
-  const { user } = useAuthStore();
+  const { user: _user } = useAuthStore();
   const { admin, isAuthenticated, signOut } = useAdminAuthStore();
   const {
     userRequests,
     availableAdmins,
     isLoading,
-    error,
+    error: _error,
     getPendingRequests,
     getAvailableAdmins,
     assignRequest,
@@ -68,6 +67,17 @@ const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({ navigation 
     }
   }, [admin, currentAdminId]);
 
+  const loadInitialData = useCallback(async () => {
+    try {
+      await Promise.all([
+        getAvailableAdmins(),
+        getPendingRequests()
+      ]);
+    } catch (error) {
+      console.error('初期データ読み込みエラー:', error);
+    }
+  }, [getAvailableAdmins, getPendingRequests]);
+
   useEffect(() => {
     if (isAuthenticated) {
       loadInitialData();
@@ -79,18 +89,7 @@ const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({ navigation 
         unsubscribe();
       };
     }
-  }, [isAuthenticated]);
-
-  const loadInitialData = async () => {
-    try {
-      await Promise.all([
-        getAvailableAdmins(),
-        getPendingRequests()
-      ]);
-    } catch (error) {
-      console.error('初期データ読み込みエラー:', error);
-    }
-  };
+  }, [isAuthenticated, subscribeToRequests, loadInitialData]);
 
   const handleRefresh = async () => {
     setRefreshing(true);

@@ -3,7 +3,8 @@ import {
   ConversationState, 
   ConversationMessage, 
   AIUserProfile, 
-  AIAvatarStore 
+  AIAvatarStore,
+  EmotionType 
 } from '../types';
 import { aiAvatarService } from '../services/aiAvatarService';
 import { realtimeManager } from '../utils/realtimeManager';
@@ -176,7 +177,7 @@ export const useAIAvatarStore = create<AIAvatarStore>((set, get) => ({
       const { userProfile } = get();
       
       // 既存のプロファイルを取得または新規作成
-      let profile = userProfile || {
+      const profile = userProfile || {
         userId,
         preferredTopics: [],
         communicationStyle: 'friendly' as const,
@@ -186,8 +187,8 @@ export const useAIAvatarStore = create<AIAvatarStore>((set, get) => ({
       };
 
       // 感情の傾向を更新
-      if (!profile.emotionalTendencies.includes(emotion as any)) {
-        profile.emotionalTendencies.push(emotion as any);
+      if (!profile.emotionalTendencies.includes(emotion as EmotionType)) {
+        profile.emotionalTendencies.push(emotion as EmotionType);
       }
 
       // 対話履歴を更新（最新10件まで保持）
